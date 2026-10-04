@@ -1,7 +1,8 @@
 extends GdUnitTestSuite
 ## Verifies the real parameter data shipped with the project.
 
-const EXPECTED_IDS := [&"temperature", &"humidity", &"oxygen", &"biomass", &"cloud_cover", &"precipitation"]
+const EXPECTED_IDS := [&"temperature", &"humidity", &"oxygen", &"biomass", &"cloud_cover", &"precipitation",
+		&"co2", &"crust_oxidation"]
 
 
 func _schema() -> ParameterSchema:
@@ -19,7 +20,8 @@ func test_project_parameters_in_storage_order() -> void:
 
 func test_schema_version_counts_parameter_changes() -> void:
 	# v1: four core parameters. v2: cloud_cover and precipitation (ClimateSystem).
-	assert_int(_schema().version()).is_equal(2)
+	# v3: co2 and crust_oxidation (AtmosphereSystem).
+	assert_int(_schema().version()).is_equal(3)
 
 
 func test_every_parameter_uses_full_normalized_scale() -> void:
@@ -32,7 +34,7 @@ func test_every_parameter_uses_full_normalized_scale() -> void:
 func test_param_constants_match_project_data() -> void:
 	var schema := _schema()
 	for id: StringName in [Param.TEMPERATURE, Param.HUMIDITY, Param.OXYGEN, Param.BIOMASS,
-			Param.CLOUD_COVER, Param.PRECIPITATION]:
+			Param.CLOUD_COVER, Param.PRECIPITATION, Param.CO2, Param.CRUST_OXIDATION]:
 		assert_int(schema.index_of(id)).is_not_equal(-1)
 
 
@@ -40,3 +42,9 @@ func test_young_planet_starts_dry_and_clear() -> void:
 	var schema := _schema()
 	assert_float(schema.def_of(Param.CLOUD_COVER).initial_value()).is_equal(10.0)
 	assert_float(schema.def_of(Param.PRECIPITATION).initial_value()).is_equal(0.0)
+
+
+func test_young_planet_has_dense_co2_and_fresh_crust() -> void:
+	var schema := _schema()
+	assert_float(schema.def_of(Param.CO2).initial_value()).is_equal(40.0)
+	assert_float(schema.def_of(Param.CRUST_OXIDATION).initial_value()).is_equal(0.0)

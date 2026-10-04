@@ -292,11 +292,12 @@ Current planetary parameters:
 - biomass
 - cloud cover
 - precipitation
+- co2
+- crust oxidation
 
 Future parameters:
 
 - pressure
-- co2
 - toxicity
 - radiation
 - ocean level

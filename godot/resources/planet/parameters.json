@@ -1,5 +1,5 @@
 {
-	"schema_version": 2,
+	"schema_version": 3,
 	"parameters": [
 		{
 			"id": "temperature",
@@ -77,6 +77,32 @@
 				"0": "brak opadów",
 				"50": "regularne opady, klimat umiarkowany",
 				"100": "ulewy, ciągły monsun"
+			}
+		},
+		{
+			"id": "co2",
+			"display_name": "Dwutlenek węgla",
+			"unit": "normalized 0-100",
+			"min": 0,
+			"max": 100,
+			"initial": 40,
+			"anchors": {
+				"0": "brak CO₂, brak efektu cieplarnianego, rośliny głodują",
+				"50": "gęsta atmosfera młodej planety, silny efekt cieplarniany",
+				"100": "duszący, wenusjański"
+			}
+		},
+		{
+			"id": "crust_oxidation",
+			"display_name": "Utlenienie skorupy",
+			"unit": "normalized 0-100",
+			"min": 0,
+			"max": 100,
+			"initial": 0,
+			"anchors": {
+				"0": "świeża, zredukowana skorupa pochłania tlen",
+				"50": "skorupa w połowie utleniona",
+				"100": "skorupa w pełni utleniona, tlen może się gromadzić"
 			}
 		}
 	]
