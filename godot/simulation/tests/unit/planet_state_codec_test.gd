@@ -21,6 +21,14 @@ func _exact_base64(values: Array) -> String:
 	return Marshalls.raw_to_base64(PackedFloat64Array(values).to_byte_array())
 
 
+## One value per project parameter: `first` for the first one, 1.0 for the rest.
+func _project_values(first: float) -> Array:
+	var values := [first]
+	for i in P.project_schema().size() - 1:
+		values.append(1.0)
+	return values
+
+
 func _assert_bitwise_equal(actual: PlanetState, expected: PlanetState) -> void:
 	assert_str(Marshalls.raw_to_base64(actual.values_copy().to_byte_array())) \
 			.is_equal(Marshalls.raw_to_base64(expected.values_copy().to_byte_array()))
@@ -41,8 +49,9 @@ func test_json_round_trip_is_bitwise_exact() -> void:
 func test_encoded_data_contains_readable_values_and_order() -> void:
 	var data := PlanetStateCodec.encode(_project_state())
 	assert_float(data["values"]["temperature"]).is_equal(30.0)
-	assert_array(data["parameter_order"]).is_equal(["temperature", "humidity", "oxygen", "biomass"])
-	assert_int(data["schema_version"]).is_equal(1)
+	var expected_order := Array(P.project_schema().ids()).map(func(id: StringName) -> String: return String(id))
+	assert_array(data["parameter_order"]).is_equal(expected_order)
+	assert_int(data["schema_version"]).is_equal(P.project_schema().version())
 
 
 func test_hash_is_sha256_hex() -> void:
@@ -108,13 +117,13 @@ func test_exact_length_mismatch_is_an_error() -> void:
 
 func test_non_finite_stored_value_is_an_error() -> void:
 	var data := PlanetStateCodec.encode(_project_state())
-	data["values_exact"] = _exact_base64([NAN, 1.0, 1.0, 1.0])
+	data["values_exact"] = _exact_base64(_project_values(NAN))
 	assert_bool(PlanetStateCodec.decode(P.project_schema(), data).is_ok()).is_false()
 
 
 func test_stored_value_outside_limits_is_an_error() -> void:
 	var data := PlanetStateCodec.encode(_project_state())
-	data["values_exact"] = _exact_base64([150.0, 1.0, 1.0, 1.0])
+	data["values_exact"] = _exact_base64(_project_values(150.0))
 	assert_str("\n".join(PlanetStateCodec.decode(P.project_schema(), data).errors)).contains("temperature")
 
 

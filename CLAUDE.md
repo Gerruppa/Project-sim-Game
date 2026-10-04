@@ -290,6 +290,8 @@ Current planetary parameters:
 - humidity
 - oxygen
 - biomass
+- cloud cover
+- precipitation
 
 Future parameters:
 

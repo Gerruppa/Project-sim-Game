@@ -1,5 +1,5 @@
 {
-	"schema_version": 1,
+	"schema_version": 2,
 	"parameters": [
 		{
 			"id": "temperature",
@@ -51,6 +51,32 @@
 				"0": "martwa planeta",
 				"50": "lasy i krzewy",
 				"100": "gęsta biosfera"
+			}
+		},
+		{
+			"id": "cloud_cover",
+			"display_name": "Zachmurzenie",
+			"unit": "normalized 0-100",
+			"min": 0,
+			"max": 100,
+			"initial": 10,
+			"anchors": {
+				"0": "bezchmurne niebo",
+				"50": "umiarkowane zachmurzenie",
+				"100": "pełna pokrywa chmur"
+			}
+		},
+		{
+			"id": "precipitation",
+			"display_name": "Opady",
+			"unit": "normalized 0-100",
+			"min": 0,
+			"max": 100,
+			"initial": 0,
+			"anchors": {
+				"0": "brak opadów",
+				"50": "regularne opady, klimat umiarkowany",
+				"100": "ulewy, ciągły monsun"
 			}
 		}
 	]
