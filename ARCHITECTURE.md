@@ -65,6 +65,7 @@ godot/                                          the Godot project (res://)
     planet/        parameter schema, snapshot
     climate/       ClimateSystem, ClimateConfig
     atmosphere/    AtmosphereSystem, AtmosphereConfig
+    biosphere/     BiosphereSystem, species catalog
     scheduling/    TickScheduler, TickPipeline, SimulationManager
     tests/         gdUnit4: unit, integration, simulation, architecture
   tools/           console entry points
@@ -93,6 +94,7 @@ logs/simulation_runs/                           run logs (not in git)
 | SimMath, SeededRng | math and randomness that give the same bits on every platform |
 | ClimateSystem | seasons, climate drift, ice-albedo tipping point, water cycle, clouds, rain |
 | AtmosphereSystem | carbon cycle (volcanoes vs weathering), CO2 greenhouse, oxygen sources and sinks |
+| BiosphereSystem | species populations: growth, competition by height, succession, fires; emits species events |
 
 ---
 
@@ -104,8 +106,9 @@ logs/simulation_runs/                           run logs (not in git)
 | 2. TickScheduler and simulation skeleton | done |
 | 3. ClimateSystem | done: seasons, ice ages, water cycle, clouds, rain |
 | 4. AtmosphereSystem | done: carbon thermostat, volcanic thaw of ice ages, oxygen sinks |
-| 5. BiosphereSystem | next |
-| 6–10. Personality, Events, Save, Gameplay, Visualization | planned |
+| 5. BiosphereSystem | done: succession, oxygenation, forests and fires, anaerobe refuge |
+| 6. PersonalitySystem | next |
+| 7–10. Events, Save, Gameplay, Visualization | planned |
 
 ---
 

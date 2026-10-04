@@ -10,6 +10,6 @@
 	"weathering_wet": 1.0,
 	"photolysis_rate": 0.004,
 	"crust_oxidation_rate": 0.5,
-	"crust_capacity": 0.05,
+	"crust_capacity": 0.1,
 	"volcanic_gas_sink": 0.02
 }

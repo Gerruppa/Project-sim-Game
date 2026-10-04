@@ -51,8 +51,10 @@ GODOT_BIN=... ./godot/run_tests.sh -a res://simulation/tests/unit/x_test.gd   # 
   to `EventBus` (subscriptions do not keep it alive).
 - Manual console check: `./godot/run_simulation.sh --ticks N` (exit 0/1/2).
 - Files written by tests go to `user://`, never into `res://`.
-- Keep simulation tests fast (whole suite runs in seconds); prefer more seeds
-  over longer single runs.
+- A full-planet tick costs ~0.4 ms. For long scenarios run the simulation
+  once in the suite's `before()` and let several tests assert on what it
+  recorded (see `tests/integration/biosphere_behavior_test.gd`). The whole
+  suite takes ~1.5 min; keep new balance tests small (few seeds).
 
 ## Failure scenarios to always consider
 

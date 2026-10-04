@@ -60,6 +60,18 @@ func test_parses_atmosphere_file() -> void:
 			.is_equal("res://resources/atmosphere/volcanic.json")
 
 
+func test_default_life_files_are_project_files() -> void:
+	var options := _options([])
+	assert_str(options["species"]).is_equal(SpeciesCatalog.DEFAULT_PATH)
+	assert_str(options["biosphere"]).is_equal(BiosphereConfig.DEFAULT_PATH)
+
+
+func test_parses_life_files() -> void:
+	var options := _options(["--species", "res://a.json", "--biosphere", "res://b.json"])
+	assert_str(options["species"]).is_equal("res://a.json")
+	assert_str(options["biosphere"]).is_equal("res://b.json")
+
+
 func test_rejects_atmosphere_option_without_path() -> void:
 	assert_bool(SimulationRunner.parse_args(PackedStringArray(["--atmosphere"])).is_ok()).is_false()
 

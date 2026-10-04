@@ -51,6 +51,10 @@ every user. That is one reason simulation data is JSON loaded into immutable obj
 - **`StringName < StringName` is not guaranteed to compare text.** Convert with
   `String(name)` before sorting or ordering.
 - **`Array.sort_custom` is not stable.** Give comparators a total order.
+- **`sort_custom` with a GDScript comparator is slow** when the comparator
+  converts types or looks things up: it made `StateWriter.apply` 70% of the
+  tick. Precompute a sort key once per element and use native `Array.sort()`.
+  Measure before optimizing (`Time.get_ticks_usec()` around phases).
 - **A `Callable` does not keep its `RefCounted` object alive.** Whoever
   subscribes an object to `EventBus` must hold a reference to it (the
   SimulationManager does); the bus drops subscribers whose object was freed.

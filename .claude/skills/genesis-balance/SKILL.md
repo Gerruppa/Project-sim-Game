@@ -16,8 +16,8 @@ Never tune from a single run. Use many seeds:
 - Simulation tests already run 20 seeds × 2000 ticks for validity
   (`tests/simulation/stability_test.gd`).
 - The planet already has a report tool:
-  `godot/simulation/tests/tools/planet_report.gd` (climate + atmosphere, `--climate-only`; seeds × ticks, per-seed
-  min/max/avg, CO2, oxygen, time in ice, ticks at 0, ice ages and their length). Use it as the
+  `godot/simulation/tests/tools/planet_report.gd` (climate + atmosphere + biosphere; `--lifeless`, `--climate-only`; seeds × ticks, per-seed
+  temperature, time in ice, ice ages, CO2 and O2 ranges, oxygenation tick, biomass, first trees, forest time, species alive, extinctions). Use it as the
   pattern for other systems (`extends SceneTree`, run with `--headless -s`);
   bigger batches can write CSV to `logs/simulation_runs/` (ignored by git).
 - Every run also writes `logs/simulation_runs/*.jsonl`, one record per tick

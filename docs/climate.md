@@ -257,7 +257,7 @@ wyważonego klimatu, tylko dodaje nowe sprzężenie.
 | `weathering_cold`, `weathering_warm` | 10, 50 | poniżej nie ma wietrzenia, powyżej jest pełne |
 | `weathering_dry`, `weathering_wet` | 0.2, 1.0 | wietrzenie bez deszczu / wzmocnienie przez opady |
 | `photolysis_rate` | 0.004 | tlen z rozkładu pary wodnej przez UV |
-| `crust_oxidation_rate`, `crust_capacity` | 0.5, 0.05 | pochłanianie tlenu przez skorupę i tempo jej nasycania |
+| `crust_oxidation_rate`, `crust_capacity` | 0.5, 0.1 | pochłanianie tlenu przez skorupę i tempo jej nasycania (0,05 → 0,1 przy biosferze: natlenienie ~3× szybciej) |
 | `volcanic_gas_sink` | 0.02 | tlen zużywany przez gazy wulkaniczne |
 
 Walidacja jak w klimacie (wspólny `CoefficientLoader`): wymagane klucze,
@@ -295,9 +295,9 @@ Kluczowe zachowania (testy integracyjne):
 
 ## Ryzyka i wymagania dla następnych kroków
 
-- **Tlen może uciec do 100** przy silnym producencie (prototyp: 0,2/tick).
-  BiosphereSystem musi dodać pochłaniacze: oddychanie i pożary przy wysokim
-  tlenie ("więcej tlenu = większe ryzyko pożarów"). Zapisane w `docs/biosphere.md`.
+- **Tlen mógł uciec do 100** przy silnym producencie. Rozwiązane w BiosphereSystem:
+  oddychanie, pożary przy wysokim tlenie i fotooddychanie trzymają tlen poniżej ~45
+  (`docs/biosphere.md`).
 - Przy chłodnym pliku `--climate` CO₂ może dojść do 100; clamp będzie zgłoszony
   jako nasycenie w logu.
 - Wkład `co2_greenhouse` nie podlega miękkiej podłodze klimatu; w chłodzie CO₂

@@ -50,7 +50,14 @@ godot/simulation/tests/integration/<area>_*_test.gd
 - Override `system_id()` (stable, unique) and `compute(snapshot)`: takes
   `PlanetSnapshot` (and resolved coefficients once ModifierRegistry exists),
   returns `Array[Delta]`.
-- Every delta: `Delta.new(Param.X, amount, &"<area>", &"<cause>")`.
+- Every delta: `Delta.new(Param.X, amount, &"<area>", &"<cause>")`. When a
+  system models several actors (species), put the actor in the cause
+  (`algae_photosynthesis`) so logs show who changed the planet.
+- Facts worth a story (something emerged, collapsed, crossed a threshold):
+  `emit_event(&"type", {plain data})` during compute; the pipeline publishes
+  them after the tick event and drops them if the batch is rejected.
+- Coefficient files: reuse `CoefficientLoader` (`simulation/core/`), as
+  `ClimateConfig`, `AtmosphereConfig` and `BiosphereConfig` do.
 - No reference to `PlanetState`, other systems, EventBus internals or Nodes.
 - Math only through `SimMath`; randomness only through its `SeededRng`.
 - Persistent internal state (e.g. species populations) is allowed only if it is

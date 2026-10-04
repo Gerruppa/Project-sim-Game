@@ -1,0 +1,50 @@
+{
+	"catalog_version": 1,
+	"species": [
+		{
+			"id": "bacteria", "layer": 0, "weight": 0.05, "growth": 0.02, "capacity": 60,
+			"t_min": 5, "t_max": 70, "t_margin": 10,
+			"water": "humidity", "water_min": 5, "water_margin": 5,
+			"co2_need": 0, "o2_need": 0, "o2_max": 12, "o2_refuge": 0.15, "biomass_need": 0,
+			"shade": 0.0, "flammable": 0.0, "base_mortality": 0.002, "stress_mortality": 0.03,
+			"emerges_from": "", "seed": 0.002,
+			"oxygen": 0.0, "co2_uptake": 0.0, "respiration": 0.004, "transpiration": 0.0
+		},
+		{
+			"id": "algae", "layer": 0, "weight": 0.10, "growth": 0.03, "capacity": 70,
+			"t_min": 10, "t_max": 45, "t_margin": 8,
+			"water": "humidity", "water_min": 20, "water_margin": 8,
+			"co2_need": 10, "o2_need": 0, "o2_max": 0, "o2_refuge": 0, "biomass_need": 0,
+			"shade": 0.0, "flammable": 0.0, "base_mortality": 0.003, "stress_mortality": 0.04,
+			"emerges_from": "bacteria", "seed": 0.002,
+			"oxygen": 0.08, "co2_uptake": 0.025, "respiration": 0.02, "transpiration": 0.0
+		},
+		{
+			"id": "moss", "layer": 1, "weight": 0.15, "growth": 0.02, "capacity": 80,
+			"t_min": 5, "t_max": 35, "t_margin": 8,
+			"water": "humidity", "water_min": 22, "water_margin": 8,
+			"co2_need": 8, "o2_need": 2, "o2_max": 0, "o2_refuge": 0, "biomass_need": 3,
+			"shade": 0.3, "flammable": 0.3, "base_mortality": 0.002, "stress_mortality": 0.03,
+			"emerges_from": "algae", "seed": 0.002,
+			"oxygen": 0.04, "co2_uptake": 0.015, "respiration": 0.012, "transpiration": 0.02
+		},
+		{
+			"id": "shrub", "layer": 2, "weight": 0.30, "growth": 0.012, "capacity": 70,
+			"t_min": 15, "t_max": 45, "t_margin": 8,
+			"water": "precipitation", "water_min": 5, "water_margin": 4,
+			"co2_need": 8, "o2_need": 12, "o2_max": 0, "o2_refuge": 0, "biomass_need": 12,
+			"shade": 0.6, "flammable": 0.8, "base_mortality": 0.0015, "stress_mortality": 0.02,
+			"emerges_from": "moss", "seed": 0.001,
+			"oxygen": 0.06, "co2_uptake": 0.025, "respiration": 0.025, "transpiration": 0.04
+		},
+		{
+			"id": "tree", "layer": 3, "weight": 0.40, "growth": 0.006, "capacity": 60,
+			"t_min": 20, "t_max": 45, "t_margin": 8,
+			"water": "precipitation", "water_min": 8, "water_margin": 4,
+			"co2_need": 8, "o2_need": 18, "o2_max": 0, "o2_refuge": 0, "biomass_need": 20,
+			"shade": 0.0, "flammable": 1.0, "base_mortality": 0.001, "stress_mortality": 0.015,
+			"emerges_from": "shrub", "seed": 0.0005,
+			"oxygen": 0.09, "co2_uptake": 0.035, "respiration": 0.035, "transpiration": 0.08
+		}
+	]
+}

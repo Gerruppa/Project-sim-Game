@@ -409,6 +409,11 @@ Every system extends `SimulationSystem` (`simulation/core/simulation_system.gd`)
 `system_id()` and `compute(snapshot) -> Array[Delta]`. Duplicate ids and
 intervals below 1 are rejected at registration.
 
+Systems report facts with `emit_event(type, data)` during compute. The
+pipeline collects them (`take_events(tick)`) and publishes them in Dispatch,
+after the tick event, in registration order. If the batch is rejected the
+tick never happened, so its system events are dropped.
+
 ---
 
 ## EventBus
@@ -555,7 +560,7 @@ Other systems may contribute flows to it as deltas.
 | temperature | ClimateSystem | AtmosphereSystem, BiosphereSystem |
 | humidity | ClimateSystem | BiosphereSystem |
 | oxygen | AtmosphereSystem | BiosphereSystem |
-| biomass | BiosphereSystem | none |
+| biomass | BiosphereSystem (weighted sum of species populations) | none |
 | cloud_cover | ClimateSystem | none |
 | precipitation | ClimateSystem | none |
 | co2 | AtmosphereSystem | BiosphereSystem (future: photosynthesis, respiration) |
@@ -659,21 +664,31 @@ Responsibilities:
 Never simulates individual organisms.
 Simulates populations.
 
+Status: implemented (`simulation/biosphere/`, data in
+`resources/biosphere/species.json` and `biosphere.json`).
+
+Species populations are internal state (decision: not planet parameters);
+biomass, owned by BiosphereSystem, is their weighted sum. A "census" delta
+corrects biomass if it ever drifts from that sum.
+
 Inputs:
 
-Snapshot, species data, effective coefficients
+Snapshot (temperature, humidity, precipitation, oxygen, co2, biomass),
+species catalog, biosphere coefficients, own SeededRng stream
 
 Outputs:
 
-Deltas for biomass, and flows to oxygen and humidity
+Deltas for biomass (per species growth/dieback) and flows to oxygen, co2
+and humidity, with species-named causes (algae_photosynthesis,
+tree_respiration, moss_transpiration, shrub_wildfire)
 
-Events:
+Events (emitted now through `emit_event`):
 
-SpeciesExpanded
+species_emerged
 
-SpeciesCollapsed
+species_extinct
 
-EcologicalShift
+Planned: EcologicalShift (with EventSystem)
 
 See `docs/biosphere.md`.
 
@@ -810,8 +825,8 @@ res://  (godot/)
     scheduling/     SimulationManager, TickScheduler, TickPipeline, SimConfig
     planet/         ParameterDefs, snapshot
     climate/        ClimateSystem
-    atmosphere/     AtmosphereSystem
-    biosphere/      BiosphereSystem, SpeciesData
+    atmosphere/     AtmosphereSystem, AtmosphereConfig
+    biosphere/      BiosphereSystem, SpeciesData, SpeciesCatalog, BiosphereConfig
     modifiers/      ModifierRegistry
     events/         EventSystem, EventDefs
     personality/    PersonalitySystem, archetypes

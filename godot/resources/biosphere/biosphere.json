@@ -1,0 +1,16 @@
+{
+	"config_version": 1,
+	"extinction_threshold": 0.01,
+	"established_population": 1.0,
+	"growth_noise": 0.1,
+	"fire_rate": 0.03,
+	"fire_o2_low": 22.0,
+	"fire_o2_high": 40.0,
+	"fire_humidity_low": 10.0,
+	"fire_humidity_high": 50.0,
+	"fire_wet_damping": 0.5,
+	"fire_o2": 3.0,
+	"fire_co2": 1.0,
+	"photorespiration_low": 25.0,
+	"photorespiration_high": 60.0
+}

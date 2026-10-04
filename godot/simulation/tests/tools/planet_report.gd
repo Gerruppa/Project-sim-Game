@@ -1,7 +1,8 @@
 extends SceneTree
-## Balance report for the planet as the game runs it (climate + atmosphere).
+## Balance report for the planet as the game runs it (climate + atmosphere + biosphere).
 ##   godot --headless --path godot -s res://simulation/tests/tools/planet_report.gd -- \
-##       [--seeds N] [--ticks N] [--climate path] [--atmosphere path] [--climate-only]
+##       [--seeds N] [--ticks N] [--climate path] [--atmosphere path] [--species path] \
+##       [--biosphere path] [--climate-only] [--lifeless]
 ## Prints per-seed statistics after warm-up; use it before and after changing data.
 
 const P := preload("res://simulation/tests/support/schema_fixtures.gd")
@@ -9,71 +10,110 @@ const P := preload("res://simulation/tests/support/schema_fixtures.gd")
 const WARM_UP := 2000
 const ICY_BELOW := 16.0
 const WARM_ABOVE := 28.0
+const ALIVE_ABOVE := 5.0
+const FOREST_ABOVE := 10.0
+const OXYGENATED_ABOVE := 15.0
 
 
-func _init() -> void:
+class Options:
 	var seeds := 8
 	var ticks := 15000
 	var climate_path := ClimateConfig.DEFAULT_PATH
 	var atmosphere_path := AtmosphereConfig.DEFAULT_PATH
-	var with_atmosphere := true
-	var args := OS.get_cmdline_user_args()
-	var i := 0
-	while i < args.size():
-		match args[i]:
-			"--seeds": i += 1; seeds = args[i].to_int()
-			"--ticks": i += 1; ticks = args[i].to_int()
-			"--climate": i += 1; climate_path = args[i]
-			"--atmosphere": i += 1; atmosphere_path = args[i]
-			"--climate-only": with_atmosphere = false
-		i += 1
-	var climate := ClimateConfig.load_json(climate_path)
-	var atmosphere := AtmosphereConfig.load_json(atmosphere_path)
-	if not climate.is_ok() or not atmosphere.is_ok():
-		printerr("\n".join(climate.errors + atmosphere.errors))
+	var species_path := SpeciesCatalog.DEFAULT_PATH
+	var biosphere_path := BiosphereConfig.DEFAULT_PATH
+	var atmosphere := true
+	var life := true
+
+
+func _init() -> void:
+	var options := _parse(OS.get_cmdline_user_args())
+	var climate := ClimateConfig.load_json(options.climate_path)
+	var atmosphere := AtmosphereConfig.load_json(options.atmosphere_path)
+	var catalog := SpeciesCatalog.load_json(options.species_path)
+	var biosphere := BiosphereConfig.load_json(options.biosphere_path)
+	var errors := climate.errors + atmosphere.errors + catalog.errors + biosphere.errors
+	if not errors.is_empty():
+		printerr("\n".join(errors))
 		quit(2)
 		return
 
-	print("seed | T min..max avg | H | C | P | CO2 min..max | O2 max | crust max | icy % | at 0 | ice ages | longest")
-	for seed_value in range(1, seeds + 1):
-		print(_report(seed_value, ticks, climate.value, atmosphere.value if with_atmosphere else null))
+	print("seed | T avg | icy % | ice ages longest | CO2 min..max | O2 min..max | oxygenated @ | B max | trees @ | forest % | species avg (min..max) | extinctions")
+	var started := Time.get_ticks_msec()
+	for seed_value in range(1, options.seeds + 1):
+		print(_report(seed_value, options, climate.value, atmosphere.value, catalog.value, biosphere.value))
+	print("time: %.1f s" % ((Time.get_ticks_msec() - started) / 1000.0))
 	quit(0)
 
 
-func _report(seed_value: int, ticks: int, climate: ClimateConfig, atmosphere: AtmosphereConfig) -> String:
+func _parse(args: PackedStringArray) -> Options:
+	var options := Options.new()
+	var i := 0
+	while i < args.size():
+		match args[i]:
+			"--seeds": i += 1; options.seeds = args[i].to_int()
+			"--ticks": i += 1; options.ticks = args[i].to_int()
+			"--climate": i += 1; options.climate_path = args[i]
+			"--atmosphere": i += 1; options.atmosphere_path = args[i]
+			"--species": i += 1; options.species_path = args[i]
+			"--biosphere": i += 1; options.biosphere_path = args[i]
+			"--climate-only": options.atmosphere = false; options.life = false
+			"--lifeless": options.life = false
+		i += 1
+	return options
+
+
+func _report(seed_value: int, options: Options, climate: ClimateConfig, atmosphere: AtmosphereConfig,
+		catalog: SpeciesCatalog, biosphere: BiosphereConfig) -> String:
 	var config: SimConfig = SimConfig.load_json(SimConfig.DEFAULT_PATH).value.with_seed(seed_value)
 	var manager: SimulationManager = SimulationManager.create(config, P.project_schema()).value
 	manager.register_system(ClimateSystem.new(climate, seed_value))
-	if atmosphere != null:
+	if options.atmosphere:
 		manager.register_system(AtmosphereSystem.new(atmosphere))
-	var ids := [Param.TEMPERATURE, Param.HUMIDITY, Param.CLOUD_COVER, Param.PRECIPITATION,
-			Param.CO2, Param.OXYGEN, Param.CRUST_OXIDATION]
-	var lows: Array[float] = []
-	var highs: Array[float] = []
-	for _id: StringName in ids:
-		lows.append(100.0)
-		highs.append(0.0)
+	var life: BiosphereSystem = null
+	if options.life:
+		life = BiosphereSystem.new(biosphere, catalog, seed_value)
+		manager.register_system(life)
+	var extinctions := [0]
+	manager.event_bus().subscribe(&"species_extinct", func(_event: SimEvent) -> void: extinctions[0] += 1)
+
 	var total_t := 0.0
 	var icy := 0
-	var at_zero := 0
 	var ice_ages := 0
 	var longest := 0
 	var ice_start := 0
 	var regime := ""
-	for tick in ticks:
+	var co2 := Vector2(100.0, 0.0)
+	var o2 := Vector2(100.0, 0.0)
+	var biomass_max := 0.0
+	var oxygenated_at := -1
+	var trees_at := -1
+	var forest_ticks := 0
+	var alive_total := 0
+	var alive := Vector2i(99, 0)
+	for tick in options.ticks:
 		if not manager.step():
 			return "%d | halted: %s" % [seed_value, manager.errors()]
+		var snapshot := manager.snapshot()
+		if oxygenated_at == -1 and snapshot.get_value(Param.OXYGEN) > OXYGENATED_ABOVE:
+			oxygenated_at = tick + 1
+		if life != null and trees_at == -1 and life.population(&"tree") > 1.0:
+			trees_at = tick + 1
 		if tick < WARM_UP:
 			continue
-		var snapshot := manager.snapshot()
-		for j in ids.size():
-			var value := snapshot.get_value(ids[j])
-			lows[j] = minf(lows[j], value)
-			highs[j] = maxf(highs[j], value)
 		var t := snapshot.get_value(Param.TEMPERATURE)
 		total_t += t
 		icy += 1 if t < ICY_BELOW else 0
-		at_zero += 1 if t <= 0.5 else 0
+		co2 = Vector2(minf(co2.x, snapshot.get_value(Param.CO2)), maxf(co2.y, snapshot.get_value(Param.CO2)))
+		o2 = Vector2(minf(o2.x, snapshot.get_value(Param.OXYGEN)), maxf(o2.y, snapshot.get_value(Param.OXYGEN)))
+		biomass_max = maxf(biomass_max, snapshot.get_value(Param.BIOMASS))
+		if life != null:
+			forest_ticks += 1 if life.population(&"tree") > FOREST_ABOVE else 0
+			var count := 0
+			for id in catalog.ids():
+				count += 1 if life.population(id) > ALIVE_ABOVE else 0
+			alive_total += count
+			alive = Vector2i(mini(alive.x, count), maxi(alive.y, count))
 		var now := "icy" if t < ICY_BELOW else ("warm" if t > WARM_ABOVE else regime)
 		if now == "icy" and regime != "icy":
 			ice_start = tick
@@ -81,7 +121,8 @@ func _report(seed_value: int, ticks: int, climate: ClimateConfig, atmosphere: At
 			ice_ages += 1
 			longest = maxi(longest, tick - ice_start)
 		regime = now
-	var measured := ticks - WARM_UP
-	return "%d | %.1f..%.1f avg %.1f | %.0f..%.0f | %.0f..%.0f | %.0f..%.0f | %.1f..%.1f | %.2f | %.2f | %.0f%% | %d | %d | %d" % [
-		seed_value, lows[0], highs[0], total_t / measured, lows[1], highs[1], lows[2], highs[2],
-		lows[3], highs[3], lows[4], highs[4], highs[5], highs[6], 100.0 * icy / measured, at_zero, ice_ages, longest]
+	var measured := options.ticks - WARM_UP
+	return "%d | %.1f | %.0f%% | %d %d | %.0f..%.0f | %.1f..%.1f | %d | %.1f | %d | %.0f%% | %.1f (%d..%d) | %d" % [
+		seed_value, total_t / measured, 100.0 * icy / measured, ice_ages, longest, co2.x, co2.y, o2.x, o2.y,
+		oxygenated_at, biomass_max, trees_at, 100.0 * forest_ticks / measured,
+		float(alive_total) / measured, alive.x, alive.y, extinctions[0]]

@@ -44,6 +44,12 @@ func _init() -> void:
 		_fail(atmosphere_result.errors, false)
 		return
 	_manager.register_system(AtmosphereSystem.new(atmosphere_result.value))
+	var catalog_result := SpeciesCatalog.load_json(_options["species"])
+	var biosphere_result := BiosphereConfig.load_json(_options["biosphere"])
+	if not catalog_result.is_ok() or not biosphere_result.is_ok():
+		_fail(catalog_result.errors + biosphere_result.errors, false)
+		return
+	_manager.register_system(BiosphereSystem.new(biosphere_result.value, catalog_result.value, config.seed()))
 
 	_log_id = SimulationRunner.run_id(config.seed())
 	var log_result := SimulationRunner.create_log(config, _log_id, not _options["quiet"])
