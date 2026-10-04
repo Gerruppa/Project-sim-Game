@@ -17,12 +17,20 @@ ClimateSystem exists (`godot/simulation/climate/`, data in
 the balance report and compare before/after:
 
 ```bash
-"$GODOT_BIN" --headless --path godot -s res://simulation/tests/tools/climate_report.gd -- --seeds 8 --ticks 20000
+"$GODOT_BIN" --headless --path godot -s res://simulation/tests/tools/planet_report.gd -- --seeds 8 --ticks 20000
 ```
 
 Design properties to preserve (tests guard them): two stable climates
 (`ice_strength` ≥ 22 with the current base), a soft floor so temperature never
 sits at 0 (`cold_floor`), responses ≤ 1 so relaxation never overshoots.
+
+AtmosphereSystem also exists (`godot/simulation/atmosphere/`, data in
+`godot/resources/atmosphere/atmosphere.json`): carbon cycle (volcanoes vs
+weathering) whose CO2 greenhouse ends ice ages, and oxygen sinks (crust
+oxidation, volcanic gases). Properties to preserve: a frozen planet thaws via
+volcanic CO2 without drift or seasons; CO2 never pinned at a limit; lifeless
+oxygen stays prebiotic. Coefficient files share `CoefficientLoader`
+(`simulation/core/`) for validation; new systems should reuse it.
 Planets of a different character are separate JSON files
 (`run_simulation.sh --climate <file>`), not code changes.
 

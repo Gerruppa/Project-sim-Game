@@ -51,6 +51,19 @@ func test_parses_climate_file_for_other_planet_characters() -> void:
 			.is_equal("res://resources/climate/cold_world.json")
 
 
+func test_default_atmosphere_is_project_file() -> void:
+	assert_str(_options([])["atmosphere"]).is_equal(AtmosphereConfig.DEFAULT_PATH)
+
+
+func test_parses_atmosphere_file() -> void:
+	assert_str(_options(["--atmosphere", "res://resources/atmosphere/volcanic.json"])["atmosphere"]) \
+			.is_equal("res://resources/atmosphere/volcanic.json")
+
+
+func test_rejects_atmosphere_option_without_path() -> void:
+	assert_bool(SimulationRunner.parse_args(PackedStringArray(["--atmosphere"])).is_ok()).is_false()
+
+
 func test_rejects_climate_option_without_path() -> void:
 	assert_bool(SimulationRunner.parse_args(PackedStringArray(["--climate"])).is_ok()).is_false()
 

@@ -1,0 +1,15 @@
+{
+	"config_version": 1,
+	"co2_greenhouse": 0.3,
+	"co2_ref": 40.0,
+	"volcanic_co2": 0.03,
+	"weathering_rate": 0.5,
+	"weathering_cold": 10.0,
+	"weathering_warm": 50.0,
+	"weathering_dry": 0.2,
+	"weathering_wet": 1.0,
+	"photolysis_rate": 0.004,
+	"crust_oxidation_rate": 0.5,
+	"crust_capacity": 0.05,
+	"volcanic_gas_sink": 0.02
+}

@@ -106,6 +106,11 @@ w osobnym commicie.
 Godot nie gwarantuje identycznych wyników obliczeń zmiennoprzecinkowych
 między procesorami i systemami. Dlatego L2 i L3 są mierzone, nie zakładane.
 
+Pomiar (GitHub Actions, commity od `692dcd6` do `46091d8`): złoty ślad zgodny
+bit w bit na Windows x86-64, Linux x86-64 i macOS ARM. L2 i L3 są spełnione
+przy obecnej polityce matematyki, a hipoteza o braku FMA w GDScript
+się potwierdziła. Plan B (liczby stałoprzecinkowe) nie jest potrzebny.
+
 ## Polityka deterministycznej matematyki
 
 IEEE 754 wymaga poprawnego zaokrąglania dla `+ - * /` i pierwiastka,

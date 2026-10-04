@@ -15,14 +15,15 @@ const USAGE := """Usage: run_simulation.sh [options]
   --speed S       real-time speed multiplier (1, 10, 100)
   --seconds S     real-time duration in seconds (default 60)
   --quiet         do not echo the text log to the console
-  --climate PATH  climate coefficients file (default res://resources/climate/climate.json);
-                  other files describe planets of a different character"""
+  --climate PATH     climate coefficients file (default res://resources/climate/climate.json)
+  --atmosphere PATH  atmosphere coefficients file (default res://resources/atmosphere/atmosphere.json)
+                     other files describe planets of a different character"""
 
 
 static func parse_args(args: PackedStringArray) -> SimResult:
 	var result := SimResult.new()
 	var options := {"realtime": false, "ticks": DEFAULT_TICKS, "speed": 1, "seconds": DEFAULT_SECONDS,
-			"quiet": false, "climate": ClimateConfig.DEFAULT_PATH}
+			"quiet": false, "climate": ClimateConfig.DEFAULT_PATH, "atmosphere": AtmosphereConfig.DEFAULT_PATH}
 	var i := 0
 	while i < args.size():
 		var arg := args[i]
@@ -31,12 +32,12 @@ static func parse_args(args: PackedStringArray) -> SimResult:
 				options["realtime"] = true
 			"--quiet":
 				options["quiet"] = true
-			"--climate":
+			"--climate", "--atmosphere":
 				if i + 1 >= args.size() or args[i + 1].begins_with("--"):
-					result.add_error("--climate needs a file path")
+					result.add_error("%s needs a file path" % arg)
 					break
 				i += 1
-				options["climate"] = args[i]
+				options[arg.trim_prefix("--")] = args[i]
 			"--seed", "--ticks", "--speed", "--seconds":
 				if i + 1 >= args.size():
 					result.add_error("%s needs a value" % arg)

@@ -1,8 +1,8 @@
 # Klimat i atmosfera
 
-Wersja: 2.0
+Wersja: 3.0
 
-Dotyczy ClimateSystem (zaimplementowany) i AtmosphereSystem (planowany).
+Dotyczy ClimateSystem i AtmosphereSystem (oba zaimplementowane).
 Architektura: `docs/architecture.md`.
 
 ---
@@ -152,8 +152,8 @@ Inny charakter planety: osobny plik i `run_simulation.sh --climate <plik>`.
 
 ## Balans
 
-Pomiar narzędziem `simulation/tests/tools/climate_report.gd`
-(8 seedów × 20 000 ticków, bez biosfery):
+Pomiar narzędziem `simulation/tests/tools/planet_report.gd --climate-only`
+(8 seedów × 20 000 ticków, sam klimat, bez atmosfery i biosfery):
 
 | Miara | Wynik |
 |---|---|
@@ -164,8 +164,9 @@ Pomiar narzędziem `simulation/tests/tools/climate_report.gd`
 | wilgotność / zachmurzenie / opady | 17–40 / 30–52 / 0–16 |
 
 Dwa stabilne stany (bistabilność): bez dryfu i sezonów zamarznięta planeta
-zostaje zamarznięta, a ciepła zostaje ciepła. Wyjście ze zlodowacenia wymaga
-dryfu, sezonu, a w przyszłości biosfery lub interwencji gracza.
+zostaje zamarznięta, a ciepła zostaje ciepła. Sam klimat wychodzi ze
+zlodowacenia tylko dzięki dryfowi i sezonom. Z AtmosphereSystem zlodowacenie
+kończy też cykl węglowy (sekcja niżej).
 
 Planeta bez oceanu i biosfery jest sucha: opady do około 16 ("rzadkie deszcze").
 Więcej wilgoci przyniesie transpiracja biosfery.
@@ -192,40 +193,129 @@ co rozwiązała miękka podłoga (`cold_floor`).
 
 ---
 
-# AtmosphereSystem (planowany)
+# AtmosphereSystem
 
-## Odpowiedzialność
+Pliki:
 
-- regulacja tlenu
-- stabilność atmosfery
-- ciśnienie (przyszłość)
+- `godot/simulation/atmosphere/atmosphere_system.gd`
+- `godot/simulation/atmosphere/atmosphere_config.gd`
+- `godot/resources/atmosphere/atmosphere.json`
 
-Jest właścicielem dynamiki tlenu.
+Jest właścicielem dynamiki: tlenu, CO₂ i utlenienia skorupy (`crust_oxidation`).
+Dokłada wkład `co2_greenhouse` do temperatury (pozwala na to tabela właścicieli).
+Nie losuje i nie ma stanu wewnętrznego: czysta funkcja snapshotu, nic do zapisu.
 
-## Wejścia
+## Wejścia i wyjścia
 
-- snapshot (tlen, biomasa, temperatura)
-- efektywne współczynniki
+| | |
+|---|---|
+| Wejścia | snapshot: temperatura, wilgotność, opady, tlen, CO₂, skorupa; `atmosphere.json` |
+| Wyjścia | delty dla tlenu, CO₂, skorupy oraz wkład do temperatury, każda z przyczyną |
+| Nie dotyka | wilgotności, chmur, opadów (ClimateSystem), biomasy |
 
-## Wyjścia
+## Procesy
 
-Delty dla tlenu (przyszłość: ciśnienie, CO₂).
+```text
+           WULKANY ──(+CO₂)──►  ┌─────┐  ──(efekt cieplarniany)──► TEMPERATURA
+                                │ CO₂ │                                │
+  ciepło + deszcz ──► WIETRZENIE SKAŁ ──(−CO₂)◄────────────────────────┘
 
-## Zdarzenia
+  para wodna ──(UV, fotoliza)──► ┌──────┐ ──► utlenia SKORUPĘ (słabnie, gdy się nasyca)
+  [biosfera: fotosynteza] ─────► │ TLEN │ ──► gazy wulkaniczne zużywają tlen
+                                 └──────┘
+```
+
+| Proces | Sprzężenie | Efekt w grze |
+|---|---|---|
+| termostat węglowy: wulkany +CO₂, wietrzenie (ciepło i deszcz) −CO₂ | ujemne, wolne (~1500 ticków) | długoterminowa stabilizacja klimatu |
+| pod lodem nie ma deszczu ani wietrzenia, wulkany działają dalej | narasta aż do odwilży | zlodowacenie samo się kończy |
+| świeża skorupa pochłania tlen, aż się utleni | próg przełomowy | "Wielkie Natlenienie" po pojawieniu się życia |
+
+## Wzory
+
+```
+wulkany     = volcanic_co2                                                    → +CO₂     "volcanic_outgassing"
+wietrzenie  = weathering_rate · CO₂/100 · smoothstep(weathering_cold, weathering_warm, T)
+              · (weathering_dry + weathering_wet · P/100)                     → −CO₂     "silicate_weathering"
+cieplarnia  = co2_greenhouse · (CO₂ − co2_ref) / 100                          → ±T       "co2_greenhouse"
+fotoliza    = photolysis_rate · H/100                                         → +O₂      "photolysis"
+skorupa     = crust_oxidation_rate · O₂/100 · (1 − skorupa/100)               → −O₂      "crust_oxidation"
+              (to samo · crust_capacity                                        → +skorupa "crust_oxidation")
+gazy        = volcanic_gas_sink · O₂/100                                      → −O₂      "volcanic_gases"
+```
+
+`co2_ref` = 40 = wartość startowa CO₂, więc przy starcie atmosfera nie zmienia
+wyważonego klimatu, tylko dodaje nowe sprzężenie.
+
+## Współczynniki (`atmosphere.json`)
+
+| Klucz | Wartość | Znaczenie |
+|---|---|---|
+| `co2_greenhouse`, `co2_ref` | 0.3, 40 | siła efektu cieplarnianego CO₂ względem poziomu odniesienia |
+| `volcanic_co2` | 0.03 | stała aktywność wulkanów (zastąpi ją parametr `geological_activity`) |
+| `weathering_rate` | 0.5 | siła wietrzenia skał |
+| `weathering_cold`, `weathering_warm` | 10, 50 | poniżej nie ma wietrzenia, powyżej jest pełne |
+| `weathering_dry`, `weathering_wet` | 0.2, 1.0 | wietrzenie bez deszczu / wzmocnienie przez opady |
+| `photolysis_rate` | 0.004 | tlen z rozkładu pary wodnej przez UV |
+| `crust_oxidation_rate`, `crust_capacity` | 0.5, 0.05 | pochłanianie tlenu przez skorupę i tempo jej nasycania |
+| `volcanic_gas_sink` | 0.02 | tlen zużywany przez gazy wulkaniczne |
+
+Walidacja jak w klimacie (wspólny `CoefficientLoader`): wymagane klucze,
+nieznane klucze są błędem, zakresy, `weathering_cold < weathering_warm`.
+Inny charakter planety: `run_simulation.sh --atmosphere <plik>`.
+
+## Balans
+
+`planet_report.gd` (8 seedów × 20 000 ticków, klimat i atmosfera):
+
+| Miara | Sam klimat | Klimat i atmosfera |
+|---|---|---|
+| najdłuższe zlodowacenie | 919–2328 ticków | 588–1589 |
+| czas w lodzie | 17–35% | 16–28% |
+| CO₂ | stałe 40 | 26–88 |
+| tlen bez życia | 2,00 | ≤ 0,28 |
+| utlenienie skorupy | 0 | ≤ 1,3 |
+| ticki na granicy 0 | 0 | 0 |
+
+Kluczowe zachowania (testy integracyjne):
+
+- bez dryfu i sezonów zamarznięta planeta bez atmosfery zostaje zamarznięta,
+  a z atmosferą rozmarza dzięki CO₂ z wulkanów
+- ciepła, deszczowa planeta obniża CO₂ (termostat)
+- przy tym samym producencie tlenu planeta z utlenioną skorupą ma ponad
+  dwa razy więcej tlenu niż planeta ze świeżą skorupą
+- planeta bez życia traci tlen (atmosfera sprzed życia)
+
+## Testy
+
+- `tests/unit/atmosphere_config_test.gd`, `tests/unit/atmosphere_system_test.gd`
+- `tests/unit/coefficient_loader_test.gd`
+- `tests/integration/atmosphere_behavior_test.gd`
+- `tests/simulation/planet_balance_test.gd` (6 seedów, oba systemy)
+
+## Ryzyka i wymagania dla następnych kroków
+
+- **Tlen może uciec do 100** przy silnym producencie (prototyp: 0,2/tick).
+  BiosphereSystem musi dodać pochłaniacze: oddychanie i pożary przy wysokim
+  tlenie ("więcej tlenu = większe ryzyko pożarów"). Zapisane w `docs/biosphere.md`.
+- Przy chłodnym pliku `--climate` CO₂ może dojść do 100; clamp będzie zgłoszony
+  jako nasycenie w logu.
+- Wkład `co2_greenhouse` nie podlega miękkiej podłodze klimatu; w chłodzie CO₂
+  rośnie, więc wkład jest dodatni (test balansu pilnuje temperatury przy 0).
+
+## Rozwój
+
+| Krok `CLAUDE.md` | Co dołączy do atmosfery |
+|---|---|
+| 5. Biosphere | fotosynteza (+O₂, −CO₂), oddychanie, pożary; Wielkie Natlenienie |
+| 7. Events | "odwilż wulkaniczna", "Wielkie Natlenienie", "zima wulkaniczna" |
+| później | `pressure` (z sumy gazów), `geological_activity` (zmienne wulkany), ozon i promieniowanie UV |
+
+## Zdarzenia (planowane, od EventSystem)
 
 - OxygenChanged
 - PressureChanged
 - AtmosphereCrisis
-
-## Zależności
-
-- biomasa i gatunki → tlen (strumień produkcji z BiosphereSystem)
-- tlen → rozwój życia (przez BiosphereSystem)
-- temperatura → zanik i rozpuszczanie gazów
-
-Biosfera nie ma własnej kopii tlenu.
-Gatunek zwraca strumień produkcji jako deltę z przyczyną.
-Regulację i zanik wykonuje AtmosphereSystem.
 
 ---
 

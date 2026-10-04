@@ -39,6 +39,11 @@ func _init() -> void:
 		_fail(climate_result.errors, false)
 		return
 	_manager.register_system(ClimateSystem.new(climate_result.value, config.seed()))
+	var atmosphere_result := AtmosphereConfig.load_json(_options["atmosphere"])
+	if not atmosphere_result.is_ok():
+		_fail(atmosphere_result.errors, false)
+		return
+	_manager.register_system(AtmosphereSystem.new(atmosphere_result.value))
 
 	_log_id = SimulationRunner.run_id(config.seed())
 	var log_result := SimulationRunner.create_log(config, _log_id, not _options["quiet"])

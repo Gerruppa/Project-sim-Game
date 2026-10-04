@@ -97,6 +97,21 @@ ale może stać się inwazyjny (kompromis krótko- i długoterminowy).
 
 ---
 
+# Wymagania z kroku AtmosphereSystem
+
+- Fotosynteza dodaje tlen i zużywa CO₂ (delty do parametrów,
+  których właścicielem dynamiki jest AtmosphereSystem).
+- **Biosfera musi mieć pochłaniacze tlenu**: oddychanie oraz pożary przy
+  wysokim tlenie i dużej biomasie. Bez nich silny producent wyprowadza tlen
+  do 100 (pomiar w prototypie przy 0,2/tick). To też realizuje zasadę
+  "więcej tlenu = większe ryzyko pożarów".
+- Świeża skorupa (`crust_oxidation` niskie) pochłania tlen z fotosyntezy:
+  tlen rośnie dopiero po jej nasyceniu (Wielkie Natlenienie). Balans
+  produkcji musi to uwzględnić.
+- Transpiracja dodaje wilgotność (właściciel: ClimateSystem).
+
+---
+
 # Reguły wspólne
 
 - biosfera nie przechowuje kopii parametrów planety

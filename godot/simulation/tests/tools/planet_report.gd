@@ -1,7 +1,8 @@
 extends SceneTree
-## Balance report for ClimateSystem: per-seed statistics after warm-up.
-##   godot --headless --path godot -s res://simulation/tests/tools/climate_report.gd -- [--seeds N] [--ticks N] [--climate path]
-## Prints a table; use it before and after changing climate.json.
+## Balance report for the planet as the game runs it (climate + atmosphere).
+##   godot --headless --path godot -s res://simulation/tests/tools/planet_report.gd -- \
+##       [--seeds N] [--ticks N] [--climate path] [--atmosphere path] [--climate-only]
+## Prints per-seed statistics after warm-up; use it before and after changing data.
 
 const P := preload("res://simulation/tests/support/schema_fixtures.gd")
 
@@ -14,35 +15,50 @@ func _init() -> void:
 	var seeds := 8
 	var ticks := 15000
 	var climate_path := ClimateConfig.DEFAULT_PATH
+	var atmosphere_path := AtmosphereConfig.DEFAULT_PATH
+	var with_atmosphere := true
 	var args := OS.get_cmdline_user_args()
-	for i in range(0, args.size() - 1, 2):
+	var i := 0
+	while i < args.size():
 		match args[i]:
-			"--seeds": seeds = args[i + 1].to_int()
-			"--ticks": ticks = args[i + 1].to_int()
-			"--climate": climate_path = args[i + 1]
-	var climate_result := ClimateConfig.load_json(climate_path)
-	if not climate_result.is_ok():
-		printerr("\n".join(climate_result.errors))
+			"--seeds": i += 1; seeds = args[i].to_int()
+			"--ticks": i += 1; ticks = args[i].to_int()
+			"--climate": i += 1; climate_path = args[i]
+			"--atmosphere": i += 1; atmosphere_path = args[i]
+			"--climate-only": with_atmosphere = false
+		i += 1
+	var climate := ClimateConfig.load_json(climate_path)
+	var atmosphere := AtmosphereConfig.load_json(atmosphere_path)
+	if not climate.is_ok() or not atmosphere.is_ok():
+		printerr("\n".join(climate.errors + atmosphere.errors))
 		quit(2)
 		return
 
-	print("seed | T min..max avg | H min..max | C min..max | P min..max | icy % | at 0 | regime switches")
+	print("seed | T min..max avg | H | C | P | CO2 min..max | O2 max | crust max | icy % | at 0 | ice ages | longest")
 	for seed_value in range(1, seeds + 1):
-		print(_report(seed_value, ticks, climate_result.value))
+		print(_report(seed_value, ticks, climate.value, atmosphere.value if with_atmosphere else null))
 	quit(0)
 
 
-func _report(seed_value: int, ticks: int, climate: ClimateConfig) -> String:
+func _report(seed_value: int, ticks: int, climate: ClimateConfig, atmosphere: AtmosphereConfig) -> String:
 	var config: SimConfig = SimConfig.load_json(SimConfig.DEFAULT_PATH).value.with_seed(seed_value)
 	var manager: SimulationManager = SimulationManager.create(config, P.project_schema()).value
 	manager.register_system(ClimateSystem.new(climate, seed_value))
-	var ids := [Param.TEMPERATURE, Param.HUMIDITY, Param.CLOUD_COVER, Param.PRECIPITATION]
-	var lows := [100.0, 100.0, 100.0, 100.0]
-	var highs := [0.0, 0.0, 0.0, 0.0]
+	if atmosphere != null:
+		manager.register_system(AtmosphereSystem.new(atmosphere))
+	var ids := [Param.TEMPERATURE, Param.HUMIDITY, Param.CLOUD_COVER, Param.PRECIPITATION,
+			Param.CO2, Param.OXYGEN, Param.CRUST_OXIDATION]
+	var lows: Array[float] = []
+	var highs: Array[float] = []
+	for _id: StringName in ids:
+		lows.append(100.0)
+		highs.append(0.0)
 	var total_t := 0.0
 	var icy := 0
 	var at_zero := 0
-	var switches := 0
+	var ice_ages := 0
+	var longest := 0
+	var ice_start := 0
 	var regime := ""
 	for tick in ticks:
 		if not manager.step():
@@ -50,19 +66,22 @@ func _report(seed_value: int, ticks: int, climate: ClimateConfig) -> String:
 		if tick < WARM_UP:
 			continue
 		var snapshot := manager.snapshot()
-		for i in ids.size():
-			var value := snapshot.get_value(ids[i])
-			lows[i] = minf(lows[i], value)
-			highs[i] = maxf(highs[i], value)
+		for j in ids.size():
+			var value := snapshot.get_value(ids[j])
+			lows[j] = minf(lows[j], value)
+			highs[j] = maxf(highs[j], value)
 		var t := snapshot.get_value(Param.TEMPERATURE)
 		total_t += t
 		icy += 1 if t < ICY_BELOW else 0
 		at_zero += 1 if t <= 0.5 else 0
 		var now := "icy" if t < ICY_BELOW else ("warm" if t > WARM_ABOVE else regime)
-		if not regime.is_empty() and now != regime:
-			switches += 1
+		if now == "icy" and regime != "icy":
+			ice_start = tick
+		if regime == "icy" and now == "warm":
+			ice_ages += 1
+			longest = maxi(longest, tick - ice_start)
 		regime = now
 	var measured := ticks - WARM_UP
-	return "%d | %.1f..%.1f avg %.1f | %.1f..%.1f | %.1f..%.1f | %.1f..%.1f | %.0f%% | %d | %d" % [
+	return "%d | %.1f..%.1f avg %.1f | %.0f..%.0f | %.0f..%.0f | %.0f..%.0f | %.1f..%.1f | %.2f | %.2f | %.0f%% | %d | %d | %d" % [
 		seed_value, lows[0], highs[0], total_t / measured, lows[1], highs[1], lows[2], highs[2],
-		lows[3], highs[3], 100.0 * icy / measured, at_zero, switches]
+		lows[3], highs[3], lows[4], highs[4], highs[5], highs[6], 100.0 * icy / measured, at_zero, ice_ages, longest]

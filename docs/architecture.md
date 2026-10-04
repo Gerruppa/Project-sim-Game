@@ -184,7 +184,7 @@ Single source of truth.
 
 Stores complete planetary state.
 
-Owns (schema v2):
+Owns (schema v3):
 
 - temperature
 - humidity
@@ -192,11 +192,12 @@ Owns (schema v2):
 - biomass
 - cloud_cover
 - precipitation
+- co2
+- crust_oxidation
 
 Future:
 
 - pressure
-- co2
 - radiation
 - toxicity
 - ocean_level
@@ -260,6 +261,8 @@ Each parameter defines anchors (meaning of 0, 50 and 100) in data:
 | biomass | dead planet | forests and shrubs | dense biosphere |
 | cloud_cover | clear sky | moderate cloud cover | full cloud cover |
 | precipitation | no precipitation | regular rain, temperate climate | downpours, constant monsoon |
+| co2 | no CO2, no greenhouse, plants starve | dense young atmosphere, strong greenhouse | suffocating, Venus-like |
+| crust_oxidation | fresh reduced crust absorbs oxygen | half oxidized | fully oxidized, oxygen can accumulate |
 
 Thresholds (extinction, events) are defined in data,
 never as comparisons with exact zero.
@@ -555,6 +558,8 @@ Other systems may contribute flows to it as deltas.
 | biomass | BiosphereSystem | none |
 | cloud_cover | ClimateSystem | none |
 | precipitation | ClimateSystem | none |
+| co2 | AtmosphereSystem | BiosphereSystem (future: photosynthesis, respiration) |
+| crust_oxidation | AtmosphereSystem | none |
 
 Example:
 
@@ -607,19 +612,28 @@ See `docs/climate.md`.
 
 Responsibilities:
 
-- oxygen regulation
-- atmospheric stability
+- carbon cycle: volcanic outgassing vs silicate weathering (a slow thermostat
+  that also ends ice ages: no weathering under ice)
+- oxygen sources and sinks: photolysis, crust oxidation, volcanic gases
+- CO2 greenhouse contribution to temperature
 - pressure calculations (future)
+
+Status: implemented (`simulation/atmosphere/`, data in
+`resources/atmosphere/atmosphere.json`). Pure function of the snapshot:
+no randomness, no internal state.
 
 Inputs:
 
-Snapshot, effective coefficients
+Snapshot (temperature, humidity, precipitation, oxygen, co2,
+crust_oxidation); effective coefficients once ModifierRegistry exists
 
 Outputs:
 
-Deltas for oxygen (future: pressure, co2)
+Deltas for oxygen, co2, crust_oxidation and a temperature contribution,
+one per named cause (volcanic_outgassing, silicate_weathering,
+co2_greenhouse, photolysis, crust_oxidation, volcanic_gases)
 
-Events:
+Events (planned):
 
 OxygenChanged
 
@@ -790,7 +804,7 @@ Documentation stays in the repository root (`docs/`).
 res://  (godot/)
   addons/gdUnit4/   test framework
   simulation/
-    core/           PlanetState, StateWriter, Delta, SimulationSystem,
+    core/           PlanetState, StateWriter, Delta, SimulationSystem, CoefficientLoader,
                     EventBus, SimEvent, SimulationLog, log sinks,
                     SeededRng, SimMath, CommandQueue, SaveSystem
     scheduling/     SimulationManager, TickScheduler, TickPipeline, SimConfig

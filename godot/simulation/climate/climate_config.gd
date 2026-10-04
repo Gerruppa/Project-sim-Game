@@ -86,44 +86,10 @@ var cold_floor: float
 
 
 static func load_json(path: String) -> SimResult:
-	if not FileAccess.file_exists(path):
-		return SimResult.failure("climate file not found: %s" % path)
-	var json := JSON.new()
-	if json.parse(FileAccess.get_file_as_string(path)) != OK:
-		return SimResult.failure("climate JSON error in %s at line %d: %s"
-				% [path, json.get_error_line(), json.get_error_message()])
-	if typeof(json.data) != TYPE_DICTIONARY:
-		return SimResult.failure("climate root must be an object: %s" % path)
-	return from_data(json.data)
+	var read := CoefficientLoader.read_json(path, "climate")
+	return from_data(read.value) if read.is_ok() else read
 
 
 ## Validates everything and reports all errors at once.
 static func from_data(data: Dictionary) -> SimResult:
-	var result := SimResult.new()
-	var config := ClimateConfig.new()
-	for key: Variant in data:
-		if key != "config_version" and not SPEC.has(key):
-			result.add_error("unknown climate coefficient '%s'" % key)
-
-	for name: String in SPEC:
-		var rule: Array = SPEC[name]
-		var value: Variant = data.get(name)
-		if typeof(value) != TYPE_FLOAT and typeof(value) != TYPE_INT:
-			result.add_error("'%s' must be a number" % name)
-			continue
-		var number := float(value)
-		if not is_finite(number) or number < rule[0] or number > rule[1]:
-			result.add_error("'%s' must lie within %s..%s" % [name, rule[0], rule[1]])
-			continue
-		if rule[2] and number != floorf(number):
-			result.add_error("'%s' must be an integer" % name)
-			continue
-		config.set(name, int(number) if rule[2] else number)
-
-	if result.is_ok():
-		for pair: Array in ORDERED_PAIRS:
-			if float(config.get(pair[0])) >= float(config.get(pair[1])):
-				result.add_error("'%s' must be lower than '%s'" % [pair[0], pair[1]])
-	if result.is_ok():
-		result.value = config
-	return result
+	return CoefficientLoader.fill(ClimateConfig.new(), data, SPEC, ORDERED_PAIRS, "climate")
