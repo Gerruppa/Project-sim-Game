@@ -1,6 +1,92 @@
+# ==================================================
+# Genesis Error
+# ==================================================
+
+# Simulation run logs (generated). Keep the folder itself.
 logs/simulation_runs/*
 !logs/simulation_runs/.gitkeep
 
-# Godot
-godot/.godot/
+# --------------------------------------------------
+# Godot 4 (project lives in godot/)
+# --------------------------------------------------
+
+# Editor cache, imported assets, class cache. Rebuilt by --import.
+.godot/
+# gdUnit4 HTML/XML test reports
 godot/reports/
+# Export settings may contain credentials and local paths
+export_presets.cfg
+export_credentials.cfg
+# Build output
+godot/build/
+godot/export/
+*.translation
+# Mono/.NET (not used yet, but Godot creates these if C# is enabled)
+.mono/
+mono_crash.*.json
+
+# Keep: *.gd.uid and *.import files are part of the project in Godot 4.
+
+# --------------------------------------------------
+# Python (main.py, .venv)
+# --------------------------------------------------
+
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --------------------------------------------------
+# JetBrains (PyCharm)
+# Shared project config stays tracked: *.iml, modules.xml, vcs.xml,
+# misc.xml, inspectionProfiles/. Personal state is ignored.
+# --------------------------------------------------
+
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+.idea/shelf/
+.idea/httpRequests/
+.idea/dataSources/
+.idea/dataSources.local.xml
+.idea/aws.xml
+.idea/copilot*
+.idea/**/caches/
+
+# --------------------------------------------------
+# Other editors
+# --------------------------------------------------
+
+.vscode/
+*.swp
+*~
+
+# --------------------------------------------------
+# Claude Code: personal settings stay local
+# --------------------------------------------------
+
+.claude/settings.local.json
+
+# --------------------------------------------------
+# Operating systems
+# --------------------------------------------------
+
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+._*
+
+# --------------------------------------------------
+# Temporary files
+# --------------------------------------------------
+
+*.tmp
+*.bak
+*.orig
