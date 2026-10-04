@@ -4,17 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cc527ea8-aeca-4437-984a-4c554c3a23d4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/PythonProject_game.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/CORE_LOOP.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/DESIGN_PRINCIPLES.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/GENESIS_ERROR_MASTER_PLAN.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-    </list>
+    <list default="true" id="cc527ea8-aeca-4437-984a-4c554c3a23d4" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -23,37 +13,37 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "Gerruppa"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Gerruppa&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/Gerruppa/Project-sim-Game.git",
-    "accountId": "71d9ce6f-0c5e-4a98-aa9a-056bd29200a6"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Gerruppa/Project-sim-Game.git&quot;,
+    &quot;accountId&quot;: &quot;71d9ce6f-0c5e-4a98-aa9a-056bd29200a6&quot;
   }
-}]]></component>
+}</component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.4732260686578358" />
-      <entry key="MS500" value="4.10744307953355" />
-      <entry key="S2" value="6.957079112932803" />
-      <entry key="S5" value="8.068470875038878" />
-      <entry key="S10" value="8.512231916082488" />
-      <entry key="S30" value="8.832209008774829" />
-      <entry key="S60" value="8.91543371769591" />
-      <entry key="M2" value="8.957547575925684" />
-      <entry key="M5" value="8.983281751910106" />
-      <entry key="M10" value="9.034159275229285" />
-      <entry key="M15" value="9.2162314253846" />
-      <entry key="M30" value="10.151052019056037" />
-      <entry key="H1" value="11.629806645651918" />
-      <entry key="H2" value="12.97262117723243" />
-      <entry key="H4" value="13.882265947414176" />
-      <entry key="D1" value="14.797362339901904" />
-      <entry key="W1" value="14.970624038242986" />
+      <entry key="MS100" value="1.3812616819802601" />
+      <entry key="MS500" value="3.427614923161576" />
+      <entry key="S2" value="8.738649217776818" />
+      <entry key="S5" value="15.051157159932027" />
+      <entry key="S10" value="20.947916482071577" />
+      <entry key="S30" value="27.943014286519723" />
+      <entry key="S60" value="30.30953101817696" />
+      <entry key="M2" value="31.611367766900564" />
+      <entry key="M5" value="32.43403011303555" />
+      <entry key="M10" value="32.75709610623024" />
+      <entry key="M15" value="33.029393865832716" />
+      <entry key="M30" value="34.05294623124121" />
+      <entry key="H1" value="35.577144557699114" />
+      <entry key="H2" value="36.94465984718802" />
+      <entry key="H4" value="37.867733915733744" />
+      <entry key="D1" value="38.794847950525224" />
+      <entry key="W1" value="38.97026234165016" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -75,55 +65,55 @@
       <entry key="W1" value="0.0" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.4356131409360682" />
-      <entry key="MS500" value="4.008028578327534" />
-      <entry key="S2" value="6.905383037851638" />
-      <entry key="S5" value="8.044357987252345" />
-      <entry key="S10" value="8.499534062605054" />
-      <entry key="S30" value="8.827826783808915" />
-      <entry key="S60" value="8.913223443913173" />
-      <entry key="M2" value="8.956437613460688" />
-      <entry key="M5" value="8.98283660249084" />
-      <entry key="M10" value="9.033936383991218" />
-      <entry key="M15" value="9.216082442969432" />
-      <entry key="M30" value="10.15097660905157" />
-      <entry key="H1" value="11.629768224133848" />
-      <entry key="H2" value="12.972601642108522" />
-      <entry key="H4" value="13.882256070091167" />
-      <entry key="D1" value="14.79736067528668" />
-      <entry key="W1" value="14.970623799943374" />
+      <entry key="MS100" value="1.2863797402027106" />
+      <entry key="MS500" value="3.341288271990406" />
+      <entry key="S2" value="8.684644367145955" />
+      <entry key="S5" value="15.014196270986314" />
+      <entry key="S10" value="20.921842343267375" />
+      <entry key="S30" value="27.93122369853006" />
+      <entry key="S60" value="30.303103828502493" />
+      <entry key="M2" value="31.608007232658903" />
+      <entry key="M5" value="32.43264868373499" />
+      <entry key="M10" value="32.756398899083806" />
+      <entry key="M15" value="33.02892729010867" />
+      <entry key="M30" value="34.052711331836946" />
+      <entry key="H1" value="35.57702621724291" />
+      <entry key="H2" value="36.9446003084924" />
+      <entry key="H4" value="37.86770402546099" />
+      <entry key="D1" value="38.794842948850544" />
+      <entry key="W1" value="38.97026162658912" />
     </decayedShown>
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7,
-  "fromUser": false
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7,
+  &quot;fromUser&quot;: false
+}</component>
   <component name="ProjectId" id="3KEBUN6Z5lNdVIrQ9FCmupvdAqT" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
-    "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "D:/PythonProject_game",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "python.packages.toolwindow.project.migrated.to.right.top.v2": "true",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "to.speed.mode.migration.done": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/PythonProject_game&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;python.packages.toolwindow.project.migrated.to.right.top.v2&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\PythonProject_game" />
@@ -144,6 +134,7 @@
       <option name="presentableId" value="Default" />
       <updated>1791112862028</updated>
       <workItem from="1791112863022" duration="2444000" />
+      <workItem from="1791117496017" duration="1248000" />
     </task>
     <servers />
   </component>

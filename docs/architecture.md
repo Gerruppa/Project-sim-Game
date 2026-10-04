@@ -2,7 +2,7 @@
 
 # Genesis Error Technical Architecture
 
-Version: 1.0
+Version: 1.1
 
 Engine: Godot 4.x
 
@@ -27,6 +27,13 @@ It defines:
 - testing requirements
 
 This document is the source of truth for all technical decisions.
+
+Related documents:
+
+- `docs/simulation.md` - tick model, determinism, logging
+- `docs/climate.md` - ClimateSystem and AtmosphereSystem
+- `docs/biosphere.md` - BiosphereSystem and species
+- `docs/events.md` - EventSystem, modifiers, personality
 
 ---
 
@@ -55,26 +62,48 @@ Never invert this dependency chain.
 # CORE ARCHITECTURE
 
 ```text
-┌─────────────────────────────┐
-│           UI Layer          │
-└──────────────┬──────────────┘
-               │
-┌──────────────▼──────────────┐
-│      Visualization Layer    │
-└──────────────┬──────────────┘
-               │
-┌──────────────▼──────────────┐
-│       Gameplay Layer        │
-└──────────────┬──────────────┘
-               │
-┌──────────────▼──────────────┐
-│      Simulation Layer       │
-└──────────────┬──────────────┘
-               │
-┌──────────────▼──────────────┐
-│          Data Layer         │
-└─────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ Observers (future: UI, Visualization, Narrative, Audio)      │
+└───────────────▲──────────────────────────────┬───────────────┘
+                │ events (read-only)           │ commands
+┌───────────────┴──────────────────────────────▼───────────────┐
+│ Gameplay Layer (future): player interventions → commands     │
+└───────────────▲──────────────────────────────┬───────────────┘
+                │                              │
+╔═══════════════╧══════════════════════════════▼═══════════════╗
+║                     SIMULATION LAYER                         ║
+║                                                              ║
+║  ORCHESTRATION                                               ║
+║    SimulationManager ─► TickScheduler ─► TickPipeline        ║
+║                                                              ║
+║  DOMAIN SYSTEMS (never reference each other)                 ║
+║    ClimateSystem  AtmosphereSystem  BiosphereSystem          ║
+║                                                              ║
+║  MODIFIERS AND EVENTS                                        ║
+║    ModifierRegistry  PersonalitySystem  EventSystem          ║
+║                                                              ║
+║  CORE (no upward dependencies)                               ║
+║    PlanetState  StateWriter  EventBus  SeededRng             ║
+║    CommandQueue  SimulationLog  SaveSystem                   ║
+╚═════════════════════════════▲════════════════════════════════╝
+                              │
+┌─────────────────────────────┴────────────────────────────────┐
+│ Data Layer: ParameterDefs, SpeciesData, EventDefs,           │
+│ PersonalityDefs, SimConfig (Resources / JSON, no logic)      │
+└──────────────────────────────────────────────────────────────┘
 ```
+
+Dependency rule:
+
+Dependencies point downward only.
+
+Domain systems depend on Core and Data.
+
+Domain systems do not depend on each other,
+on EventSystem or on PersonalitySystem.
+
+The simulation does not know that UI, Visualization
+or Gameplay exist.
 
 ---
 
@@ -93,6 +122,57 @@ The simulation must be executable in a console application.
 
 If a system requires visualization to function,
 the architecture is wrong.
+
+---
+
+# COMMUNICATION MODEL
+
+Four channels exist.
+They must never be mixed.
+
+| Channel | Direction | Mechanism | Purpose |
+|---|---|---|---|
+| State | system ← Core | read-only snapshot | read the world |
+| Change | system → Core | deltas with cause | propose changes |
+| Notification | system → observers | EventBus | report facts after they happened |
+| Control | outside → simulation | CommandQueue | player, tests, debug |
+
+## Rules
+
+1. Systems read PlanetState only through a snapshot.
+2. Systems never write PlanetState directly.
+   They return deltas. StateWriter is the only writer.
+3. EventBus carries facts that already happened.
+   It never drives the order of computation.
+4. EventBus delivery is a FIFO queue flushed in a fixed phase.
+   No re-entrant dispatch.
+5. Anything that comes from outside enters through CommandQueue
+   and is executed on a tick boundary.
+
+## Why not "everything through events"
+
+Event-driven control flow makes execution order depend on
+subscription order. That breaks determinism and debugging.
+
+Order of computation is explicit (TickPipeline).
+Events inform. They do not command.
+
+## Breaking circular feedback
+
+Climate, Atmosphere and Biosphere form a natural feedback loop.
+
+temperature → humidity → biomass → oxygen → life → temperature
+
+The loop is not removed. It is broken in time.
+
+All systems in tick N read the snapshot from the end of tick N-1.
+Their deltas are applied together at the end of the compute phase.
+
+Consequences:
+
+- the result does not depend on system call order
+- every reaction has a natural one-tick delay
+- no system holds a reference to another system
 
 ---
 
@@ -120,9 +200,58 @@ Future:
 - ocean_level
 - geology
 
+Responsibilities:
+
+- hold parameter values
+- enforce limits (from ParameterDefs)
+- validate values
+- serialize and deserialize
+- produce an immutable snapshot
+
 Rules:
 
 No system may duplicate values stored here.
+
+Contains no simulation logic.
+
+Parameters are accessed by identifier, not by hardcoded fields,
+so a future change from global values to regional values
+does not break systems.
+
+---
+
+## StateWriter
+
+The only write path into PlanetState.
+
+Responsibilities:
+
+- collect deltas from the compute phase
+- sum deltas per parameter
+- clamp to limits
+- validate result
+- apply atomically
+- report every applied delta with its source and cause
+
+Does not decide what a sensible change is.
+
+---
+
+## Delta
+
+A proposed change.
+
+Fields:
+
+- parameter
+- amount
+- source (which system)
+- cause (why, as a short identifier)
+
+The cause is mandatory.
+
+It is the basis of the cause chain in logs
+and of the player's ability to learn why something happened.
 
 ---
 
@@ -132,9 +261,9 @@ Central orchestrator.
 
 Responsibilities:
 
-- initialize systems
-- execute update loop
+- initialize systems from SimConfig
 - register simulation modules
+- own the TickPipeline
 - run deterministic ticks
 
 Must not contain business logic.
@@ -145,29 +274,49 @@ Responsibilities stop at orchestration.
 
 ## TickScheduler
 
-Controls simulation frequency.
+Controls simulation timing.
 
 Responsibilities:
 
-- simulation timing
-- tick dispatching
-- pause
-- speed control
+- fixed simulation step
+- pause and resume
+- speed control (x1, x10, x100)
+- system intervals ("run every N ticks")
 
-Supported rates:
+Rules:
 
-1 second
-10 seconds
-30 seconds
-60 seconds
+Speed is the number of ticks per real second.
+The tick itself never changes size.
+
+Must not depend on FPS.
 
 Must be deterministic.
+
+See `docs/simulation.md`.
+
+---
+
+## TickPipeline
+
+The single place that defines the order of a tick.
+
+```text
+1. Begin       commands from CommandQueue, RNG advance
+2. Modifiers   ModifierRegistry resolves effective coefficients
+3. Compute     Climate, Atmosphere, Biosphere read snapshot, return deltas
+4. Apply       StateWriter sums, clamps, validates, applies
+5. Detect      EventSystem evaluates conditions on the new state
+6. Dispatch    EventBus flushes queue (log, observers)
+7. End         metrics, optional snapshot
+```
+
+No other module may define or change this order.
 
 ---
 
 ## EventBus
 
-Global communication layer.
+Global notification layer.
 
 Responsibilities:
 
@@ -175,44 +324,117 @@ Responsibilities:
 - subscribe listeners
 - decouple systems
 
-All major systems communicate
-through EventBus.
+Rules:
 
-Avoid direct dependencies.
+Events describe what happened.
+They never carry commands.
 
----
+Delivery is FIFO and happens in the Dispatch phase.
 
-# SYSTEM COMMUNICATION
-
-Allowed:
-
-```text
-System A
-   │
-   ▼
-EventBus
-   │
-   ▼
-System B
-```
-
-Avoid:
-
-```text
-ClimateSystem
-   │
-   ▼
-BiosphereSystem
-   │
-   ▼
-ClimateSystem
-```
-
-This creates circular dependencies.
+Handlers must not publish events that change simulation state.
+State changes go through deltas or commands.
 
 ---
 
-# CLIMATE SYSTEM
+## SeededRng
+
+Deterministic randomness.
+
+Rules:
+
+- one global seed
+- one independent stream per system
+- adding a system must not change streams of other systems
+- stream state is saved and restored
+- global random functions are forbidden in simulation code
+
+---
+
+## CommandQueue
+
+The only entry point from outside the simulation.
+
+Examples:
+
+- add species
+- change a coefficient
+- set seed
+
+Commands run on a tick boundary.
+Commands never bypass StateWriter.
+
+---
+
+## SimulationLog
+
+Subscribes to EventBus and to applied deltas.
+
+Responsibilities:
+
+- structured log per tick
+- cause chains
+- log levels and aggregation for high speeds
+
+Does not affect the simulation.
+
+Logs are part of gameplay design.
+They are not temporary.
+
+---
+
+## SaveSystem
+
+Saves and restores:
+
+- PlanetState
+- current tick
+- RNG stream states
+- species populations
+- active events
+- active modifiers
+
+The state format is designed for it from the beginning.
+Implementation comes later (see system priority in CLAUDE.md).
+
+---
+
+# DOMAIN SYSTEMS
+
+All domain systems follow one contract:
+
+- read a snapshot
+- read effective coefficients from ModifierRegistry
+- return deltas
+- hold no copy of planet parameters
+
+A system may hold internal state
+only if it is not a planet parameter
+(for example species populations).
+
+## Dynamics ownership
+
+Every parameter has one system that owns its dynamics
+(regulation, decay, equilibrium).
+
+Other systems may contribute flows to it as deltas.
+
+| Parameter | Dynamics owner | Contributors |
+|---|---|---|
+| temperature | ClimateSystem | AtmosphereSystem, BiosphereSystem |
+| humidity | ClimateSystem | BiosphereSystem |
+| oxygen | AtmosphereSystem | BiosphereSystem |
+| biomass | BiosphereSystem | none |
+
+Example:
+
+A species produces oxygen.
+BiosphereSystem returns an oxygen delta caused by that species.
+AtmosphereSystem owns regulation and decay of oxygen.
+Oxygen exists once, in PlanetState.
+
+---
+
+## ClimateSystem
 
 Responsibilities:
 
@@ -223,13 +445,13 @@ Responsibilities:
 
 Inputs:
 
-PlanetState
+Snapshot, effective coefficients
 
 Outputs:
 
-Updated PlanetState
+Deltas for temperature and humidity
 
-Events:
+Events (emitted through the event queue):
 
 TemperatureChanged
 
@@ -237,25 +459,25 @@ HumidityChanged
 
 ClimateShift
 
+See `docs/climate.md`.
+
 ---
 
-# ATMOSPHERE SYSTEM
+## AtmosphereSystem
 
 Responsibilities:
 
-- oxygen generation
+- oxygen regulation
 - atmospheric stability
-- pressure calculations
+- pressure calculations (future)
 
 Inputs:
 
-PlanetState
-
-Biosphere output
+Snapshot, effective coefficients
 
 Outputs:
 
-PlanetState
+Deltas for oxygen (future: pressure, co2)
 
 Events:
 
@@ -265,9 +487,11 @@ PressureChanged
 
 AtmosphereCrisis
 
+See `docs/climate.md`.
+
 ---
 
-# BIOSPHERE SYSTEM
+## BiosphereSystem
 
 Most important gameplay system.
 
@@ -278,15 +502,16 @@ Responsibilities:
 - extinction
 - environmental impact
 
+Never simulates individual organisms.
+Simulates populations.
+
 Inputs:
 
-Climate data
-
-PlanetState
+Snapshot, species data, effective coefficients
 
 Outputs:
 
-PlanetState modifications
+Deltas for biomass, and flows to oxygen and humidity
 
 Events:
 
@@ -296,9 +521,38 @@ SpeciesCollapsed
 
 EcologicalShift
 
+See `docs/biosphere.md`.
+
 ---
 
-# PERSONALITY SYSTEM
+# MODIFIERS, PERSONALITY AND EVENTS
+
+## ModifierRegistry
+
+Holds active modifiers.
+
+Modifier fields:
+
+- target (coefficient identifier)
+- operation (add, multiply)
+- value
+- source
+- lifetime
+
+Responsibilities:
+
+- register and expire modifiers
+- resolve effective coefficients once per tick
+
+Operation order is defined in one place:
+
+base value → add → multiply → clamp
+
+Registration order must not change the result.
+
+---
+
+## PersonalitySystem
 
 Purpose:
 
@@ -310,9 +564,8 @@ Planet appears intelligent.
 
 Responsibilities:
 
-- modify simulations
-- alter event probabilities
-- adjust environmental stability
+- select an archetype at start
+- register constant modifiers
 
 Archetypes:
 
@@ -328,8 +581,135 @@ Never directly manipulate world state.
 
 ---
 
-# EVENT SYSTEM
+## EventSystem
 
 Purpose:
 
-Convert simulation state 
+Convert simulation state into meaningful events.
+
+Responsibilities:
+
+- evaluate trigger conditions on the new state
+- manage lifecycle: trigger → active phase → ending conditions
+- register modifiers for the active phase
+- publish lifecycle events
+
+Rules:
+
+Events have no private write path to PlanetState.
+
+An active event only changes modifiers.
+The state changes through the normal systems.
+
+Example:
+
+Drought does not set humidity.
+Drought lowers the humidity recovery coefficient.
+ClimateSystem produces the humidity decline.
+
+This keeps events emergent.
+They cannot become scripts.
+
+See `docs/events.md`.
+
+---
+
+# DATA LAYER
+
+Logic lives in code.
+Numbers live in data.
+
+Data assets:
+
+- ParameterDefs: name, limits, initial value, unit
+- SpeciesData: population, growth, mortality, requirements, effects
+- EventDefs: triggers, duration, ending conditions, modifiers
+- PersonalityDefs: modifier sets per archetype
+- SimConfig: seed, speeds, system intervals
+
+Rules:
+
+Adding a species or an event must not require code changes.
+
+Data is validated when loaded.
+
+---
+
+# FILE STRUCTURE
+
+```text
+res://
+  simulation/
+    core/           PlanetState, StateWriter, EventBus, SeededRng,
+                    CommandQueue, SimulationLog, SaveSystem
+    scheduling/     SimulationManager, TickScheduler, TickPipeline
+    planet/         ParameterDefs, snapshot
+    climate/        ClimateSystem
+    atmosphere/     AtmosphereSystem
+    biosphere/      BiosphereSystem, SpeciesData
+    modifiers/      ModifierRegistry
+    events/         EventSystem, EventDefs
+    personality/    PersonalitySystem, archetypes
+    tests/          unit, integration, simulation
+  resources/        data assets
+  docs/
+  logs/
+```
+
+---
+
+# SCALABILITY RULES
+
+1. A new domain system must not require edits to existing systems or Core.
+2. Parameters are accessed by identifier.
+3. Slow systems run on intervals, not every tick.
+4. Regions and maps are not designed now.
+   The architecture must only avoid blocking them.
+5. Optimization happens after measurement.
+
+---
+
+# TESTING REQUIREMENTS
+
+Every module requires:
+
+- unit tests
+- integration tests
+- simulation tests
+
+Required architecture-level tests:
+
+- same seed, same commands → identical log
+- result independent of system registration order
+- save at tick N, load, continue M ticks = continuous run of N+M ticks
+- speeds x1, x10, x100 → identical result after the same tick count
+- direct write to PlanetState outside StateWriter is detected
+- many seeds, long runs: no NaN, no permanent freeze, no divergence
+
+---
+
+# KNOWN RISKS
+
+1. Model instability.
+   One-tick feedback can oscillate or converge to a flat line.
+   Needs statistical simulation tests over many seeds.
+
+2. Boring or chaotic output.
+   "Interesting" must be measured.
+   Log regime changes, threshold crossings and extinctions
+   per 1000 ticks.
+
+3. Spatial scaling.
+   Global scalars will become fields.
+   Identifier-based access reduces the cost.
+
+4. Modifier growth.
+   Without a fixed operation order results depend
+   on registration order.
+
+5. Log volume at high speed.
+   Use log levels and aggregation.
+   Do not disable logs.
+
+6. God object.
+   SimulationManager must stay orchestration only.

@@ -253,6 +253,14 @@ Simulation reacts.
 
 Narrative reacts.
 
+Events report facts that already happened.
+Events never drive the order of computation.
+
+Simulation systems read PlanetState through a snapshot
+and change it only by returning deltas to StateWriter.
+
+Details: docs/architecture.md (COMMUNICATION MODEL)
+
 ---
 
 # SYSTEM PRIORITY
@@ -305,6 +313,11 @@ All parameters must:
 
 Simulation must not depend on FPS.
 
+Simulation uses one fixed tick size.
+
+Speed is the number of ticks per real second.
+It never changes the size of a tick.
+
 Simulation must support:
 
 - pause
@@ -312,6 +325,8 @@ Simulation must support:
 - speed x1
 - speed x10
 - speed x100
+
+Details: docs/simulation.md
 
 Simulation should be deterministic.
 
@@ -525,11 +540,17 @@ simulation/
 
 simulation/core/
 
+simulation/scheduling/
+
 simulation/planet/
 
 simulation/climate/
 
+simulation/atmosphere/
+
 simulation/biosphere/
+
+simulation/modifiers/
 
 simulation/events/
 
