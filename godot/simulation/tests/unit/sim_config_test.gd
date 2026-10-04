@@ -8,6 +8,7 @@ func _data() -> Dictionary:
 		"base_ticks_per_second": 1,
 		"speed_multipliers": [1, 10, 100],
 		"max_catch_up_ticks": 1000,
+		"personality": "random",
 		"log": {"text": true, "jsonl": true, "deltas": true, "directory": "../logs/simulation_runs"},
 	}
 
@@ -99,3 +100,24 @@ func test_reports_all_errors_at_once() -> void:
 	data["seed"] = "x"
 	data["max_catch_up_ticks"] = -1
 	assert_int(SimConfig.from_data(data).errors.size()).is_greater_equal(2)
+
+
+func test_personality_defaults_to_random_draw() -> void:
+	var config: SimConfig = SimConfig.load_json(SimConfig.DEFAULT_PATH).value
+	assert_str(config.personality()).is_equal("random")
+
+
+func test_with_personality_returns_copy() -> void:
+	var config: SimConfig = SimConfig.from_data(_data()).value
+	var forced := config.with_personality(&"chaotic")
+	assert_str(forced.personality()).is_equal("chaotic")
+	assert_str(config.personality()).is_equal("random")
+	assert_str(forced.with_seed(3).personality()).is_equal("chaotic")
+
+
+func test_rejects_missing_or_empty_personality() -> void:
+	var data := _data()
+	data["personality"] = ""
+	assert_str(_errors(data)).contains("personality")
+	data.erase("personality")
+	assert_str(_errors(data)).contains("personality")

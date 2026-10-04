@@ -35,6 +35,20 @@ func system_id() -> StringName:
 	return ID
 
 
+## Coefficients in use. The pipeline keeps the ones returned at registration
+## as the untouched base and hands back modified copies (personality, events).
+func coefficients() -> Object:
+	return _k
+
+
+func coefficient_spec() -> Dictionary:
+	return BiosphereConfig.SPEC
+
+
+func apply_coefficients(effective: Object) -> void:
+	_k = effective
+
+
 ## NAN for unknown species.
 func population(species_id: StringName) -> float:
 	var index := _index_of(species_id)
@@ -92,8 +106,9 @@ func _population_change(index: int, species: SpeciesData, p: float, suit: float,
 			* (1.0 - species.shade * _taller_cover(species.layer) / 100.0)
 	var crowding := p / capacity if capacity > 0.0 else 2.0
 	var noise := 1.0 + _rng.next_range(-_k.growth_noise, _k.growth_noise)
-	var growth := species.growth * suit * noise * p * (1.0 - crowding)
-	var death := (species.base_mortality + species.stress_mortality * (1.0 - suit) + fire * species.flammable) * p
+	var growth := species.growth * _k.growth_scale * suit * noise * p * (1.0 - crowding)
+	var death := (species.base_mortality + species.stress_mortality * _k.stress_scale * (1.0 - suit)
+			+ fire * species.flammable) * p
 	var seeding := species.seed * suit * _precursor_share(species)
 	var next_population := clampf(p + growth - death + seeding, 0.0, 100.0)
 	if next_population < _k.extinction_threshold and next_population < p:

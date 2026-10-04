@@ -25,6 +25,20 @@ func system_id() -> StringName:
 	return ID
 
 
+## Coefficients in use. The pipeline keeps the ones returned at registration
+## as the untouched base and hands back modified copies (personality, events).
+func coefficients() -> Object:
+	return _k
+
+
+func coefficient_spec() -> Dictionary:
+	return ClimateConfig.SPEC
+
+
+func apply_coefficients(effective: Object) -> void:
+	_k = effective
+
+
 func drift() -> float:
 	return _drift
 

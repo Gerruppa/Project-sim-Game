@@ -406,7 +406,9 @@ Detect are documented placeholders, filled in with CommandQueue,
 ModifierRegistry and EventSystem.
 
 Every system extends `SimulationSystem` (`simulation/core/simulation_system.gd`):
-`system_id()` and `compute(snapshot) -> Array[Delta]`. Duplicate ids and
+`system_id()` and `compute(snapshot) -> Array[Delta]`. Systems with a
+coefficient file also implement `coefficients()`, `coefficient_spec()` and
+`apply_coefficients(effective)` so modifiers can reach them. Duplicate ids and
 intervals below 1 are rejected at registration.
 
 Systems report facts with `emit_event(type, data)` during compute. The
@@ -719,6 +721,23 @@ base value → add → multiply → clamp
 
 Registration order must not change the result.
 
+Implementation (`simulation/modifiers/`):
+
+- `Modifier`: target `<system_id>.<coefficient>`, operation add|multiply,
+  value, source, `expires_at` (last active tick, -1 permanent)
+- `ModifierRegistry`: targets validated against each system's coefficient
+  spec; modifiers folded in canonical order (float multiplication is not
+  associative); result clamped to the spec range, integers stay integers;
+  `version()` changes only when the set changes
+- `ModifierProvider` (extends SimulationSystem): `provide_modifiers(snapshot,
+  tick, registry)`, called in phase 2 for every provider, in registration order
+- TickPipeline phase 2: providers run, expired modifiers drop
+  (`expire(tick - 1)`), then, only if the set changed, every system with
+  coefficients receives an effective copy via `apply_coefficients()`.
+  Base coefficients (returned by `coefficients()` at registration) are never
+  changed. With no modifiers nothing happens, so a planet without
+  personality is bit-identical to one with personality "none".
+
 ---
 
 ## PersonalitySystem
@@ -747,6 +766,17 @@ Outputs:
 Modifiers only.
 
 Never directly manipulate world state.
+
+Status: implemented (`simulation/personality/`, data in
+`resources/personality/personality.json`).
+
+- archetype: forced id, "random" (weighted draw from its own SeededRng
+  stream) or "none"; chosen in `sim_config.json` or with `--personality`
+- modifiers registered once on tick 1 with source `personality:<id>`;
+  modifiers for systems the planet does not run are skipped
+- event `planet_personality` on tick 1 (archetype, description)
+- reactions of the planet (healing, restlessness) are planned for
+  EventSystem (step 7); see `docs/events.md`
 
 ---
 
@@ -827,9 +857,9 @@ res://  (godot/)
     climate/        ClimateSystem
     atmosphere/     AtmosphereSystem, AtmosphereConfig
     biosphere/      BiosphereSystem, SpeciesData, SpeciesCatalog, BiosphereConfig
-    modifiers/      ModifierRegistry
+    modifiers/      Modifier, ModifierRegistry, ModifierProvider
     events/         EventSystem, EventDefs
-    personality/    PersonalitySystem, archetypes
+    personality/    PersonalitySystem, PersonalityCatalog, PersonalityArchetype
     tests/          unit, integration, simulation, architecture,
                     support (test-only helpers), golden, tools
   resources/        data assets (planet/, simulation/)

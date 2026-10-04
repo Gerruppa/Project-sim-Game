@@ -16,6 +16,8 @@ var _speed_multipliers: Array[int] = []
 var _max_catch_up_ticks: int
 var _log_flags: Dictionary[String, bool] = {}
 var _log_directory: String
+## Archetype id, "random" (drawn from the seed) or "none".
+var _personality: StringName
 
 
 static func load_json(path: String) -> SimResult:
@@ -56,6 +58,11 @@ static func from_data(data: Dictionary) -> SimResult:
 		config._max_catch_up_ticks = int(data["max_catch_up_ticks"])
 
 	_read_log(data.get("log"), config, result)
+
+	if typeof(data.get("personality")) != TYPE_STRING or (data["personality"] as String).is_empty():
+		result.add_error("personality must be an archetype id, \"random\" or \"none\"")
+	else:
+		config._personality = StringName(data["personality"])
 
 	if result.is_ok():
 		result.value = config
@@ -109,7 +116,18 @@ func with_seed(seed_value: int) -> SimConfig:
 	copy._max_catch_up_ticks = _max_catch_up_ticks
 	copy._log_flags = _log_flags.duplicate()
 	copy._log_directory = _log_directory
+	copy._personality = _personality
 	return copy
+
+
+func with_personality(choice: StringName) -> SimConfig:
+	var copy := with_seed(_seed)
+	copy._personality = choice
+	return copy
+
+
+func personality() -> StringName:
+	return _personality
 
 
 func seed() -> int:

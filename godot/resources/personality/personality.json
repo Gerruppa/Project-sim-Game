@@ -1,0 +1,39 @@
+{
+	"personality_version": 1,
+	"archetypes": [
+		{
+			"id": "harmonious",
+			"weight": 1,
+			"description": "Łagodna i bujna: spokojniejszy klimat, szybszy wzrost, rzadsze pożary. Kryzysy zdarzają się rzadziej.",
+			"modifiers": [
+				{"target": "climate.drift_noise", "operation": "multiply", "value": 0.8},
+				{"target": "climate.season_amplitude", "operation": "multiply", "value": 0.9},
+				{"target": "biosphere.growth_scale", "operation": "multiply", "value": 1.1},
+				{"target": "biosphere.fire_rate", "operation": "multiply", "value": 0.85}
+			]
+		},
+		{
+			"id": "chaotic",
+			"weight": 1,
+			"description": "Niespokojna, wulkaniczna i płonąca: silne wahania klimatu, więcej CO₂ i pożarów. Życie ma trudniej.",
+			"modifiers": [
+				{"target": "climate.drift_noise", "operation": "multiply", "value": 1.35},
+				{"target": "climate.drift_limit", "operation": "multiply", "value": 1.15},
+				{"target": "climate.season_amplitude", "operation": "multiply", "value": 1.2},
+				{"target": "atmosphere.volcanic_co2", "operation": "multiply", "value": 1.25},
+				{"target": "biosphere.fire_rate", "operation": "multiply", "value": 1.25},
+				{"target": "biosphere.growth_noise", "operation": "multiply", "value": 1.5}
+			]
+		},
+		{
+			"id": "guardian",
+			"weight": 1,
+			"description": "Strażnik życia i równowagi: klimat szybciej wraca do normy, słabszy punkt przełomowy lodu, życie lepiej znosi stres.",
+			"modifiers": [
+				{"target": "climate.thermal_response", "operation": "multiply", "value": 1.2},
+				{"target": "climate.ice_strength", "operation": "multiply", "value": 0.9},
+				{"target": "biosphere.stress_scale", "operation": "multiply", "value": 0.75}
+			]
+		}
+	]
+}

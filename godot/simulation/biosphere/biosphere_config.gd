@@ -11,6 +11,8 @@ const SPEC := {
 	"extinction_threshold": [0.0, 10.0, false],
 	"established_population": [0.0, 100.0, false],
 	"growth_noise": [0.0, 1.0, false],
+	"growth_scale": [0.0, 10.0, false],
+	"stress_scale": [0.0, 10.0, false],
 	"fire_rate": [0.0, 1.0, false],
 	"fire_o2_low": [0.0, 100.0, false],
 	"fire_o2_high": [0.0, 100.0, false],
@@ -34,6 +36,10 @@ var extinction_threshold: float
 ## Above this a species counts as established (emergence event).
 var established_population: float
 var growth_noise: float
+## Multiplies every species' growth (planet personality: lushness).
+var growth_scale: float
+## Multiplies every species' stress mortality (planet personality: protection of life).
+var stress_scale: float
 var fire_rate: float
 var fire_o2_low: float
 var fire_o2_high: float

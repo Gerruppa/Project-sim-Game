@@ -68,6 +68,50 @@ Dwie rozgrywki mają dawać różne efekty.
 
 ---
 
+# Stan wdrożenia (krok 6)
+
+- **ModifierRegistry** jest zaimplementowany (`godot/simulation/modifiers/`):
+  walidacja celu względem SPEC systemu, kolejność add → multiply → clamp,
+  kanoniczne sortowanie, wygasanie (`expires_at`), wersja zestawu.
+- **PersonalitySystem** jest zaimplementowany (`godot/simulation/personality/`,
+  dane `godot/resources/personality/personality.json`): stałe modyfikatory
+  archetypu od ticka 1, zdarzenie `planet_personality`.
+
+Wartości archetypów i ich wpływ (pomiar `planet_report.gd`, 4 seedy × 30 000 ticków, z życiem):
+
+| Archetyp | Czas w lodzie | Las | Gatunków > 5 | Wymierania |
+|---|---|---|---|---|
+| bez osobowości | 11–18% | 10–30% | 3,1–3,6 | 7–13 |
+| Harmonijna | 1–10% | 62–82% | 4,2–4,3 | 2–9 |
+| Chaotyczna | 14–22% | 0–18% | 2,3–3,0 | 10–16 |
+| Strażnik | 3–14% | 24–51% | 3,5–4,2 | 3–7 |
+
+Uwagi z pomiaru: planeta chaotyczna na jednym seedzie dotknęła CO₂ = 100
+(nasycenie) i na jednym nie wytworzyła drzew w 30 000 ticków; harmonijna
+jest bardziej bujna niż w prototypie. Wartości są w danych.
+
+---
+
+# Reakcje planety (wymaganie na krok 7)
+
+Decyzja z kroku 6: osobowość ma na razie tylko stałe modyfikatory.
+**Reakcje planety budujemy razem z EventSystem**, bo potrzebują tej samej
+infrastruktury (warunki, faza aktywna, warunki końca, histereza, modyfikatory
+z czasem wygaśnięcia). Archetyp ma wpływać na to, które reakcje występują
+i z jakimi progami. Przykłady do zaprojektowania:
+
+| Archetyp | Reakcja | Warunek (przykład) | Efekt (modyfikatory na czas) |
+|---|---|---|---|
+| Strażnik | "planeta leczy się" | biomasa spada o >30% od ostatniego szczytu | szybszy wzrost, mniejszy stres życia |
+| Chaotyczna | "niepokój" | długi spokój (mała zmienność temperatury) | przebudzenie wulkanów (więcej CO₂), silniejszy dryf |
+| Harmonijna | "powrót do równowagi" | temperatura daleko od normy | szybszy powrót temperatury |
+
+Zasada pozostaje: reakcje działają wyłącznie przez modyfikatory, nigdy przez
+bezpośredni zapis stanu. Mają tworzyć wrażenie inteligencji planety,
+a ich przyczyna musi być czytelna w logu.
+
+---
+
 # EventSystem
 
 Zdarzenia mają wynikać z symulacji.

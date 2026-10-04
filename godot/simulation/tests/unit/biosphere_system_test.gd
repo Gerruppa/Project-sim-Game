@@ -201,3 +201,34 @@ func test_same_seed_gives_same_populations() -> void:
 		_step(a)
 		_step(b)
 	assert_float(a.population(&"moss")).is_equal(b.population(&"moss"))
+
+
+func test_growth_scale_speeds_up_all_growth() -> void:
+	var normal := _system([S.species("moss", {"seed": 0.0, "base_mortality": 0.0})])
+	var fast := _system([S.species("moss", {"seed": 0.0, "base_mortality": 0.0})], S.calm({"growth_scale": 2.0}))
+	normal.set_population(&"moss", 10.0)
+	fast.set_population(&"moss", 10.0)
+	_step(normal)
+	_step(fast)
+	assert_float(fast.population(&"moss") - 10.0).is_equal_approx(2.0 * (normal.population(&"moss") - 10.0), 1e-9)
+
+
+func test_stress_scale_softens_environmental_deaths() -> void:
+	var harsh := _system([S.species("moss", {"seed": 0.0, "base_mortality": 0.0})])
+	var gentle := _system([S.species("moss", {"seed": 0.0, "base_mortality": 0.0})], S.calm({"stress_scale": 0.5}))
+	harsh.set_population(&"moss", 50.0)
+	gentle.set_population(&"moss", 50.0)
+	_step(harsh, {"temperature": 2.0})
+	_step(gentle, {"temperature": 2.0})
+	assert_float(50.0 - gentle.population(&"moss")).is_equal_approx(0.5 * (50.0 - harsh.population(&"moss")), 1e-9)
+
+
+func test_exposes_and_uses_effective_coefficients() -> void:
+	var config := S.calm()
+	var system := _system([S.species("moss", {"seed": 0.0})], config)
+	assert_object(system.coefficients()).is_same(config)
+	assert_dict(system.coefficient_spec()).is_equal(BiosphereConfig.SPEC)
+	system.set_population(&"moss", 10.0)
+	system.apply_coefficients(S.calm({"growth_scale": 0.0}))
+	_step(system)
+	assert_float(system.population(&"moss")).is_less_equal(10.0)

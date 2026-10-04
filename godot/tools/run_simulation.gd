@@ -26,6 +26,8 @@ func _init() -> void:
 	var config: SimConfig = config_result.value
 	if _options.has("seed"):
 		config = config.with_seed(_options["seed"])
+	if _options.has("personality"):
+		config = config.with_personality(StringName(_options["personality"]))
 
 	var manager_result := SimulationManager.create(config, schema_result.value)
 	if not manager_result.is_ok():
@@ -50,6 +52,18 @@ func _init() -> void:
 		_fail(catalog_result.errors + biosphere_result.errors, false)
 		return
 	_manager.register_system(BiosphereSystem.new(biosphere_result.value, catalog_result.value, config.seed()))
+
+	# Personality last: it only adds modifiers, which reach every system before compute.
+	var specs := {&"climate": ClimateConfig.SPEC, &"atmosphere": AtmosphereConfig.SPEC, &"biosphere": BiosphereConfig.SPEC}
+	var personality_catalog := PersonalityCatalog.load_json(PersonalityCatalog.DEFAULT_PATH, specs)
+	if not personality_catalog.is_ok():
+		_fail(personality_catalog.errors, false)
+		return
+	var personality := PersonalitySystem.create(personality_catalog.value, config.personality(), config.seed())
+	if not personality.is_ok():
+		_fail(personality.errors, false)
+		return
+	_manager.register_system(personality.value)
 
 	_log_id = SimulationRunner.run_id(config.seed())
 	var log_result := SimulationRunner.create_log(config, _log_id, not _options["quiet"])

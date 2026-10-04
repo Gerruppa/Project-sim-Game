@@ -149,3 +149,16 @@ func _amounts(deltas: Array[Delta]) -> Array[float]:
 	for delta in deltas:
 		amounts.append(delta.amount)
 	return amounts
+
+
+func test_exposes_coefficients_for_modifiers() -> void:
+	var config := C.calm()
+	var system := ClimateSystem.new(config, 1)
+	assert_object(system.coefficients()).is_same(config)
+	assert_dict(system.coefficient_spec()).is_equal(ClimateConfig.SPEC)
+
+
+func test_uses_effective_coefficients() -> void:
+	var system := ClimateSystem.new(C.config({"drift_noise": 0.0}), 1)
+	system.apply_coefficients(C.config({"drift_noise": 0.0, "season_amplitude": 0.0}))
+	assert_bool(C.by_cause(system.compute(C.snapshot(NEUTRAL, 0))).has("temperature:season")).is_false()

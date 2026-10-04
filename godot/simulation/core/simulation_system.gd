@@ -26,6 +26,22 @@ func compute(_snapshot: PlanetSnapshot) -> Array[Delta]:
 	return []
 
 
+## Systems with a coefficient file return it here so modifiers (personality,
+## events) can reach it. The pipeline keeps this object as the untouched base.
+func coefficients() -> Object:
+	return null
+
+
+## name -> [min, max, integer] for every modifiable coefficient.
+func coefficient_spec() -> Dictionary:
+	return {}
+
+
+## Receives an effective copy of coefficients() with modifiers applied.
+func apply_coefficients(_effective: Object) -> void:
+	pass
+
+
 ## Queues a notification for the current tick. Data should be plain values.
 func emit_event(type: StringName, data: Dictionary) -> void:
 	_pending_events.append([type, data])

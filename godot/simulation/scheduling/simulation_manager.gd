@@ -101,6 +101,10 @@ func state_hash() -> String:
 	return PlanetStateCodec.state_hash(_state)
 
 
+func modifier_registry() -> ModifierRegistry:
+	return _pipeline.modifier_registry()
+
+
 func scheduler() -> TickScheduler:
 	return _scheduler
 

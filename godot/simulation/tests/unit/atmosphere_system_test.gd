@@ -79,3 +79,12 @@ func test_is_a_pure_function_of_the_snapshot() -> void:
 	var first := C.by_cause(system.compute(C.snapshot(BASE)))
 	var second := C.by_cause(system.compute(C.snapshot(BASE)))
 	assert_dict(first).is_equal(second)
+
+
+func test_exposes_and_uses_effective_coefficients() -> void:
+	var config := A.config()
+	var system := AtmosphereSystem.new(config)
+	assert_object(system.coefficients()).is_same(config)
+	assert_dict(system.coefficient_spec()).is_equal(AtmosphereConfig.SPEC)
+	system.apply_coefficients(A.config({"volcanic_co2": 0.0}))
+	assert_bool(C.by_cause(system.compute(C.snapshot(BASE))).has("co2:volcanic_outgassing")).is_false()

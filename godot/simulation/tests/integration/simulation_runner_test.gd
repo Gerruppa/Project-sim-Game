@@ -10,6 +10,7 @@ func _config(text: bool = true, jsonl: bool = true) -> SimConfig:
 		"base_ticks_per_second": 1,
 		"speed_multipliers": [1, 10, 100],
 		"max_catch_up_ticks": 1000,
+		"personality": "none",
 		"log": {"text": text, "jsonl": jsonl, "deltas": true, "directory": TEST_DIR},
 	}).value
 
@@ -70,6 +71,15 @@ func test_parses_life_files() -> void:
 	var options := _options(["--species", "res://a.json", "--biosphere", "res://b.json"])
 	assert_str(options["species"]).is_equal("res://a.json")
 	assert_str(options["biosphere"]).is_equal("res://b.json")
+
+
+func test_personality_comes_from_config_unless_forced() -> void:
+	assert_bool(_options([]).has("personality")).is_false()
+	assert_str(_options(["--personality", "chaotic"])["personality"]).is_equal("chaotic")
+
+
+func test_rejects_personality_option_without_name() -> void:
+	assert_bool(SimulationRunner.parse_args(PackedStringArray(["--personality"])).is_ok()).is_false()
 
 
 func test_rejects_atmosphere_option_without_path() -> void:

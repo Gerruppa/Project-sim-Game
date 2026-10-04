@@ -21,6 +21,20 @@ func system_id() -> StringName:
 	return ID
 
 
+## Coefficients in use. The pipeline keeps the ones returned at registration
+## as the untouched base and hands back modified copies (personality, events).
+func coefficients() -> Object:
+	return _k
+
+
+func coefficient_spec() -> Dictionary:
+	return AtmosphereConfig.SPEC
+
+
+func apply_coefficients(effective: Object) -> void:
+	_k = effective
+
+
 func compute(snapshot: PlanetSnapshot) -> Array[Delta]:
 	var deltas: Array[Delta] = []
 	_add_carbon_cycle(deltas, snapshot)

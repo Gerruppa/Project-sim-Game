@@ -4,6 +4,7 @@
 	"base_ticks_per_second": 1,
 	"speed_multipliers": [1, 10, 100],
 	"max_catch_up_ticks": 1000,
+	"personality": "random",
 	"log": {
 		"text": true,
 		"jsonl": true,

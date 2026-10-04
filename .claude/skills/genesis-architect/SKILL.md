@@ -21,6 +21,10 @@ contradicts it must say so explicitly and propose the doc change.
 - One dynamics owner per parameter; others contribute flows.
 - Data in JSON; deterministic math policy; normalized 0..100 scale with anchors.
 - Order of the tick lives only in TickPipeline.
+- ModifierRegistry exists (phase 2): modifiers target `<system>.<coefficient>`
+  from a system's spec; providers (`ModifierProvider`) add them; systems get
+  effective copies. Personality uses it; EventSystem must reuse it.
+- Planet reactions per archetype are a step 7 requirement (`docs/events.md`).
 
 ## How to answer
 

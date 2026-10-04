@@ -2,7 +2,8 @@ extends SceneTree
 ## Balance report for the planet as the game runs it (climate + atmosphere + biosphere).
 ##   godot --headless --path godot -s res://simulation/tests/tools/planet_report.gd -- \
 ##       [--seeds N] [--ticks N] [--climate path] [--atmosphere path] [--species path] \
-##       [--biosphere path] [--climate-only] [--lifeless]
+##       [--biosphere path] [--personality name] [--climate-only] [--lifeless]
+## --personality defaults to "none" so runs compare like with like.
 ## Prints per-seed statistics after warm-up; use it before and after changing data.
 
 const P := preload("res://simulation/tests/support/schema_fixtures.gd")
@@ -24,6 +25,7 @@ class Options:
 	var biosphere_path := BiosphereConfig.DEFAULT_PATH
 	var atmosphere := true
 	var life := true
+	var personality := PersonalityCatalog.NONE
 
 
 func _init() -> void:
@@ -59,6 +61,7 @@ func _parse(args: PackedStringArray) -> Options:
 			"--biosphere": i += 1; options.biosphere_path = args[i]
 			"--climate-only": options.atmosphere = false; options.life = false
 			"--lifeless": options.life = false
+			"--personality": i += 1; options.personality = StringName(args[i])
 		i += 1
 	return options
 
@@ -74,6 +77,12 @@ func _report(seed_value: int, options: Options, climate: ClimateConfig, atmosphe
 	if options.life:
 		life = BiosphereSystem.new(biosphere, catalog, seed_value)
 		manager.register_system(life)
+	var specs := {&"climate": ClimateConfig.SPEC, &"atmosphere": AtmosphereConfig.SPEC, &"biosphere": BiosphereConfig.SPEC}
+	var personality_catalog: PersonalityCatalog = PersonalityCatalog.load_json(PersonalityCatalog.DEFAULT_PATH, specs).value
+	var personality := PersonalitySystem.create(personality_catalog, options.personality, seed_value)
+	if not personality.is_ok():
+		return "%d | %s" % [seed_value, personality.errors]
+	manager.register_system(personality.value)
 	var extinctions := [0]
 	manager.event_bus().subscribe(&"species_extinct", func(_event: SimEvent) -> void: extinctions[0] += 1)
 

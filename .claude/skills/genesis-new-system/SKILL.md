@@ -57,7 +57,12 @@ godot/simulation/tests/integration/<area>_*_test.gd
   `emit_event(&"type", {plain data})` during compute; the pipeline publishes
   them after the tick event and drops them if the batch is rejected.
 - Coefficient files: reuse `CoefficientLoader` (`simulation/core/`), as
-  `ClimateConfig`, `AtmosphereConfig` and `BiosphereConfig` do.
+  `ClimateConfig`, `AtmosphereConfig` and `BiosphereConfig` do, and implement
+  `coefficients()`, `coefficient_spec()` and `apply_coefficients(effective)`
+  so personality and events can modify them (ModifierRegistry, phase 2).
+  Read coefficients only through the config object (`_k.x`), never cache them.
+- A system that should only bend other systems (personality, events) extends
+  `ModifierProvider` and returns no deltas.
 - No reference to `PlanetState`, other systems, EventBus internals or Nodes.
 - Math only through `SimMath`; randomness only through its `SeededRng`.
 - Persistent internal state (e.g. species populations) is allowed only if it is

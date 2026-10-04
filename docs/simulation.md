@@ -245,7 +245,11 @@ Każdy tick ma dokładnie jeden rekord `tick`, także gdy nic się nie zmieniło
 GODOT_BIN=<Godot 4.7.2 console> ./godot/run_simulation.sh                     # 3600 ticków (1 h przy x1), tryb wsadowy
 GODOT_BIN=... ./godot/run_simulation.sh --seed 7 --ticks 10000 --quiet
 GODOT_BIN=... ./godot/run_simulation.sh --realtime --speed 10 --seconds 60     # czas rzeczywisty
+GODOT_BIN=... ./godot/run_simulation.sh --personality chaotic                   # wymuszony archetyp planety
 ```
+
+Osobowość planety: `"personality"` w `sim_config.json` (`random` = losowana
+z seeda, `none` = brak, albo id archetypu) lub opcja `--personality`.
 
 Kod wyjścia: 0 = zakończono, 1 = zatrzymano przez odrzuconą paczkę delt,
 2 = błędne opcje lub dane.

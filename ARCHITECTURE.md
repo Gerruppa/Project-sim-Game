@@ -66,6 +66,8 @@ godot/                                          the Godot project (res://)
     climate/       ClimateSystem, ClimateConfig
     atmosphere/    AtmosphereSystem, AtmosphereConfig
     biosphere/     BiosphereSystem, species catalog
+    modifiers/     ModifierRegistry, Modifier, ModifierProvider
+    personality/   PersonalitySystem, archetype catalog
     scheduling/    TickScheduler, TickPipeline, SimulationManager
     tests/         gdUnit4: unit, integration, simulation, architecture
   tools/           console entry points
@@ -95,6 +97,8 @@ logs/simulation_runs/                           run logs (not in git)
 | ClimateSystem | seasons, climate drift, ice-albedo tipping point, water cycle, clouds, rain |
 | AtmosphereSystem | carbon cycle (volcanoes vs weathering), CO2 greenhouse, oxygen sources and sinks |
 | BiosphereSystem | species populations: growth, competition by height, succession, fires; emits species events |
+| ModifierRegistry | coefficient modifiers (add, multiply, clamp) applied before systems compute |
+| PersonalitySystem | planet archetype: permanent modifiers, never deltas |
 
 ---
 
@@ -107,8 +111,9 @@ logs/simulation_runs/                           run logs (not in git)
 | 3. ClimateSystem | done: seasons, ice ages, water cycle, clouds, rain |
 | 4. AtmosphereSystem | done: carbon thermostat, volcanic thaw of ice ages, oxygen sinks |
 | 5. BiosphereSystem | done: succession, oxygenation, forests and fires, anaerobe refuge |
-| 6. PersonalitySystem | next |
-| 7–10. Events, Save, Gameplay, Visualization | planned |
+| 6. PersonalitySystem | done: Harmonious, Chaotic, Guardian via ModifierRegistry |
+| 7. EventSystem | next (includes planet reactions per archetype) |
+| 8–10. Save, Gameplay, Visualization | planned |
 
 ---
 
@@ -119,6 +124,7 @@ export GODOT_BIN=<Godot 4.7.2 console binary>
 ./godot/run_tests.sh                                      # all tests
 ./godot/run_simulation.sh                                 # 3600 ticks (1 h at x1), batch
 ./godot/run_simulation.sh --realtime --speed 10 --seconds 60
+./godot/run_simulation.sh --personality guardian          # harmonious, chaotic, guardian, random, none
 ```
 
 Each run writes `logs/simulation_runs/<run id>.log` (text) and `.jsonl` (JSON Lines).

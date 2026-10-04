@@ -3,6 +3,8 @@
 	"extinction_threshold": 0.01,
 	"established_population": 1.0,
 	"growth_noise": 0.1,
+	"growth_scale": 1.0,
+	"stress_scale": 1.0,
 	"fire_rate": 0.03,
 	"fire_o2_low": 22.0,
 	"fire_o2_high": 40.0,
