@@ -9,6 +9,12 @@ Purpose: stop features that do not serve the simulation before they cost code,
 and give the ones that pass a precise specification. Genesis Error succeeds or
 fails on simulation quality; this gate protects it.
 
+## 0. Is it fun?
+
+Run `genesis-fun-detector` first for any new or large feature. A REMOVE
+verdict stops the gate; POSTPONE records it for its phase; SIMPLIFY means
+the specification below covers only what survives.
+
 ## 1. Build order
 
 `CLAUDE.md` SYSTEM PRIORITY: PlanetState → TickScheduler → Climate →

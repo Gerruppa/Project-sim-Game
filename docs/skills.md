@@ -2,7 +2,7 @@
 
 # Genesis Error AI Skill Framework
 
-Version: 1.1
+Version: 1.2
 
 Purpose:
 
@@ -36,6 +36,7 @@ Rules for every skill:
 
 | Skill | Role | Activates on |
 |---|---|---|
+| `genesis-fun-detector` | Fun Detector (skill 13, highest design priority) | new or expanded systems, species, events, mechanics, roadmaps, feature reviews, before large features |
 | `genesis-architect` | Planet Simulation Architect | new systems, dependencies, module design |
 | `genesis-feature-gate` | Design gate | any new feature, mechanic, species, event, before code |
 | `genesis-new-system` | Procedure | implementing a domain system |
@@ -53,6 +54,7 @@ Rules for every skill:
 
 | Question type | Skill |
 |---|---|
+| Is this fun? Is it worth building at all? | genesis-fun-detector |
 | Should we build this? | genesis-feature-gate |
 | Architecture | genesis-architect |
 | Implement a system | genesis-new-system |
@@ -63,6 +65,10 @@ Rules for every skill:
 | Review | genesis-review |
 | Climate | genesis-climate |
 | Balance | genesis-balance |
+
+Fun Detector may challenge every other skill.
+Its veto covers features, never engineering rules
+(determinism, snapshot + deltas, tests, build order).
 
 When uncertain, use `genesis-review`.
 
@@ -87,6 +93,14 @@ When uncertain, protect the simulation.
 4. New procedural skills: new system, add parameter,
    determinism debugging, feature gate.
 5. Document paths corrected (`docs/architecture.md`).
+
+# CHANGES IN v1.2
+
+1. Skill 13, Fun Detector (`genesis-fun-detector`), added as the highest
+   design priority. Until the gameplay layer exists, its "player" is the
+   observer of the simulation logs. It takes over the "Is the game fun?
+   What should be removed or delayed?" questions of the deferred
+   Steam Demo Evaluator for the current stage.
 
 ---
 

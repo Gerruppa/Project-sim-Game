@@ -72,6 +72,76 @@ Only then can gameplay systems be added.
 
 ---
 
+# FUN DETECTOR
+
+Genesis Error must not become
+an engineering project disguised as a game.
+
+Every feature answers one question:
+
+"Is this actually fun?"
+
+Not "is it realistic?".
+Not "is it technically impressive?".
+
+Fun Detector is the highest design priority.
+It may challenge every other skill and veto any feature.
+Skill: `genesis-fun-detector` (docs/skills.md).
+
+Use it before:
+
+- designing or expanding a system
+- adding simulation depth or complexity
+- new species, events, climate mechanics
+- roadmap decisions
+- any large feature
+
+Every evaluated feature gets scores
+(fun, clarity, story potential, replayability,
+complexity, development and maintenance cost)
+and a verdict:
+
+KEEP / SIMPLIFY / POSTPONE / REMOVE
+
+Scope:
+
+The veto applies to features,
+not to engineering rules.
+
+Determinism, snapshot + deltas, tests and the build order
+are never traded for fun.
+They keep the simulation trustworthy enough to be fun.
+
+Current stage:
+
+There is no player yet.
+The "player" is the observer reading the logs.
+
+A feature is fun now if the logs show
+surprises, stories and causes worth understanding,
+and if it prepares decisions for the gameplay layer.
+
+Most dangerous state:
+
+simulation depth > gameplay depth
+
+Bad: 50 simulated species, 1 meaningful decision.
+
+Good: 5 simulated species, 20 meaningful decisions.
+
+The observer should say:
+
+"I wonder what happens if..."
+
+more often than:
+
+"I found the optimal strategy."
+
+A boring simulation is still boring.
+No amount of technical excellence can save it.
+
+---
+
 # CORE DESIGN PRINCIPLES
 
 ## Principle 1
@@ -581,6 +651,8 @@ logs/
 
 Whenever helping with implementation:
 
+0. For a new or large feature, ask first whether it is fun
+   (genesis-fun-detector). A feature that fails is not built.
 1. Explain architecture first.
 2. Explain tradeoffs.
 3. Explain risks.
