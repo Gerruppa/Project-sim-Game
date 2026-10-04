@@ -7,7 +7,8 @@ extends RefCounted
 ##                  effective coefficients reach systems
 ##   3. Compute     due systems read the snapshot of tick N-1, return deltas
 ##   4. Apply       StateWriter validates, sorts, sums, clamps, commits
-##   5. Detect      event conditions (added with EventSystem)
+##   5. Detect      providers see the new state (EventSystem); the
+##                  modifiers they change take effect next tick
 ##   6. Dispatch    tick event published, EventBus flushed
 ##   7. End         report returned to SimulationManager
 
@@ -72,6 +73,10 @@ func execute(tick: int) -> ApplyReport:
 	# 4. Apply
 	var report := _writer.apply(deltas)
 
+	# 5. Detect: only a tick that happened can trigger events.
+	if report.is_ok():
+		_detect(_state.snapshot(tick), tick)
+
 	# 6. Dispatch: the tick event first, then facts reported by systems
 	# (in registration order). A rejected batch never happened, so its
 	# system events are dropped.
@@ -84,6 +89,12 @@ func execute(tick: int) -> ApplyReport:
 				_bus.publish(event)
 	_bus.flush()
 	return report
+
+
+func _detect(snapshot: PlanetSnapshot, tick: int) -> void:
+	for system in _systems:
+		if system is ModifierProvider:
+			(system as ModifierProvider).detect(snapshot, tick, _registry)
 
 
 ## Providers run first (all of them, in registration order), then modifiers

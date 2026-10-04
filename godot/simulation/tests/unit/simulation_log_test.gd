@@ -110,6 +110,15 @@ func test_other_events_are_logged_generically() -> void:
 	assert_float(record["data"]["humidity"]).is_equal(12.5)
 
 
+func test_events_with_a_summary_print_it_and_keep_full_data_in_json() -> void:
+	_log()
+	_bus.publish(SimEvent.new(&"world_event_started", 8, &"events",
+			{"summary": "Susza started: humidity 12.50 < 20", "id": "drought"}))
+	_bus.flush()
+	assert_str(_text.lines[0]).is_equal("[Tick 8] EVENT world_event_started from events: Susza started: humidity 12.50 < 20")
+	assert_str(_json(_jsonl.lines[0])["data"]["id"]).is_equal("drought")
+
+
 func test_close_closes_every_sink() -> void:
 	_log().close()
 	assert_bool(_text.is_closed()).is_true()

@@ -1,0 +1,49 @@
+{
+	"events_version": 1,
+	"events": [
+		{
+			"id": "drought",
+			"name": "Susza",
+			"trigger": {
+				"condition": {"all": [
+					{"measure": "value", "param": "temperature", "op": ">", "value": 22},
+					{"measure": "anomaly", "param": "humidity", "window": 500, "op": "<", "value": -3.5}
+				]},
+				"for_ticks": 30
+			},
+			"end": {
+				"condition": {"measure": "anomaly", "param": "humidity", "window": 500, "op": ">", "value": -1},
+				"for_ticks": 20
+			},
+			"min_duration": 60,
+			"max_duration": 400,
+			"cooldown": 300,
+			"modifiers": [
+				{"target": "climate.water_availability", "operation": "multiply", "value": 0.85}
+			]
+		},
+		{
+			"id": "guardian_healing",
+			"name": "Planeta leczy się",
+			"personality": ["guardian"],
+			"trigger": {
+				"condition": {"all": [
+					{"measure": "max", "param": "biomass", "window": 500, "op": ">", "value": 5},
+					{"measure": "drop_from_peak", "param": "biomass", "window": 500, "op": ">", "value": 0.3}
+				]},
+				"for_ticks": 5
+			},
+			"end": {
+				"condition": {"measure": "drop_from_peak", "param": "biomass", "window": 500, "op": "<", "value": 0.1},
+				"for_ticks": 10
+			},
+			"min_duration": 50,
+			"max_duration": 300,
+			"cooldown": 200,
+			"modifiers": [
+				{"target": "biosphere.growth_scale", "operation": "multiply", "value": 1.25},
+				{"target": "biosphere.stress_scale", "operation": "multiply", "value": 0.8}
+			]
+		}
+	]
+}

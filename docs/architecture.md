@@ -400,10 +400,14 @@ The single place that defines the order of a tick.
 No other module may define or change this order.
 
 Implemented now (`simulation/scheduling/tick_pipeline.gd`):
-Compute, Apply, Dispatch (publishes `tick_applied` or `batch_rejected`
-with the ApplyReport, then flushes the EventBus). Begin, Modifiers and
-Detect are documented placeholders, filled in with CommandQueue,
-ModifierRegistry and EventSystem.
+Modifiers, Compute, Apply, Detect and Dispatch (publishes `tick_applied`
+or `batch_rejected` with the ApplyReport, then flushes the EventBus).
+Begin is a documented placeholder, filled in with CommandQueue.
+
+Modifier providers (`ModifierProvider`) take part in two phases:
+`provide_modifiers(snapshot N-1)` in phase 2 and `detect(snapshot N)` in
+phase 5. Detect runs every tick, only if the batch was applied; modifiers
+it changes take effect from phase 2 of the next tick.
 
 Every system extends `SimulationSystem` (`simulation/core/simulation_system.gd`):
 `system_id()` and `compute(snapshot) -> Array[Delta]`. Systems with a
@@ -799,6 +803,22 @@ Events have no private write path to PlanetState.
 
 An active event only changes modifiers.
 The state changes through the normal systems.
+
+Status: implemented (`simulation/events/`, data in
+`resources/events/events.json`).
+
+- runs in phase 5 (Detect) on the new state; its modifiers act from the
+  next tick, under source `event:<id>`
+- conditions are data trees with trend measures over a parameter history
+  (ParamHistory, ring buffers sized by the longest window)
+- lifecycle Inactive → Pending → Active → Cooldown → Inactive
+  (EventLifecycle); `max_duration` is mandatory
+- planet reactions are definitions limited to archetypes; the archetype
+  id is passed in by the runner, no dependency on PersonalitySystem
+- events `world_event_started` / `world_event_ended` with measured causes
+  and a readable `summary`
+- `save_state()` / `load_state()` (history + lifecycles; active modifiers
+  are rebuilt from phases); wired into saves by SaveSystem (step 8)
 
 Example:
 

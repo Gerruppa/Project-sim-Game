@@ -19,6 +19,7 @@ const USAGE := """Usage: run_simulation.sh [options]
   --atmosphere PATH  atmosphere coefficients file (default res://resources/atmosphere/atmosphere.json)
   --species PATH     species catalog (default res://resources/biosphere/species.json)
   --biosphere PATH   biosphere coefficients (default res://resources/biosphere/biosphere.json)
+  --events PATH      world event definitions (default res://resources/events/events.json)
   --personality NAME harmonious, chaotic, guardian, random or none (default from sim_config.json)
                      other files describe planets of a different character"""
 
@@ -27,7 +28,8 @@ static func parse_args(args: PackedStringArray) -> SimResult:
 	var result := SimResult.new()
 	var options := {"realtime": false, "ticks": DEFAULT_TICKS, "speed": 1, "seconds": DEFAULT_SECONDS,
 			"quiet": false, "climate": ClimateConfig.DEFAULT_PATH, "atmosphere": AtmosphereConfig.DEFAULT_PATH,
-			"species": SpeciesCatalog.DEFAULT_PATH, "biosphere": BiosphereConfig.DEFAULT_PATH}
+			"species": SpeciesCatalog.DEFAULT_PATH, "biosphere": BiosphereConfig.DEFAULT_PATH,
+			"events": EventCatalog.DEFAULT_PATH}
 	var i := 0
 	while i < args.size():
 		var arg := args[i]
@@ -36,7 +38,7 @@ static func parse_args(args: PackedStringArray) -> SimResult:
 				options["realtime"] = true
 			"--quiet":
 				options["quiet"] = true
-			"--climate", "--atmosphere", "--species", "--biosphere", "--personality":
+			"--climate", "--atmosphere", "--species", "--biosphere", "--events", "--personality":
 				if i + 1 >= args.size() or args[i + 1].begins_with("--"):
 					result.add_error("%s needs a value" % arg)
 					break

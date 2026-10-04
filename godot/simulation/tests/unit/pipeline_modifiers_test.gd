@@ -53,3 +53,22 @@ func test_base_coefficients_are_never_changed() -> void:
 func test_registry_knows_registered_coefficients() -> void:
 	assert_bool(_pipeline.modifier_registry().add(Modifier.new(&"scaled.amount", Modifier.ADD, 1.0, &"x")).is_ok()).is_true()
 	assert_bool(_pipeline.modifier_registry().add(Modifier.new(&"scaled.speed", Modifier.ADD, 1.0, &"x")).is_ok()).is_false()
+
+
+func test_detect_sees_the_state_the_tick_produced() -> void:
+	_pipeline.execute(1)
+	_pipeline.execute(2)
+	assert_array(_provider.detected).is_equal([[1, 1, 11.0], [2, 2, 12.0]])
+
+
+func test_modifier_added_in_detect_applies_from_the_next_tick() -> void:
+	_provider.detect_schedule[1] = [Modifier.new(&"scaled.amount", Modifier.MULTIPLY, 3.0, &"test")]
+	_pipeline.execute(1)
+	_pipeline.execute(2)
+	assert_float(_temperature()).is_equal(10.0 + 1.0 + 3.0)
+
+
+func test_detect_is_skipped_when_the_batch_is_rejected() -> void:
+	_pipeline.register(TestStubSystem.new(&"broken", Param.TEMPERATURE, NAN), 1)
+	_pipeline.execute(1)
+	assert_array(_provider.detected).is_empty()

@@ -118,8 +118,13 @@ func _log_rejected(tick: int, report: ApplyReport) -> void:
 	_json({"record": "rejected", "tick": tick, "errors": Array(report.errors)})
 
 
+## Events that carry a readable "summary" print it instead of raw data;
+## JSON Lines always keep the full data.
 func _log_generic(event: SimEvent) -> void:
-	_text("[Tick %d] EVENT %s from %s %s" % [event.tick, event.type, event.source, _stringify(event.data)])
+	if typeof(event.data.get("summary")) == TYPE_STRING:
+		_text("[Tick %d] EVENT %s from %s: %s" % [event.tick, event.type, event.source, event.data["summary"]])
+	else:
+		_text("[Tick %d] EVENT %s from %s %s" % [event.tick, event.type, event.source, _stringify(event.data)])
 	_json({"record": "event", "tick": event.tick, "type": String(event.type),
 			"source": String(event.source), "data": event.data})
 

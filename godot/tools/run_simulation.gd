@@ -65,6 +65,15 @@ func _init() -> void:
 		return
 	_manager.register_system(personality.value)
 
+	# Events after every system whose coefficients they modify; the archetype
+	# selects the planet's reactions.
+	var event_catalog := EventCatalog.load_json(_options["events"], schema_result.value, specs,
+			personality_catalog.value.ids())
+	if not event_catalog.is_ok():
+		_fail(event_catalog.errors, false)
+		return
+	_manager.register_system(EventSystem.new(event_catalog.value, personality.value.archetype_id()))
+
 	_log_id = SimulationRunner.run_id(config.seed())
 	var log_result := SimulationRunner.create_log(config, _log_id, not _options["quiet"])
 	if not log_result.is_ok():
