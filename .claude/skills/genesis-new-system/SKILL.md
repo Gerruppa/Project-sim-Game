@@ -44,10 +44,12 @@ godot/simulation/tests/integration/<area>_*_test.gd
 
 ## 3. Shape of the system
 
-- `extends RefCounted`, constructed with its config and its own
+- `extends SimulationSystem` (`simulation/core/simulation_system.gd`),
+  constructed with its config and its own
   `SeededRng.new(global_seed, "<area>")` (stream id = system id).
-- One public compute method: takes `PlanetSnapshot` (and resolved coefficients
-  once ModifierRegistry exists), returns `Array[Delta]`.
+- Override `system_id()` (stable, unique) and `compute(snapshot)`: takes
+  `PlanetSnapshot` (and resolved coefficients once ModifierRegistry exists),
+  returns `Array[Delta]`.
 - Every delta: `Delta.new(Param.X, amount, &"<area>", &"<cause>")`.
 - No reference to `PlanetState`, other systems, EventBus internals or Nodes.
 - Math only through `SimMath`; randomness only through its `SeededRng`.
@@ -57,10 +59,13 @@ godot/simulation/tests/integration/<area>_*_test.gd
 
 ## 4. Registration
 
-If `godot/simulation/scheduling/` exists, register the system in the pipeline's
-Compute phase and add its interval (ticks) to SimConfig. If the pipeline does
-not exist yet, do not invent a partial one inside the system; drive it in tests
-the way `tests/support/fixture_scenario.gd` does and note the missing step.
+- In tests: `SimulationManager.create(config, schema)` then
+  `manager.register_system(system, interval)` (interval in ticks; 1 = every
+  tick). See `tests/simulation/scheduler_determinism_test.gd` for the pattern.
+- In the console run: register it in `godot/tools/run_simulation.gd`
+  where the comment marks domain system registration.
+- The pipeline calls `compute` in the Compute phase with the snapshot of the
+  previous tick; never call other systems or the pipeline from a system.
 
 ## 5. Tests (write first)
 

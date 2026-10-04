@@ -1,4 +1,4 @@
-# Golden trace of TestFixtureScenario.
+# Golden trace of TestFixtureSystem through SimulationManager.
 # engine: 4.7.2-stable (official)
 # seed: 42, ticks: 10000, checkpoint every: 100
 # format: <tick> <sha256 of exact planet state>

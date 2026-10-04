@@ -73,6 +73,14 @@ func test_only_state_writer_commits_state() -> void:
 	assert_array(Array(found)).override_failure_message("\n".join(found)).is_empty()
 
 
+func test_simulation_never_uses_godot_signals() -> void:
+	# Signals call listeners immediately; the simulation uses the queued EventBus.
+	var pattern := "(^|\\n)\\s*signal\\s+\\w+|\\.connect\\s*\\(|\\bemit_signal\\s*\\(|\\.emit\\s*\\("
+	var found := _violations(pattern, func(_path: String) -> bool: return false)
+	assert_array(Array(found)).override_failure_message(
+			"Use EventBus instead of signals:\n" + "\n".join(found)).is_empty()
+
+
 func test_domain_code_never_references_planet_state() -> void:
 	var allowed := func(path: String) -> bool:
 		for directory: String in STATE_ACCESS_DIRS:

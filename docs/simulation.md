@@ -42,16 +42,24 @@ Wyjście:
 | Prędkość | Znaczenie |
 |---|---|
 | pauza | 0 ticków na sekundę |
-| x1 | bazowa liczba ticków na sekundę (SimConfig) |
-| x10 | 10 × bazowa |
-| x100 | 100 × bazowa |
+| x1 | 1 tick na sekundę (`base_ticks_per_second` w SimConfig) |
+| x10 | 10 ticków na sekundę |
+| x100 | 100 ticków na sekundę |
 
 Prędkość zmienia liczbę ticków na sekundę. Nigdy nie zmienia rozmiaru ticka.
 Dzięki temu wynik po N tickach jest identyczny przy każdej prędkości.
+Potwierdza to test `scheduler_determinism_test.gd`
+(x1, x10, x100, pauzy i nierówne klatki dają ten sam hash).
+
+Jedno wywołanie `advance()` zwraca najwyżej `max_catch_up_ticks` ticków.
+Nadmiar jest odrzucany i liczony: po długim zawieszeniu symulacja
+zwalnia zamiast się zamrozić.
 
 ## Interwały systemów
 
-Wolne systemy mogą działać co N ticków (parametr w SimConfig).
+Wolne systemy mogą działać co N ticków. Interwał podaje się przy
+rejestracji systemu (`register_system(system, interval)`):
+system z interwałem K działa w tickach K, 2K, 3K...
 Interwał dotyczy liczby ticków, nie sekund.
 
 Poprzednie wartości 1 s, 10 s, 30 s i 60 s
@@ -182,9 +190,52 @@ Zasady:
 
 - log ma strukturę (tick, źródło, przyczyna, wartość)
 - każda delta niesie przyczynę, więc można odtworzyć łańcuch przyczyn
-- poziomy logowania i agregacja przy dużych prędkościach
+- poziomy logowania i agregacja przy dużych prędkościach (przyszłość;
+  na razie `log.deltas` włącza lub wyłącza szczegóły delt)
 - logi nie są tymczasowe
-- logi zapisywane są w `logs/simulation_runs/`
+- logi zapisywane są w `logs/simulation_runs/` (poza gitem)
+
+## Formaty
+
+Każdy przebieg tworzy dwa pliki z tych samych zdarzeń:
+`<run id>.log` (tekst dla ludzi) i `<run id>.jsonl`
+(JSON Lines: jeden obiekt JSON w linii, dla narzędzi i analizy balansu).
+Identyfikator przebiegu to `seed<N>_<data>_<godzina>`. Data trafia tylko
+do nazwy pliku, nigdy do treści, więc ten sam seed daje identyczne bajty.
+
+Tekst:
+
+```text
+# Genesis Error simulation log
+# seed: 42 | engine: 4.7.2-stable (official) | schema: v1
+[Tick 0] initial temperature=30.000 humidity=15.000 oxygen=2.000 biomass=0.000
+[Tick 1] temperature 30.000 -> 30.120 (+0.120) [biosphere:shading -0.010, climate:greenhouse +0.130]
+[Tick 2] no changes
+[Tick 3] biomass 0.010 -> 0.000 (-0.010) [biosphere:dieback -0.020] SATURATED (requested -0.010)
+[Tick 4] REJECTED temperature: amount is not finite (...)
+[Tick 5] EVENT drought_started from events {"humidity":12.5}
+```
+
+JSON Lines (rekordy `run_start`, `tick`, `rejected`, `event`):
+
+```json
+{"engine":"4.7.2-stable (official)","initial":{"biomass":0.0,...},"parameters":[...],"record":"run_start","schema_version":1,"seed":42}
+{"changes":[{"deltas":[{"amount":0.13,"cause":"greenhouse","source":"climate"}],"new":30.12,"old":30.0,"parameter":"temperature","requested":30.12,"saturated":false}],"record":"tick","tick":1}
+```
+
+Klucze są sortowane, a liczby zapisywane z pełną precyzją.
+Każdy tick ma dokładnie jeden rekord `tick`, także gdy nic się nie zmieniło.
+
+## Uruchamianie symulacji
+
+```bash
+GODOT_BIN=<Godot 4.7.2 console> ./godot/run_simulation.sh                     # 3600 ticków (1 h przy x1), tryb wsadowy
+GODOT_BIN=... ./godot/run_simulation.sh --seed 7 --ticks 10000 --quiet
+GODOT_BIN=... ./godot/run_simulation.sh --realtime --speed 10 --seconds 60     # czas rzeczywisty
+```
+
+Kod wyjścia: 0 = zakończono, 1 = zatrzymano przez odrzuconą paczkę delt,
+2 = błędne opcje lub dane.
 
 ## Metryki obserwowalności
 
@@ -240,6 +291,7 @@ GODOT_BIN=/path/to/Godot_v4.7.2-stable_console ./godot/run_tests.sh
 - CI: `.github/workflows/simulation-tests.yml` (Linux, Windows, macOS ARM)
 
 Do czasu powstania domenowych systemów testy symulacyjne napędza
-`TestFixtureDynamics` (tylko w `tests/support`). To nie jest model
+`TestFixtureDynamics` (tylko w `tests/support`), zarejestrowana w prawdziwym
+`SimulationManager` jako `TestFixtureSystem`. To nie jest model
 planety, tylko generator sprzężonych delt podlegający tej samej
-polityce matematyki.
+polityce matematyki. Złoty ślad przechodzi przez pełny `TickPipeline`.

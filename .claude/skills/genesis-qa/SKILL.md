@@ -44,7 +44,12 @@ GODOT_BIN=... ./godot/run_tests.sh -a res://simulation/tests/unit/x_test.gd   # 
   Base64 of bytes; approximate checks with `is_equal_approx`.
 - `override_failure_message(...)` goes before the final assertion call.
 - Shared helpers: `tests/support/schema_fixtures.gd` (preload as `P`),
-  `TestFixtureScenario`, `TestFixtureDynamics`, `golden_trace.gd`.
+  `TestStubSystem` (fixed deltas, records what it saw), `TestFixtureSystem`
+  (fixture dynamics as a registered system), `TestFixtureScenario`
+  (reference loop), `golden_trace.gd`.
+- Logs in tests: `MemoryLogSink`; keep a reference to any object subscribed
+  to `EventBus` (subscriptions do not keep it alive).
+- Manual console check: `./godot/run_simulation.sh --ticks N` (exit 0/1/2).
 - Files written by tests go to `user://`, never into `res://`.
 - Keep simulation tests fast (whole suite runs in seconds); prefer more seeds
   over longer single runs.

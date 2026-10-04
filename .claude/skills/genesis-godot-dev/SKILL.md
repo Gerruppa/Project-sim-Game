@@ -51,6 +51,9 @@ every user. That is one reason simulation data is JSON loaded into immutable obj
 - **`StringName < StringName` is not guaranteed to compare text.** Convert with
   `String(name)` before sorting or ordering.
 - **`Array.sort_custom` is not stable.** Give comparators a total order.
+- **A `Callable` does not keep its `RefCounted` object alive.** Whoever
+  subscribes an object to `EventBus` must hold a reference to it (the
+  SimulationManager does); the bus drops subscribers whose object was freed.
 - **JSON numbers are doubles.** Integers above 2^53 (RNG state, large ids) must
   be saved as strings. All JSON numbers come back as `float`.
 - **`hash()` stability across engine versions is not documented.** Use

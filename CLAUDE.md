@@ -459,6 +459,9 @@ Logs are part of gameplay design.
 
 Logs are not temporary.
 
+Every run writes text and JSON Lines to logs/simulation_runs/.
+Run: GODOT_BIN=<godot console binary> ./godot/run_simulation.sh (formats in docs/simulation.md)
+
 ---
 
 # TESTING PHILOSOPHY

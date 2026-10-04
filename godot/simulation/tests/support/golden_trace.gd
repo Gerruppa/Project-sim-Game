@@ -10,8 +10,17 @@ const TICKS := 10000
 const EVERY := 100
 
 
+## Runs through the real SimulationManager and TickPipeline.
 static func generate() -> PackedStringArray:
-	return TestFixtureScenario.start(P.project_schema(), SEED).run_with_checkpoints(TICKS, EVERY)
+	var config: SimConfig = SimConfig.load_json(SimConfig.DEFAULT_PATH).value.with_seed(SEED)
+	var manager: SimulationManager = SimulationManager.create(config, P.project_schema()).value
+	manager.register_system(TestFixtureSystem.new(SEED))
+	var lines := PackedStringArray()
+	for i in TICKS / EVERY:
+		if manager.run_ticks(EVERY) != EVERY:
+			break
+		lines.append("%d %s" % [manager.tick(), manager.state_hash()])
+	return lines
 
 
 ## Checkpoint lines without comments; empty if the file is missing.
@@ -29,7 +38,7 @@ static func write_file(lines: PackedStringArray) -> Error:
 	var file := FileAccess.open(PATH, FileAccess.WRITE)
 	if file == null:
 		return FileAccess.get_open_error()
-	file.store_line("# Golden trace of TestFixtureScenario.")
+	file.store_line("# Golden trace of TestFixtureSystem through SimulationManager.")
 	file.store_line("# engine: %s" % Engine.get_version_info()["string"])
 	file.store_line("# seed: %d, ticks: %d, checkpoint every: %d" % [SEED, TICKS, EVERY])
 	file.store_line("# format: <tick> <sha256 of exact planet state>")

@@ -323,6 +323,22 @@ Must not contain business logic.
 
 Responsibilities stop at orchestration.
 
+Implementation (`simulation/scheduling/simulation_manager.gd`):
+
+- `create(config, schema, overrides)` → SimResult; owns PlanetState,
+  TickScheduler, TickPipeline, EventBus
+- `register_system(system, interval)`, `attach_log(log)`
+- `step()`, `run_ticks(n)` (batch), `advance(real_seconds)` (real time)
+- tick 0 is the initial state; tick N reads the snapshot of tick N-1
+- a rejected batch halts the simulation: state unchanged, tick not advanced,
+  errors kept, further steps refused
+- keeps references to attached logs, because EventBus subscriptions
+  do not keep objects alive
+
+Settings come from `godot/resources/simulation/sim_config.json`
+(SimConfig): seed, `base_ticks_per_second` = 1, speeds [1, 10, 100],
+`max_catch_up_ticks`, log flags and directory.
+
 ---
 
 ## TickScheduler
@@ -345,6 +361,17 @@ Must not depend on FPS.
 
 Must be deterministic.
 
+Implementation (`simulation/scheduling/tick_scheduler.gd`):
+
+- x1 = 1 tick per real second
+- `advance(real_seconds)` returns the number of ticks due; fractions
+  accumulate (a small epsilon absorbs float error such as 10 × 0.1 s)
+- one advance never returns more than `max_catch_up_ticks`;
+  the excess is dropped and counted, so a long stall slows the
+  simulation instead of freezing it
+- pause keeps partial progress; resume keeps the selected speed
+- `is_due(tick, interval)`: a system with interval K runs on ticks K, 2K, ...
+
 See `docs/simulation.md`.
 
 ---
@@ -364,6 +391,16 @@ The single place that defines the order of a tick.
 ```
 
 No other module may define or change this order.
+
+Implemented now (`simulation/scheduling/tick_pipeline.gd`):
+Compute, Apply, Dispatch (publishes `tick_applied` or `batch_rejected`
+with the ApplyReport, then flushes the EventBus). Begin, Modifiers and
+Detect are documented placeholders, filled in with CommandQueue,
+ModifierRegistry and EventSystem.
+
+Every system extends `SimulationSystem` (`simulation/core/simulation_system.gd`):
+`system_id()` and `compute(snapshot) -> Array[Delta]`. Duplicate ids and
+intervals below 1 are rejected at registration.
 
 ---
 
@@ -386,6 +423,17 @@ Delivery is FIFO and happens in the Dispatch phase.
 
 Handlers must not publish events that change simulation state.
 State changes go through deltas or commands.
+
+Implementation (`simulation/core/event_bus.gd`, `sim_event.gd`):
+
+- `publish()` only queues; `flush()` delivers in publish order to
+  subscribers in subscription order
+- events published during a flush wait for the next flush
+  (no re-entrant delivery, no infinite loops)
+- a Callable does not keep its object alive; subscribers whose object
+  was freed are dropped
+- SimEvent: `type`, `tick`, `source`, `data` (plain values)
+- Godot signals are forbidden in `simulation/` (architecture test)
 
 ---
 
@@ -432,6 +480,30 @@ Does not affect the simulation.
 
 Logs are part of gameplay design.
 They are not temporary.
+
+Implementation (`simulation/core/simulation_log.gd`):
+
+- writes to LogSinks: FileLogSink, PrintLogSink (console), MemoryLogSink (tests)
+- two formats from the same events: text and JSON Lines
+  (formats in `docs/simulation.md`)
+- same seed → byte-identical logs (sorted keys, full float precision,
+  no timestamps inside the logs)
+- `log.deltas` in SimConfig switches per-delta causes on or off
+
+---
+
+## Console runner
+
+`godot/tools/run_simulation.gd` (SceneTree entry) and
+`godot/tools/simulation_runner.gd` (options, log files; testable).
+Kept outside `simulation/` because it does file and process work.
+
+```bash
+GODOT_BIN=... ./godot/run_simulation.sh                  # batch, 3600 ticks
+GODOT_BIN=... ./godot/run_simulation.sh --realtime --speed 10 --seconds 60
+```
+
+Domain systems are registered in `run_simulation.gd` as they are built.
 
 ---
 
@@ -703,9 +775,10 @@ Documentation stays in the repository root (`docs/`).
 res://  (godot/)
   addons/gdUnit4/   test framework
   simulation/
-    core/           PlanetState, StateWriter, EventBus, SeededRng,
-                    CommandQueue, SimulationLog, SaveSystem
-    scheduling/     SimulationManager, TickScheduler, TickPipeline
+    core/           PlanetState, StateWriter, Delta, SimulationSystem,
+                    EventBus, SimEvent, SimulationLog, log sinks,
+                    SeededRng, SimMath, CommandQueue, SaveSystem
+    scheduling/     SimulationManager, TickScheduler, TickPipeline, SimConfig
     planet/         ParameterDefs, snapshot
     climate/        ClimateSystem
     atmosphere/     AtmosphereSystem
@@ -715,7 +788,8 @@ res://  (godot/)
     personality/    PersonalitySystem, archetypes
     tests/          unit, integration, simulation, architecture,
                     support (test-only helpers), golden, tools
-  resources/        data assets
+  resources/        data assets (planet/, simulation/)
+  tools/            console runner (outside simulation/: file and process work)
 ```
 
 ---
