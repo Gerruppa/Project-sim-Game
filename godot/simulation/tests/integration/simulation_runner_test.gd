@@ -42,6 +42,19 @@ func test_parses_realtime_options() -> void:
 	assert_float(options["seconds"]).is_equal(30.0)
 
 
+func test_default_climate_is_project_file() -> void:
+	assert_str(_options([])["climate"]).is_equal(ClimateConfig.DEFAULT_PATH)
+
+
+func test_parses_climate_file_for_other_planet_characters() -> void:
+	assert_str(_options(["--climate", "res://resources/climate/cold_world.json"])["climate"]) \
+			.is_equal("res://resources/climate/cold_world.json")
+
+
+func test_rejects_climate_option_without_path() -> void:
+	assert_bool(SimulationRunner.parse_args(PackedStringArray(["--climate"])).is_ok()).is_false()
+
+
 func test_rejects_unknown_option() -> void:
 	assert_str("\n".join(SimulationRunner.parse_args(PackedStringArray(["--fast"])).errors)).contains("--fast")
 

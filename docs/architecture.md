@@ -184,12 +184,14 @@ Single source of truth.
 
 Stores complete planetary state.
 
-Owns:
+Owns (schema v2):
 
 - temperature
 - humidity
 - oxygen
 - biomass
+- cloud_cover
+- precipitation
 
 Future:
 
@@ -256,6 +258,8 @@ Each parameter defines anchors (meaning of 0, 50 and 100) in data:
 | humidity | absolute desert | temperate climate | saturation, constant rain |
 | oxygen | no oxygen | Earth level | toxic, extreme fire risk |
 | biomass | dead planet | forests and shrubs | dense biosphere |
+| cloud_cover | clear sky | moderate cloud cover | full cloud cover |
+| precipitation | no precipitation | regular rain, temperate climate | downpours, constant monsoon |
 
 Thresholds (extinction, events) are defined in data,
 never as comparisons with exact zero.
@@ -549,6 +553,8 @@ Other systems may contribute flows to it as deltas.
 | humidity | ClimateSystem | BiosphereSystem |
 | oxygen | AtmosphereSystem | BiosphereSystem |
 | biomass | BiosphereSystem | none |
+| cloud_cover | ClimateSystem | none |
+| precipitation | ClimateSystem | none |
 
 Example:
 
@@ -565,24 +571,33 @@ Responsibilities:
 
 - temperature
 - humidity
+- cloud cover
 - precipitation
-- weather trends
+- seasons and slow climate drift
+
+Status: implemented (`simulation/climate/`, data in `resources/climate/climate.json`).
 
 Inputs:
 
-Snapshot, effective coefficients
+Snapshot (temperature, humidity, cloud_cover, precipitation, biomass),
+tick (season), own SeededRng stream; effective coefficients once
+ModifierRegistry exists
 
 Outputs:
 
-Deltas for temperature and humidity
+Deltas for temperature, humidity, cloud_cover and precipitation,
+one per named cause (radiative_balance, season, ice_albedo, greenhouse,
+evaporation, rainfall, ...)
 
-Events (emitted through the event queue):
+Internal state: climate drift (to be saved by SaveSystem)
+
+Events (planned, emitted through the event queue once EventSystem exists):
 
 TemperatureChanged
 
 HumidityChanged
 
-ClimateShift
+ClimateShift (e.g. entering or leaving an ice age)
 
 See `docs/climate.md`.
 

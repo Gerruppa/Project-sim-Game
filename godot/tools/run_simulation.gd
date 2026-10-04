@@ -32,7 +32,13 @@ func _init() -> void:
 		_fail(manager_result.errors, false)
 		return
 	_manager = manager_result.value
-	# Domain systems are registered here as they are built (ClimateSystem next).
+
+	# Domain systems, registered as they are built (CLAUDE.md SYSTEM PRIORITY).
+	var climate_result := ClimateConfig.load_json(_options["climate"])
+	if not climate_result.is_ok():
+		_fail(climate_result.errors, false)
+		return
+	_manager.register_system(ClimateSystem.new(climate_result.value, config.seed()))
 
 	_log_id = SimulationRunner.run_id(config.seed())
 	var log_result := SimulationRunner.create_log(config, _log_id, not _options["quiet"])

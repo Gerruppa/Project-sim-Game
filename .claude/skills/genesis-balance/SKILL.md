@@ -15,10 +15,13 @@ Never tune from a single run. Use many seeds:
 
 - Simulation tests already run 20 seeds × 2000 ticks for validity
   (`tests/simulation/stability_test.gd`).
-- For balance, write a batch tool in `godot/simulation/tests/tools/`
-  (pattern: `write_golden_trace.gd`, `extends SceneTree`, run with
-  `--headless -s`) that runs seeds × presets and writes CSV to
-  `logs/simulation_runs/` (ignored by git).
+- Climate already has a report tool:
+  `godot/simulation/tests/tools/climate_report.gd` (seeds × ticks, per-seed
+  min/max/avg, time in ice, ticks at 0, regime switches). Use it as the
+  pattern for other systems (`extends SceneTree`, run with `--headless -s`);
+  bigger batches can write CSV to `logs/simulation_runs/` (ignored by git).
+- Every run also writes `logs/simulation_runs/*.jsonl`, one record per tick
+  with all changes and causes, ready for offline analysis.
 
 Metrics per run, per 1000 ticks (from `docs/simulation.md`):
 - min, max, mean, variance per parameter

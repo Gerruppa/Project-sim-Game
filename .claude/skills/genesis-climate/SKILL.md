@@ -8,9 +8,23 @@ description: Climate and atmosphere design for Genesis Error — temperature, hu
 Success metric: climate generates interesting planetary states (regimes,
 shifts, crises), not a flat equilibrium and not noise.
 
-Read `docs/climate.md` (responsibilities, dependencies) and the dynamics
-ownership table in `docs/architecture.md`. Implementation procedure:
-`genesis-new-system`.
+Read `docs/climate.md` (formulas, coefficients, balance results, tuning
+history) and the dynamics ownership table in `docs/architecture.md`.
+Implementation procedure: `genesis-new-system`.
+
+ClimateSystem exists (`godot/simulation/climate/`, data in
+`godot/resources/climate/climate.json`). Before changing a coefficient, run
+the balance report and compare before/after:
+
+```bash
+"$GODOT_BIN" --headless --path godot -s res://simulation/tests/tools/climate_report.gd -- --seeds 8 --ticks 20000
+```
+
+Design properties to preserve (tests guard them): two stable climates
+(`ice_strength` ≥ 22 with the current base), a soft floor so temperature never
+sits at 0 (`cold_floor`), responses ≤ 1 so relaxation never overshoots.
+Planets of a different character are separate JSON files
+(`run_simulation.sh --climate <file>`), not code changes.
 
 ## Ground rules
 

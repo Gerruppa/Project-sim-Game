@@ -63,6 +63,7 @@ godot/                                          the Godot project (res://)
   simulation/
     core/          PlanetState, StateWriter, Delta, EventBus, log, RNG, math
     planet/        parameter schema, snapshot
+    climate/       ClimateSystem, ClimateConfig
     scheduling/    TickScheduler, TickPipeline, SimulationManager
     tests/         gdUnit4: unit, integration, simulation, architecture
   tools/           console entry points
@@ -78,7 +79,7 @@ logs/simulation_runs/                           run logs (not in git)
 
 | Block | Responsibility |
 |---|---|
-| PlanetState | the only source of truth: temperature, humidity, oxygen, biomass (0..100) |
+| PlanetState | the only source of truth: temperature, humidity, oxygen, biomass, cloud cover, precipitation (0..100) |
 | ParameterSchema | which parameters exist, their limits and meaning, loaded from JSON |
 | PlanetSnapshot | read-only copy given to systems |
 | Delta | one proposed change with source and cause |
@@ -89,6 +90,7 @@ logs/simulation_runs/                           run logs (not in git)
 | EventBus | queued notifications about facts that already happened |
 | SimulationLog | every tick written as text and JSON Lines |
 | SimMath, SeededRng | math and randomness that give the same bits on every platform |
+| ClimateSystem | seasons, climate drift, ice-albedo tipping point, water cycle, clouds, rain |
 
 ---
 
@@ -97,9 +99,10 @@ logs/simulation_runs/                           run logs (not in git)
 | Step (CLAUDE.md order) | State |
 |---|---|
 | 1. PlanetState | done |
-| 2. TickScheduler and simulation skeleton | done (no domain systems yet, so a run logs "no changes") |
-| 3. ClimateSystem | next |
-| 4–10. Atmosphere, Biosphere, Personality, Events, Save, Gameplay, Visualization | planned |
+| 2. TickScheduler and simulation skeleton | done |
+| 3. ClimateSystem | done: seasons, ice ages, water cycle, clouds, rain |
+| 4. AtmosphereSystem | next |
+| 5–10. Biosphere, Personality, Events, Save, Gameplay, Visualization | planned |
 
 ---
 
