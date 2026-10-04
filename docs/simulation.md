@@ -80,13 +80,89 @@ Każda reakcja ma więc naturalne opóźnienie jednego ticka.
 
 Ten sam seed i te same komendy muszą dawać identyczny log.
 
+## Wersja silnika
+
+Silnik jest przypięty: **Godot 4.7.2 stable**.
+Determinizm dotyczy konkretnego buildu silnika.
+Aktualizacja silnika oznacza świadome przegenerowanie złotego śladu
+w osobnym commicie.
+
+## Poziomy determinizmu
+
+| Poziom | Zakres | Status |
+|---|---|---|
+| L1 | ten sam build, ta sama maszyna | wymagany, testowany przy każdej zmianie |
+| L2 | ten sam build, Windows i Linux na x86-64 | cel, wymagany w CI |
+| L3 | inne architektury (macOS ARM) | mierzony w CI, bez gwarancji |
+
+Godot nie gwarantuje identycznych wyników obliczeń zmiennoprzecinkowych
+między procesorami i systemami. Dlatego L2 i L3 są mierzone, nie zakładane.
+
+## Polityka deterministycznej matematyki
+
+IEEE 754 wymaga poprawnego zaokrąglania dla `+ - * /` i pierwiastka,
+więc te operacje dają identyczne bity na każdej zgodnej platformie.
+Funkcje przestępne (`sin`, `exp`, `log`, `pow`) zależą od biblioteki
+matematycznej platformy.
+
 Reguły:
 
-- brak globalnego `randf()`, tylko strumienie SeededRng
-- jeden niezależny strumień na system
+- kod w `simulation/` używa tylko `+ - * /`, porównań, `abs`, `min`,
+  `max`, `clamp`, `floor`, `sqrt`
+- potrzebne funkcje (`lerp`, `smoothstep`, potęga całkowita)
+  są w `SimMath`, napisane wyłącznie z tych operacji
+- zakazane: `sin`, `cos`, `tan`, `exp`, `log`, `pow`, wbudowane `lerp`
+  i `smoothstep`, `ease`, `hash`, globalne `randf()`, `randi()`, `seed()`,
+  `randomize()`, `randfn()`, `randf_range()`
+- regułę egzekwuje test `tests/architecture/architecture_rules_test.gd`
+
+Do zmierzenia (L3): każda operacja GDScript jest osobną instrukcją
+maszyny wirtualnej, więc nie powinna zostać połączona w FMA.
+To hipoteza, którą weryfikuje złoty ślad na macOS ARM.
+
+## Losowość
+
+- tylko `SeededRng`: jeden niezależny strumień na system
+- seed strumienia: pierwsze 15 znaków hex z SHA-256 tekstu
+  `"{seed_globalny}:{id_strumienia}"` (nie `hash()`, którego stabilność
+  między wersjami nie jest udokumentowana)
+- używany jest tylko całkowity rdzeń PCG32 (`randi()`),
+  zamiana na float w `SimMath.u32_to_unit_float` (dzielenie przez 2^32)
 - stan strumieni jest częścią zapisu gry
+
+## Kolejność
+
 - wynik nie zależy od kolejności rejestracji systemów
+- delty są sumowane w kolejności kanonicznej
+  (parametr, źródło, przyczyna, wartość), bo dodawanie
+  zmiennoprzecinkowe nie jest łączne
+- `StringName` porównujemy jako `String`
 - brak zależności od FPS i czasu systemowego
+
+## Zapis
+
+- wartości zapisywane są dwukrotnie: dziesiętnie (`values`, dla ludzi)
+  i dokładnie (`values_exact`, Base64 bajtów IEEE 754, źródło prawdy)
+- liczby całkowite powyżej 2^53 (np. stan RNG) zapisujemy jako tekst,
+  bo JSON zamienia liczby na double
+- hash stanu: SHA-256 z bajtów, nie z tekstu dziesiętnego
+- przy starcie sprawdzana jest kolejność bajtów (little-endian)
+
+Pomiar w Godot 4.7.2: `JSON.stringify(full_precision = true)` odtwarza
+wartości dziesiętne bit w bit (także 5e-324). `values_exact` zostaje
+jako zabezpieczenie, bo dokumentacja tego nie gwarantuje.
+
+## Złoty ślad
+
+- scenariusz: seed 42, 10 000 ticków, hash stanu co 100 ticków
+- plik: `godot/simulation/tests/golden/fixture_trace.txt`
+- test porównuje bieżący przebieg z plikiem i podaje pierwszy
+  rozbieżny punkt kontrolny
+- regeneracja (tylko po świadomej zmianie):
+  `godot --headless --path godot -s res://simulation/tests/tools/write_golden_trace.gd`
+- plan B, jeśli L2 zawiedzie: wewnętrzna reprezentacja
+  w liczbach stałoprzecinkowych; API `PlanetState` po identyfikatorach
+  pozwala na to bez zmian w systemach
 
 ---
 
@@ -146,3 +222,24 @@ Martwa trajektoria (brak zmian) i wybuchowa trajektoria
 - unit: SeededRng (niezależność strumieni, odtwarzanie stanu)
 - integration: pełny tick z trzema systemami, kolejność faz
 - simulation: wiele seedów, długie przebiegi, brak NaN i zamarcia
+
+---
+
+# Uruchamianie testów
+
+Framework: gdUnit4 6.2.1 (`godot/addons/gdUnit4`).
+
+```bash
+GODOT_BIN=/path/to/Godot_v4.7.2-stable_console ./godot/run_tests.sh
+```
+
+- bez argumentów uruchamia `res://simulation/tests`
+- kod wyjścia 0 = sukces, 100 = błędy, 101 = ostrzeżenia
+  (każdy inny niż 0 to porażka)
+- raporty HTML i XML: `godot/reports/`
+- CI: `.github/workflows/simulation-tests.yml` (Linux, Windows, macOS ARM)
+
+Do czasu powstania domenowych systemów testy symulacyjne napędza
+`TestFixtureDynamics` (tylko w `tests/support`). To nie jest model
+planety, tylko generator sprzężonych delt podlegający tej samej
+polityce matematyki.

@@ -1,2 +1,6 @@
 logs/simulation_runs/*
 !logs/simulation_runs/.gitkeep
+
+# Godot
+godot/.godot/
+godot/reports/

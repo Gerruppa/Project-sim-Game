@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cc527ea8-aeca-4437-984a-4c554c3a23d4" name="Changes" comment="" />
+    <list default="true" id="cc527ea8-aeca-4437-984a-4c554c3a23d4" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/godot/.gitkeep" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -134,7 +138,7 @@
       <option name="presentableId" value="Default" />
       <updated>1791112862028</updated>
       <workItem from="1791112863022" duration="2444000" />
-      <workItem from="1791117496017" duration="1248000" />
+      <workItem from="1791117496017" duration="3467000" />
     </task>
     <servers />
   </component>

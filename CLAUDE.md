@@ -4,7 +4,7 @@
 
 Version: 1.0
 Project Type: Planetary Evolution Simulation
-Engine: Godot 4.x
+Engine: Godot 4.7.2 stable (pinned, see docs/simulation.md)
 Language: GDScript
 Architecture: Data Driven + Event Driven
 Development Stage: Console Simulation First
@@ -471,6 +471,11 @@ Every system must support:
 
 No system is complete without tests.
 
+Framework: gdUnit4. Run: GODOT_BIN=<godot console binary> ./godot/run_tests.sh
+
+Simulation code must follow the deterministic math policy
+(docs/simulation.md). Architecture tests enforce it.
+
 ---
 
 # ACCEPTANCE CRITERIA TEMPLATE
@@ -532,7 +537,7 @@ MegaController
 
 # FILE STRUCTURE
 
-res://
+res:// (the Godot project lives in godot/)
 
 addons/
 

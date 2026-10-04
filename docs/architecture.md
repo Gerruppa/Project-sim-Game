@@ -4,7 +4,7 @@
 
 Version: 1.1
 
-Engine: Godot 4.x
+Engine: Godot 4.7.2 stable (pinned, see docs/simulation.md)
 
 Language: GDScript
 
@@ -218,6 +218,48 @@ Parameters are accessed by identifier, not by hardcoded fields,
 so a future change from global values to regional values
 does not break systems.
 
+## Implementation
+
+| Class | Base | File | Role |
+|---|---|---|---|
+| ParameterDef | RefCounted | `simulation/planet/parameter_def.gd` | immutable definition: id, display name, unit, min, max, initial, anchors |
+| ParameterSchema | RefCounted | `simulation/planet/parameter_schema.gd` | ordered definitions, id → index, validation of data |
+| Param | RefCounted | `simulation/planet/param.gd` | id constants (`Param.TEMPERATURE`) |
+| PlanetState | RefCounted | `simulation/core/planet_state.gd` | values in `PackedFloat64Array` ordered by schema |
+| PlanetSnapshot | RefCounted | `simulation/planet/planet_snapshot.gd` | read-only copy with tick |
+| PlanetStateCodec | RefCounted | `simulation/core/planet_state_codec.gd` | save/load, exact values, state hash |
+| SimResult | RefCounted | `simulation/core/sim_result.gd` | value + errors + warnings |
+
+Rules:
+
+- State is RefCounted, not Node: it runs headless and without the scene tree.
+- PlanetState is created by SimulationManager and injected. It is never an autoload.
+- Packed arrays are passed by reference in Godot 4. Every copy that leaves
+  PlanetState (snapshot, values_copy) is duplicated explicitly.
+- Validation returns SimResult instead of asserting:
+  GDScript has no exceptions and assert() is stripped from release builds.
+- Unknown ids return NAN, so a typo is rejected by StateWriter
+  instead of silently reading zero.
+- Static typing is required: `untyped_declaration` is an error in project settings.
+
+## Normalized scale
+
+Every parameter uses the scale 0..100.
+The simulation computes only in normalized units.
+Physical units exist only in presentation.
+
+Each parameter defines anchors (meaning of 0, 50 and 100) in data:
+
+| Parameter | 0 | 50 | 100 |
+|---|---|---|---|
+| temperature | frozen, no life possible | optimum for Earth-like life | boiling, no life possible |
+| humidity | absolute desert | temperate climate | saturation, constant rain |
+| oxygen | no oxygen | Earth level | toxic, extreme fire risk |
+| biomass | dead planet | forests and shrubs | dense biosphere |
+
+Thresholds (extinction, events) are defined in data,
+never as comparisons with exact zero.
+
 ---
 
 ## StateWriter
@@ -234,6 +276,17 @@ Responsibilities:
 - report every applied delta with its source and cause
 
 Does not decide what a sensible change is.
+
+Rules (`simulation/core/state_writer.gd`):
+
+- any invalid delta (unknown parameter, NaN, INF, missing source or cause)
+  rejects the whole batch; NaN is a model bug, never clamped
+- deltas are summed in canonical order (parameter, source, cause, amount)
+  because float addition is not associative
+- clamping happens after summing, never per delta
+- the result is an ApplyReport (changes, saturations, applied deltas);
+  the pipeline turns it into events, so Core never depends on EventBus
+- saturation is a balance signal and is logged
 
 ---
 
@@ -621,7 +674,8 @@ Numbers live in data.
 
 Data assets:
 
-- ParameterDefs: name, limits, initial value, unit
+- ParameterDefs: name, limits, initial value, unit, anchors
+  (`godot/resources/planet/parameters.json`)
 - SpeciesData: population, growth, mortality, requirements, effects
 - EventDefs: triggers, duration, ending conditions, modifiers
 - PersonalityDefs: modifier sets per archetype
@@ -631,14 +685,23 @@ Rules:
 
 Adding a species or an event must not require code changes.
 
-Data is validated when loaded.
+Data is validated when loaded. All errors are reported at once.
+
+Format decision: JSON instead of `.tres` Resources.
+JSON is edited outside the Godot editor, diffs cleanly
+and is validated explicitly by loaders. Loaded data is immutable,
+which also avoids the shared-instance problem of cached Resources.
 
 ---
 
 # FILE STRUCTURE
 
+The Godot project lives in `godot/`, so `res://` is `godot/`.
+Documentation stays in the repository root (`docs/`).
+
 ```text
-res://
+res://  (godot/)
+  addons/gdUnit4/   test framework
   simulation/
     core/           PlanetState, StateWriter, EventBus, SeededRng,
                     CommandQueue, SimulationLog, SaveSystem
@@ -650,10 +713,9 @@ res://
     modifiers/      ModifierRegistry
     events/         EventSystem, EventDefs
     personality/    PersonalitySystem, archetypes
-    tests/          unit, integration, simulation
+    tests/          unit, integration, simulation, architecture,
+                    support (test-only helpers), golden, tools
   resources/        data assets
-  docs/
-  logs/
 ```
 
 ---
@@ -685,6 +747,13 @@ Required architecture-level tests:
 - speeds x1, x10, x100 → identical result after the same tick count
 - direct write to PlanetState outside StateWriter is detected
 - many seeds, long runs: no NaN, no permanent freeze, no divergence
+
+Architecture tests (`simulation/tests/architecture/`) scan the source and fail when:
+
+- simulation code calls forbidden math or global random functions
+- RandomNumberGenerator is used outside SeededRng
+- `_commit` is called outside PlanetState and StateWriter
+- PlanetState is referenced outside core, scheduling and tests
 
 ---
 

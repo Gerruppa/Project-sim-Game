@@ -1,0 +1,73 @@
+name: Simulation tests
+
+# Runs the gdUnit4 suite headless on several platforms.
+# The golden trace test measures determinism levels (docs/simulation.md):
+#   L1 same machine        - every job
+#   L2 Windows vs Linux    - required jobs
+#   L3 other architectures - macOS ARM, measured but not required
+
+on:
+  push:
+  pull_request:
+
+env:
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86-64 (L2)
+            os: ubuntu-latest
+            archive: linux.x86_64.zip
+            binary: Godot_v4.7.2-stable_linux.x86_64
+            sha512: 9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65
+            experimental: false
+          - name: Windows x86-64 (L2)
+            os: windows-latest
+            archive: win64.exe.zip
+            binary: Godot_v4.7.2-stable_win64_console.exe
+            sha512: 83decd58fdf67b9d657958a1ae6bf1929c20785315a81effe245874cdc57acb709bf868e00778a96984338c1b29dafdb453c6847747694621c6ecf5da2259993
+            experimental: false
+          - name: macOS ARM (L3, measured)
+            os: macos-latest
+            archive: macos.universal.zip
+            binary: Godot.app/Contents/MacOS/Godot
+            sha512: 38aa16e5bba2083941fc5b3e54be0089bd4cc35e32415f5b9fd9a8a6a7b9818255d44532ea8ef94b5aef56c4b407c2d634fa4f657e4ebe681ebbf59b7bac69ca
+            experimental: true
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Godot ${{ env.GODOT_VERSION }}
+        run: |
+          archive="Godot_v${GODOT_VERSION}_${{ matrix.archive }}"
+          curl -sSfL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${archive}"
+          echo "${{ matrix.sha512 }}  godot.zip" > godot.zip.sha512
+          if command -v sha512sum > /dev/null; then sha512sum -c godot.zip.sha512; else shasum -a 512 -c godot.zip.sha512; fi
+          unzip -q godot.zip -d "$RUNNER_TEMP/godot"
+          echo "GODOT_BIN=$RUNNER_TEMP/godot/${{ matrix.binary }}" >> "$GITHUB_ENV"
+
+      - name: Show engine version
+        run: '"$GODOT_BIN" --headless --version'
+
+      - name: Run tests
+        working-directory: godot
+        run: ./run_tests.sh
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ matrix.os }}
+          path: godot/reports/
+          if-no-files-found: ignore

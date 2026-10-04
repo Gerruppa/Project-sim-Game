@@ -1,0 +1,17 @@
+; Engine configuration file.
+; Pinned engine version: Godot 4.7.2 stable (see docs/simulation.md).
+
+config_version=5
+
+[application]
+
+config/name="Genesis Error"
+config/features=PackedStringArray("4.7")
+
+[debug]
+
+gdscript/warnings/untyped_declaration=2
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg")

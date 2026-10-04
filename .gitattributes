@@ -1,0 +1,12 @@
+* text=auto
+
+# Shell scripts must keep LF to run on Linux and macOS CI runners.
+*.sh text eol=lf
+
+# Godot text formats use LF.
+*.gd text eol=lf
+*.godot text eol=lf
+*.tres text eol=lf
+*.tscn text eol=lf
+*.cfg text eol=lf
+*.uid text eol=lf

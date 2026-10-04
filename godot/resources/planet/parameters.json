@@ -1,0 +1,57 @@
+{
+	"schema_version": 1,
+	"parameters": [
+		{
+			"id": "temperature",
+			"display_name": "Temperatura",
+			"unit": "normalized 0-100",
+			"min": 0,
+			"max": 100,
+			"initial": 30,
+			"anchors": {
+				"0": "zamarznięta, życie niemożliwe",
+				"50": "optimum dla życia ziemskiego",
+				"100": "wrząca, życie niemożliwe"
+			}
+		},
+		{
+			"id": "humidity",
+			"display_name": "Wilgotność",
+			"unit": "normalized 0-100",
+			"min": 0,
+			"max": 100,
+			"initial": 15,
+			"anchors": {
+				"0": "pustynia absolutna",
+				"50": "klimat umiarkowany",
+				"100": "nasycenie, ciągłe opady"
+			}
+		},
+		{
+			"id": "oxygen",
+			"display_name": "Tlen",
+			"unit": "normalized 0-100",
+			"min": 0,
+			"max": 100,
+			"initial": 2,
+			"anchors": {
+				"0": "brak tlenu",
+				"50": "poziom ziemski",
+				"100": "toksyczny, ekstremalne ryzyko pożarów"
+			}
+		},
+		{
+			"id": "biomass",
+			"display_name": "Biomasa",
+			"unit": "normalized 0-100",
+			"min": 0,
+			"max": 100,
+			"initial": 0,
+			"anchors": {
+				"0": "martwa planeta",
+				"50": "lasy i krzewy",
+				"100": "gęsta biosfera"
+			}
+		}
+	]
+}
