@@ -17,11 +17,11 @@
 			"weight": 1,
 			"description": "Niespokojna, wulkaniczna i płonąca: silne wahania klimatu, więcej CO₂ i pożarów. Życie ma trudniej.",
 			"modifiers": [
-				{"target": "climate.drift_noise", "operation": "multiply", "value": 1.35},
-				{"target": "climate.drift_limit", "operation": "multiply", "value": 1.15},
-				{"target": "climate.season_amplitude", "operation": "multiply", "value": 1.2},
-				{"target": "atmosphere.volcanic_co2", "operation": "multiply", "value": 1.25},
-				{"target": "biosphere.fire_rate", "operation": "multiply", "value": 1.25},
+				{"target": "climate.drift_noise", "operation": "multiply", "value": 1.25},
+				{"target": "climate.drift_limit", "operation": "multiply", "value": 1.1},
+				{"target": "climate.season_amplitude", "operation": "multiply", "value": 1.15},
+				{"target": "atmosphere.volcanic_co2", "operation": "multiply", "value": 1.15},
+				{"target": "biosphere.fire_rate", "operation": "multiply", "value": 1.15},
 				{"target": "biosphere.growth_noise", "operation": "multiply", "value": 1.5}
 			]
 		},

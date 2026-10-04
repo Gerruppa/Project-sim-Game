@@ -83,12 +83,17 @@ Wartości archetypów i ich wpływ (pomiar `planet_report.gd`, 4 seedy × 30 000
 |---|---|---|---|---|
 | bez osobowości | 11–18% | 10–30% | 3,1–3,6 | 7–13 |
 | Harmonijna | 1–10% | 62–82% | 4,2–4,3 | 2–9 |
-| Chaotyczna | 14–22% | 0–18% | 2,3–3,0 | 10–16 |
+| Chaotyczna | 16–22% | 0–13% | 2,5–3,0 | 9–13 |
 | Strażnik | 3–14% | 24–51% | 3,5–4,2 | 3–7 |
 
-Uwagi z pomiaru: planeta chaotyczna na jednym seedzie dotknęła CO₂ = 100
-(nasycenie) i na jednym nie wytworzyła drzew w 30 000 ticków; harmonijna
-jest bardziej bujna niż w prototypie. Wartości są w danych.
+Planeta chaotyczna została złagodzona po pierwszym pomiarze, w którym CO₂
+dotykało 100 (nasycenie), a na jednym seedzie nie powstały drzewa. Przyczyną
+były częstsze i głębsze zlodowacenia (pod lodem CO₂ tylko narasta), więc
+zmiękczone zostały ich źródła: dryf ×1,35 → ×1,25, limit dryfu ×1,15 → ×1,1,
+sezony ×1,2 → ×1,15, pożary ×1,25 → ×1,15, wulkany ×1,25 → ×1,15.
+Po zmianie: drzewa na 4/4 seedach, CO₂ maksymalnie 98, nadal najwięcej
+zlodowaceń (9–15) i najmniej lasu. Harmonijna jest bardziej bujna niż
+w prototypie (62–82% lasu). Wartości są w danych.
 
 ---
 
