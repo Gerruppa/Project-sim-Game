@@ -71,6 +71,29 @@ func test_rejected_batch_publishes_rejection_and_keeps_state() -> void:
 	assert_float(_state.get_value(Param.TEMPERATURE)).is_equal(30.0)
 
 
+func test_system_events_follow_the_tick_event() -> void:
+	var emitter := TestStubSystem.new(&"emitter")
+	emitter.event_type = &"something_happened"
+	_pipeline.register(emitter, 1)
+	_pipeline.execute(3)
+	assert_int(_events.size()).is_equal(2)
+	assert_str(_events[0].type).is_equal(String(SimEvent.TICK_APPLIED))
+	assert_str(_events[1].type).is_equal("something_happened")
+	assert_int(_events[1].tick).is_equal(3)
+	assert_str(_events[1].source).is_equal("emitter")
+	assert_int(_events[1].data["seen_tick"]).is_equal(2)
+
+
+func test_system_events_are_dropped_when_batch_is_rejected() -> void:
+	var broken := TestStubSystem.new(&"broken", Param.TEMPERATURE, NAN)
+	broken.event_type = &"should_not_appear"
+	_pipeline.register(broken, 1)
+	_pipeline.execute(1)
+	assert_int(_events.size()).is_equal(1)
+	assert_str(_events[0].type).is_equal(String(SimEvent.BATCH_REJECTED))
+	assert_array(broken.take_events(1)).is_empty()
+
+
 func test_registration_order_does_not_change_result() -> void:
 	var first: PlanetState = PlanetState.create(P.project_schema()).value
 	var second: PlanetState = PlanetState.create(P.project_schema()).value

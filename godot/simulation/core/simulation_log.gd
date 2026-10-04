@@ -9,6 +9,9 @@ extends RefCounted
 
 const VALUE_FORMAT := "%.3f"
 const DELTA_FORMAT := "%+.3f"
+## Causes smaller than this print as +0.000; the text log folds them into a
+## count to stay readable. JSON Lines always keeps every delta.
+const NEGLIGIBLE := 0.0005
 
 var _text_sinks: Array[LogSink]
 var _jsonl_sinks: Array[LogSink]
@@ -81,8 +84,14 @@ func _change_line(tick: int, change: ApplyReport.ParameterChange, deltas: Array)
 			DELTA_FORMAT % (change.new_value - change.old_value)]
 	if _include_deltas and not deltas.is_empty():
 		var causes := PackedStringArray()
+		var negligible := 0
 		for delta: Delta in deltas:
+			if absf(delta.amount) < NEGLIGIBLE:
+				negligible += 1
+				continue
 			causes.append("%s:%s %s" % [delta.source, delta.cause, DELTA_FORMAT % delta.amount])
+		if negligible > 0:
+			causes.append("+%d negligible" % negligible)
 		line += " [%s]" % ", ".join(causes)
 	if change.saturated:
 		line += " SATURATED (requested %s)" % (VALUE_FORMAT % change.requested_value)

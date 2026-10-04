@@ -114,3 +114,14 @@ func test_close_closes_every_sink() -> void:
 	_log().close()
 	assert_bool(_text.is_closed()).is_true()
 	assert_bool(_jsonl.is_closed()).is_true()
+
+
+func test_negligible_causes_are_folded_in_text_but_kept_in_jsonl() -> void:
+	_log()
+	_apply_tick(8, [
+		Delta.new(&"temperature", 0.25, &"climate", &"greenhouse"),
+		Delta.new(&"temperature", 0.0001, &"biosphere", &"moss_growth"),
+		Delta.new(&"temperature", -0.0002, &"biosphere", &"tree_dieback")])
+	assert_str(_text.lines[0]).is_equal(
+			"[Tick 8] temperature 35.000 -> 35.250 (+0.250) [climate:greenhouse +0.250, +2 negligible]")
+	assert_int((_json(_jsonl.lines[0])["changes"][0]["deltas"] as Array).size()).is_equal(3)

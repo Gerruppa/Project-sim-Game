@@ -6,9 +6,16 @@ extends RefCounted
 ## tick and returns deltas. It never writes PlanetState and never references
 ## other systems. One level of inheritance only; behaviour comes from
 ## composition inside each system.
+##
+## A system may also report facts (species emerged, species extinct) with
+## emit_event(). TickPipeline collects them and publishes them in the
+## Dispatch phase, after the tick event, only if the tick's batch was applied.
+
+## Each entry: [type, data].
+var _pending_events: Array[Array] = []
 
 
-## Unique, stable id. Used as delta source and as SeededRng stream id.
+## Unique, stable id. Used as delta source, event source and SeededRng stream id.
 func system_id() -> StringName:
 	push_error("SimulationSystem.system_id must be overridden")
 	return &""
@@ -17,3 +24,17 @@ func system_id() -> StringName:
 func compute(_snapshot: PlanetSnapshot) -> Array[Delta]:
 	push_error("SimulationSystem.compute must be overridden")
 	return []
+
+
+## Queues a notification for the current tick. Data should be plain values.
+func emit_event(type: StringName, data: Dictionary) -> void:
+	_pending_events.append([type, data])
+
+
+## Returns queued notifications as events of tick `tick` and clears the queue.
+func take_events(tick: int) -> Array[SimEvent]:
+	var events: Array[SimEvent] = []
+	for pending in _pending_events:
+		events.append(SimEvent.new(pending[0], tick, system_id(), pending[1]))
+	_pending_events.clear()
+	return events

@@ -219,7 +219,15 @@ Tekst:
 [Tick 3] biomass 0.010 -> 0.000 (-0.010) [biosphere:dieback -0.020] SATURATED (requested -0.010)
 [Tick 4] REJECTED temperature: amount is not finite (...)
 [Tick 5] EVENT drought_started from events {"humidity":12.5}
+[Tick 7214] EVENT species_emerged from biosphere {"population":1.0004,"species":"tree"}
+[Tick 15000] biomass 18.109 -> 18.128 (+0.019) [biosphere:moss_growth +0.007, biosphere:shrub_growth +0.012, +3 negligible]
 ```
+
+Przyczyny mniejsze niż 0,0005 (drukowane jako `+0.000`) log tekstowy zwija
+do licznika `+N negligible`. JSON Lines zawsze zawiera każdą deltę.
+
+Zdarzenia zgłaszane przez systemy (`emit_event`) trafiają do logu po linii
+ticka, w kolejności rejestracji systemów.
 
 JSON Lines (rekordy `run_start`, `tick`, `rejected`, `event`):
 

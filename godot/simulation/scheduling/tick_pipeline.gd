@@ -56,8 +56,15 @@ func execute(tick: int) -> ApplyReport:
 	# 4. Apply
 	var report := _writer.apply(deltas)
 
-	# 6. Dispatch
+	# 6. Dispatch: the tick event first, then facts reported by systems
+	# (in registration order). A rejected batch never happened, so its
+	# system events are dropped.
 	var type := SimEvent.TICK_APPLIED if report.is_ok() else SimEvent.BATCH_REJECTED
 	_bus.publish(SimEvent.new(type, tick, &"pipeline", {"report": report}))
+	for system in _systems:
+		var events := system.take_events(tick)
+		if report.is_ok():
+			for event in events:
+				_bus.publish(event)
 	_bus.flush()
 	return report
