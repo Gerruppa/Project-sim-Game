@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="cc527ea8-aeca-4437-984a-4c554c3a23d4" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/PythonProject_game.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/CORE_LOOP.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/DESIGN_PRINCIPLES.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GENESIS_ERROR_MASTER_PLAN.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "Gerruppa"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/Gerruppa/Project-sim-Game.git",
+    "accountId": "71d9ce6f-0c5e-4a98-aa9a-056bd29200a6"
+  }
+}]]></component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.4732260686578358" />
+      <entry key="MS500" value="4.10744307953355" />
+      <entry key="S2" value="6.957079112932803" />
+      <entry key="S5" value="8.068470875038878" />
+      <entry key="S10" value="8.512231916082488" />
+      <entry key="S30" value="8.832209008774829" />
+      <entry key="S60" value="8.91543371769591" />
+      <entry key="M2" value="8.957547575925684" />
+      <entry key="M5" value="8.983281751910106" />
+      <entry key="M10" value="9.034159275229285" />
+      <entry key="M15" value="9.2162314253846" />
+      <entry key="M30" value="10.151052019056037" />
+      <entry key="H1" value="11.629806645651918" />
+      <entry key="H2" value="12.97262117723243" />
+      <entry key="H4" value="13.882265947414176" />
+      <entry key="D1" value="14.797362339901904" />
+      <entry key="W1" value="14.970624038242986" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="1.4356131409360682" />
+      <entry key="MS500" value="4.008028578327534" />
+      <entry key="S2" value="6.905383037851638" />
+      <entry key="S5" value="8.044357987252345" />
+      <entry key="S10" value="8.499534062605054" />
+      <entry key="S30" value="8.827826783808915" />
+      <entry key="S60" value="8.913223443913173" />
+      <entry key="M2" value="8.956437613460688" />
+      <entry key="M5" value="8.98283660249084" />
+      <entry key="M10" value="9.033936383991218" />
+      <entry key="M15" value="9.216082442969432" />
+      <entry key="M30" value="10.15097660905157" />
+      <entry key="H1" value="11.629768224133848" />
+      <entry key="H2" value="12.972601642108522" />
+      <entry key="H4" value="13.882256070091167" />
+      <entry key="D1" value="14.79736067528668" />
+      <entry key="W1" value="14.970623799943374" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7,
+  "fromUser": false
+}]]></component>
+  <component name="ProjectId" id="3KEBUN6Z5lNdVIrQ9FCmupvdAqT" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "D:/PythonProject_game",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "python.packages.toolwindow.project.migrated.to.right.top.v2": "true",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "to.speed.mode.migration.done": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\PythonProject_game" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-73a66231627c-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.10968.92" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="cc527ea8-aeca-4437-984a-4c554c3a23d4" name="Changes" comment="" />
+      <created>1791112862028</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1791112862028</updated>
+      <workItem from="1791112863022" duration="2444000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/main.py</url>
+          <line>8</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

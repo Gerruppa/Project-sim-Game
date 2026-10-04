@@ -1,0 +1,550 @@
+==================================================
+GENESIS ERROR
+MASTER DEVELOPMENT PLAN
+GODOT EDITION
+==================================================
+
+WIZJA PROJEKTU
+==================================================
+
+Genesis Error jest grą o terraformowaniu żywej planety.
+
+Gracz nie jest budowniczym kolonii.
+
+Gracz jest opiekunem, naukowcem i katalizatorem ewolucji.
+
+Najważniejszym elementem gry nie są budynki, crafting ani eksploracja.
+
+Najważniejszym elementem jest obserwowanie jak świat reaguje na działania gracza.
+
+Każdy system musi odpowiadać na pytanie:
+
+"Czy sprawia, że planeta wydaje się żywa?"
+
+Jeżeli nie, system jest drugorzędny.
+
+==================================================
+TECHNOLOGIA
+==================================================
+
+Silnik:
+Godot 4.x
+
+Język:
+GDScript
+
+Architektura:
+Data Driven
+Event Driven
+Simulation First
+
+Priorytet:
+
+1. Symulacja
+2. Dane
+3. Wizualizacja
+4. Gameplay
+5. Fabuła
+
+Nigdy odwrotnie.
+
+==================================================
+FAZA 1
+CORE SIMULATION FOUNDATION
+==================================================
+
+CEL
+
+Stworzyć serce planety.
+
+Bez grafiki.
+Bez budynków.
+Bez UI.
+
+Tylko symulacja.
+
+SYSTEMY
+
+PlanetState
+
+Temperatura
+Wilgotność
+Tlen
+Biomasa
+
+Wartości od 0 do 100
+
+AtmosphereSystem
+
+ClimateSystem
+
+SimulationManager
+
+GlobalEventBus
+
+KRYTERIUM SUKCESU
+
+Uruchomienie symulacji na 60 minut
+bez błędów.
+
+Parametry zmieniają się samoczynnie.
+
+PROMPT
+
+Jestem twórcą gry w Godot 4.
+
+Projektuję grę terraformacyjną opartą
+na symulacji żywej planety.
+
+Chcę stworzyć czystą architekturę
+symulacji.
+
+Pomóż mi zaprojektować:
+
+- PlanetState
+- ClimateSystem
+- AtmosphereSystem
+- Global Event Bus
+- Simulation Tick System
+
+Wymagania:
+
+- GDScript
+- Godot 4
+- brak UI
+- brak grafiki
+- modularna architektura
+- łatwa rozbudowa
+
+Generuj kompletne klasy wraz
+z wyjaśnieniem zależności.
+
+==================================================
+FAZA 2
+PLANET MODEL
+==================================================
+
+CEL
+
+Planeta powinna reagować na własne
+warunki.
+
+SIMULACJA
+
+Temperatura wpływa na wilgotność
+
+Wilgotność wpływa na biomasę
+
+Biomasa wpływa na tlen
+
+Tlen wpływa na rozwój życia
+
+KRYTERIUM SUKCESU
+
+Zmiana jednego parametru wywołuje
+reakcję łańcuchową.
+
+PROMPT
+
+Pomóż mi stworzyć model planetarny.
+
+Parametry:
+
+- temperatura
+- wilgotność
+- biomasa
+- tlen
+
+Każdy parametr powinien wpływać
+na pozostałe.
+
+Zaproponuj:
+
+- wzory
+- zależności
+- balans
+- implementację w GDScript
+
+Chcę uzyskać realistyczne reakcje
+łańcuchowe, ale bez nadmiernej
+złożoności.
+
+==================================================
+FAZA 3
+SPECIES SIMULATION
+==================================================
+
+CEL
+
+Powstanie życia.
+
+SYSTEM
+
+SpeciesData
+
+Population
+
+Growth Rate
+
+Environment Requirements
+
+MVP GATUNKI
+
+Bakterie
+
+Glony
+
+Mech
+
+Krzew
+
+Drzewo
+
+KRYTERIUM SUKCESU
+
+Organizmy same rosną
+lub wymierają.
+
+PROMPT
+
+Projektuję system gatunków dla gry
+terraformacyjnej.
+
+Każdy gatunek posiada:
+
+- populację
+- tempo wzrostu
+- minimalną temperaturę
+- maksymalną temperaturę
+- wymagania wilgotności
+- produkcję tlenu
+- wpływ na biomasę
+
+Stwórz skalowalny system danych
+w Godot 4.
+
+Użyj Resource oraz GDScript.
+
+Napisz architekturę i przykładowy kod.
+
+==================================================
+FAZA 4
+PLANET PERSONALITY
+==================================================
+
+CEL
+
+Planeta zyskuje osobowość.
+
+ARCHETYPY
+
+Harmonijna
+
+Chaotyczna
+
+Strażnik
+
+KAŻDA PLANETA
+
+wpływa na:
+
+- klimat
+- katastrofy
+- rozwój życia
+
+KRYTERIUM SUKCESU
+
+Dwie rozgrywki dają różne efekty.
+
+PROMPT
+
+Projektuję system osobowości planety.
+
+Archetypy:
+
+- Harmonious
+- Chaotic
+- Guardian
+
+Chcę aby archetyp wpływał na:
+
+- szansę katastrof
+- rozwój biomasy
+- stabilność klimatu
+
+Zaproponuj skalowalną architekturę
+dla Godot 4 oraz przykładowe klasy.
+
+==================================================
+FAZA 5
+WORLD EVENTS
+==================================================
+
+CEL
+
+Świat zaczyna reagować.
+
+EVENTY
+
+Susza
+
+Burza
+
+Erupcja
+
+Mutacja
+
+Katastrofa biologiczna
+
+PROMPT
+
+Projektuję system wydarzeń dla gry.
+
+Wydarzenia powinny:
+
+- mieć warunki aktywacji
+- wpływać na planetę
+- działać czasowo
+- generować narrację
+
+Zaproponuj system Event Manager
+w Godot 4.
+
+Uwzględnij możliwość łatwego
+dodawania nowych wydarzeń.
+
+==================================================
+FAZA 6
+VISUALIZATION
+==================================================
+
+CEL
+
+Pokazać efekty symulacji.
+
+NIE TWORZYMY JESZCZE ŁADNEJ GRY.
+
+Tworzymy debugową wizualizację.
+
+PROGI
+
+0-20 biomasy
+
+martwa planeta
+
+20-40
+
+mech
+
+40-60
+
+krzewy
+
+60-80
+
+las
+
+80-100
+
+gęsta biosfera
+
+PROMPT
+
+Potrzebuję stworzyć system
+wizualizacji danych symulacyjnych.
+
+Chcę aby biomasa wpływała
+na wygląd mapy.
+
+Godot 4.
+
+Podaj najlepsze rozwiązanie:
+
+- MultiMesh
+- shaders
+- GPU instancing
+
+Uwzględnij wydajność dla dużych map.
+
+==================================================
+FAZA 7
+BUILDINGS
+==================================================
+
+CEL
+
+Gracz zaczyna wpływać
+na planetę.
+
+BUDYNKI
+
+Generator ciepła
+
+Wieża tlenu
+
+Kondensator
+
+Laboratorium
+
+PROMPT
+
+Projektuję system budynków
+dla gry terraformacyjnej.
+
+Każdy budynek powinien modyfikować
+PlanetState.
+
+Chcę zastosować wzorzec:
+
+Building -> Planet Modifier
+
+Pokaż architekturę dla Godot 4
+umożliwiającą łatwe dodawanie
+nowych budynków.
+
+==================================================
+FAZA 8
+SAVE SYSTEM
+==================================================
+
+CEL
+
+Zapisywanie świata.
+
+FORMAT
+
+JSON
+
+Zapisywane:
+
+- planeta
+- populacje
+- wydarzenia
+- budynki
+
+PROMPT
+
+Chcę stworzyć wydajny system zapisu
+dla gry symulacyjnej w Godot 4.
+
+Dane:
+
+PlanetState
+SpeciesState
+BuildingState
+EventState
+
+Pokaż najlepszą architekturę
+opartą o JSON.
+
+==================================================
+FAZA 9
+GAMEPLAY LOOP
+==================================================
+
+CEL
+
+Połączenie wszystkich systemów.
+
+PĘTLA
+
+Obserwuj
+↓
+Analizuj
+↓
+Interweniuj
+↓
+Konsekwencje
+↓
+Ewolucja planety
+
+PROMPT
+
+Mam działającą symulację planety.
+
+Pomóż zaprojektować gameplay loop,
+który zmusza gracza do podejmowania
+trudnych decyzji.
+
+Nie chcę kolejnego city buildera.
+
+Chcę aby decyzje gracza wpływały
+na przyszłą ewolucję planety.
+
+Zaproponuj mechaniki i balans.
+
+==================================================
+FAZA 10
+STEAM DEMO
+==================================================
+
+CEL
+
+Udowodnić że gra jest zabawna.
+
+NIE DODAWAĆ:
+
+- multiplayer
+- walki
+- proceduralnej galaktyki
+- craftingu setek przedmiotów
+
+DEMO MA ODPOWIEDZIEĆ
+
+Czy obserwowanie żywej planety
+jest wystarczająco satysfakcjonujące?
+
+Jeżeli odpowiedź brzmi TAK,
+dopiero wtedy rozpoczyna się
+produkcja pełnej wersji.
+
+==================================================
+NAJWAŻNIEJSZE ZASADY PROJEKTU
+==================================================
+
+1.
+Symulacja przed grafiką.
+
+2.
+Dane przed contentem.
+
+3.
+Planeta jest bohaterem gry.
+
+4.
+Każda mechanika musi wpływać
+na stan planety.
+
+5.
+Najpierw obserwacja.
+Potem interakcja.
+
+6.
+Nigdy nie dodawaj nowych systemów
+dopóki nie działa poprzedni.
+
+7.
+W każdej chwili gra musi dawać
+odpowiedź na pytanie:
+
+"Co właśnie dzieje się z planetą?"
+
+8.
+Najważniejszy moment gry:
+
+Gracz obserwuje konsekwencje swoich
+decyzji po 20-30 minutach.
+
+9.
+Jeżeli system nie wspiera fantazji
+opieki nad żywym światem,
+usuń go.
+
+10.
+Genesis Error jest przede wszystkim
+symulatorem ewolucji planety,
+a dopiero potem grą o terraformacji.
+
+==================================================
+END OF FILE
+==================================================

@@ -1,0 +1,3 @@
+# Wizja gry
+
+> Do uzupełnienia.
