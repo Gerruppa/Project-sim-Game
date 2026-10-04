@@ -58,7 +58,7 @@ static func _parse_archetype(raw: Dictionary, index: int, specs: Dictionary, res
 		result.add_error("%s: 'modifiers' must be a list" % label)
 	else:
 		for modifier: Variant in raw["modifiers"]:
-			_check_modifier(modifier, label, specs, result)
+			Modifier.check_data(modifier, label, specs, result)
 	if result.errors.size() > errors_before:
 		return null
 
@@ -70,23 +70,6 @@ static func _parse_archetype(raw: Dictionary, index: int, specs: Dictionary, res
 		archetype.modifiers.append({"target": modifier["target"], "operation": modifier["operation"],
 				"value": float(modifier["value"])})
 	return archetype
-
-
-static func _check_modifier(modifier: Variant, label: String, specs: Dictionary, result: SimResult) -> void:
-	if typeof(modifier) != TYPE_DICTIONARY:
-		result.add_error("%s: every modifier must be an object" % label)
-		return
-	var target: Variant = modifier.get("target")
-	var parts := String(target).split(".") if typeof(target) == TYPE_STRING else PackedStringArray()
-	if parts.size() != 2 or not specs.has(StringName(parts[0])):
-		result.add_error("%s: modifier target '%s' must be <system>.<coefficient>" % [label, target])
-	elif not (specs[StringName(parts[0])] as Dictionary).has(parts[1]):
-		result.add_error("%s: system '%s' has no coefficient '%s'" % [label, parts[0], parts[1]])
-	if typeof(modifier.get("operation")) != TYPE_STRING or not Modifier.OPERATIONS.has(StringName(modifier["operation"])):
-		result.add_error("%s: modifier operation must be add or multiply" % label)
-	var value: Variant = modifier.get("value")
-	if (typeof(value) != TYPE_FLOAT and typeof(value) != TYPE_INT) or not is_finite(float(value)):
-		result.add_error("%s: modifier value must be a finite number" % label)
 
 
 func ids() -> Array[StringName]:
