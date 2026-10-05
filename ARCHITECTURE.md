@@ -117,7 +117,7 @@ logs/simulation_runs/                           run logs (not in git)
 | 6. PersonalitySystem | done: Harmonious, Chaotic, Guardian via ModifierRegistry |
 | 7. EventSystem | done: drought, guardian healing, planet chronicle |
 | 8. SaveSystem | done: save/load/autosave, data fingerprints, lineage placeholder |
-| 9. Gameplay layer | in progress: 9a extinction causes, 9b interventions (CommandQueue, --act) done; 9c decision points next (docs/gameplay.md) |
+| 9. Gameplay layer | done: extinction causes, interventions (CommandQueue, --act), decision points (--until decision); docs/gameplay.md |
 | 10. Visualization | planned |
 
 ---
@@ -132,6 +132,8 @@ export GODOT_BIN=<Godot 4.7.2 console binary>
 ./godot/run_simulation.sh --personality guardian          # harmonious, chaotic, guardian, random, none
 ./godot/run_simulation.sh --ticks 2500 --save epoch.json  # save when the run ends (saves/, outside git)
 ./godot/run_simulation.sh --load epoch.json --ticks 1000  # continue a saved run
+./godot/run_simulation.sh --until decision --story        # play: stop at a decision point, then
+./godot/run_simulation.sh --load decision.json --act cull_species:shrub --until decision --story
 ```
 
 Each run writes `logs/simulation_runs/<run id>.log` (text), `.jsonl` (JSON Lines)

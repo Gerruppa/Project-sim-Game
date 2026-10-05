@@ -6,6 +6,7 @@ extends SceneTree
 
 var _manager: SimulationManager
 var _saver: RunSaver
+var _watcher: DecisionWatcher
 var _options: Dictionary
 var _log_id: String
 var _elapsed := 0.0
@@ -78,6 +79,14 @@ func _init() -> void:
 	if chronicle_result.value != null:
 		_manager.attach_log(chronicle_result.value)
 
+	if _options.has("until"):
+		var watcher := SimulationRunner.create_watcher(_manager)
+		if not watcher.is_ok():
+			_fail(watcher.errors, false)
+			return
+		_watcher = watcher.value
+		_manager.attach_log(_watcher)
+
 	var every: int = _options.get("autosave", config.autosave_every())
 	var autosave_path := SimulationRunner.resolve_save_path(_log_id + ".autosave.json", config)
 	_saver = RunSaver.new(_manager, run, autosave_path, every)
@@ -93,6 +102,8 @@ func _init() -> void:
 			if not _manager.step():
 				break
 			_autosave()
+			if _watcher != null and _watcher.reached():
+				break
 		_finish()
 
 
@@ -102,7 +113,10 @@ func _process(delta: float) -> bool:
 	_manager.advance(delta)
 	_autosave()
 	_elapsed += delta
-	if _elapsed >= float(_options["seconds"]) or _manager.is_halted():
+	# Real time runs several ticks per frame: it stops at the end of the
+	# frame in which the decision point happened.
+	var decided := _watcher != null and _watcher.reached()
+	if _elapsed >= float(_options["seconds"]) or _manager.is_halted() or decided:
 		_realtime = false
 		_finish()
 	return false
@@ -125,12 +139,18 @@ func _finish() -> void:
 		print("Autosave: %s" % _saver.autosave_path())
 	for error in _manager.errors():
 		printerr(error)
-	if _options.has("save"):
-		var saved := _saver.save_to(SimulationRunner.resolve_save_path(_options["save"], _manager.config()))
+	var decided := _watcher != null and _watcher.reached() and not _manager.is_halted()
+	if _options.has("save") or decided:
+		var name: String = _options.get("save", SimulationRunner.DECISION_SAVE)
+		var saved := _saver.save_to(SimulationRunner.resolve_save_path(name, _manager.config()))
 		if not saved.is_ok():
 			_fail(saved.errors, false)
 			return
 		print("Saved: %s" % saved.value)
+		if decided:
+			print("\n".join(SimulationRunner.decision_report(_manager, _watcher, saved.value)))
+	elif _watcher != null:
+		print("No decision point within %d ticks." % _options["ticks"])
 	quit(1 if _manager.is_halted() else 0)
 
 

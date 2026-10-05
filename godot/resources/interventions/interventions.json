@@ -1,5 +1,9 @@
 {
 	"interventions_version": 1,
+	"decision_points": {
+		"events": ["world_event_started", "species_extinct", "species_emerged"],
+		"grace_ticks": 100
+	},
 	"interventions": [
 		{
 			"id": "seed_species",

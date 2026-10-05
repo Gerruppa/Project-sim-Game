@@ -1,15 +1,20 @@
 extends SceneTree
 ## Fun check for interventions (docs/gameplay.md): does every action change
 ## the planet's story, does it have a price, and is any action always best?
-##   godot --headless --path godot -s res://simulation/tests/tools/intervention_report.gd -- [--seeds N]
-## For every archetype and seed: run to ACT_TICK, save, then continue once
-## without intervention and once per action, and compare what followed.
+##   godot --headless --path godot -s res://simulation/tests/tools/intervention_report.gd -- [--seeds N] [--at decision]
+## For every archetype and seed: run to the act tick, save, then continue
+## once without intervention and once per action, and compare what followed.
+## The act tick is ACT_TICK, or with --at decision the first crisis after
+## WARM_UP (a drought starts or a species dies out): the player's real moment.
 
 const ACT_TICK := 2500
-const TOTAL := 6500
+## How long consequences are watched after the act.
+const WATCH := 4000
+const WARM_UP := 1500
+const CRISES: Array[StringName] = [&"world_event_started", &"species_extinct"]
 const ARCHETYPES := ["harmonious", "chaotic", "guardian"]
-const ACTIONS := ["seed_species:shrub", "seed_species:tree", "cull_species:moss", "mirrors_warm", "mirrors_cool",
-		"cloud_seeding", "volcanic_awakening"]
+const ACTIONS := ["seed_species:shrub", "seed_species:tree", "cull_species:moss", "cull_species:shrub", "mirrors_warm",
+		"mirrors_cool", "cloud_seeding", "volcanic_awakening"]
 ## Population above which a species counts as alive at the end.
 const ALIVE_ABOVE := 1.0
 ## Relative biomass change that counts as a gain or a loss.
@@ -31,6 +36,19 @@ class Recorder extends RunObserver:
 			extinctions += 1
 
 
+class CrisisWatch extends RunObserver:
+	var tick := -1
+	var what := ""
+
+	func attach(bus: EventBus) -> void:
+		bus.subscribe_all(_on_event)
+
+	func _on_event(event: SimEvent) -> void:
+		if tick == -1 and event.tick > WARM_UP and CRISES.has(event.type):
+			tick = event.tick
+			what = "%s %s" % [event.type, event.data.get("id", event.data.get("species", ""))]
+
+
 class Outcome:
 	var lines := PackedStringArray()
 	var extinctions := 0
@@ -41,9 +59,13 @@ class Outcome:
 
 func _init() -> void:
 	var seeds := 3
+	var at_decision := false
 	var args := OS.get_cmdline_user_args()
-	if args.size() == 2 and args[0] == "--seeds":
-		seeds = args[1].to_int()
+	for i in args.size():
+		if args[i] == "--seeds" and i + 1 < args.size():
+			seeds = args[i + 1].to_int()
+		elif args[i] == "--at" and i + 1 < args.size():
+			at_decision = args[i + 1] == "decision"
 	var started := Time.get_ticks_msec()
 	# action -> [changed, priced, gained, Δbiomass sum, ΔT sum]
 	var totals := {}
@@ -53,10 +75,11 @@ func _init() -> void:
 	for archetype: String in ARCHETYPES:
 		for seed_value in range(1, seeds + 1):
 			runs += 1
-			var save := _save_at_act_tick(archetype, seed_value)
-			var base := _continue(archetype, seed_value, save, "")
+			var save := _save_before_act(archetype, seed_value, at_decision)
+			var act_tick := int(save["tick"]) + 1
+			var base := _continue(archetype, seed_value, save, "", act_tick)
 			for action: String in ACTIONS:
-				var outcome := _continue(archetype, seed_value, save, action)
+				var outcome := _continue(archetype, seed_value, save, action, act_tick)
 				var row: Array = totals[action]
 				var changed := outcome.lines != base.lines
 				var priced := outcome.extinctions > base.extinctions or outcome.alive < base.alive \
@@ -68,12 +91,13 @@ func _init() -> void:
 				row[2] += 1 if gained else 0
 				row[3] += outcome.biomass - base.biomass
 				row[4] += outcome.mean_temperature - base.mean_temperature
-				print("%-10s seed %d %-20s changed %-5s price %-5s gain %-5s | biomass %6.2f vs %6.2f | T %5.2f vs %5.2f | alive %d vs %d | extinctions %d vs %d"
-						% [archetype, seed_value, action, changed, priced, gained, outcome.biomass, base.biomass,
+				print("%-10s seed %d @%-5d %-20s changed %-5s price %-5s gain %-5s | biomass %6.2f vs %6.2f | T %5.2f vs %5.2f | alive %d vs %d | extinctions %d vs %d"
+						% [archetype, seed_value, act_tick, action, changed, priced, gained, outcome.biomass, base.biomass,
 						outcome.mean_temperature, base.mean_temperature, outcome.alive, base.alive,
 						outcome.extinctions, base.extinctions])
 	print("")
-	print("action               | changed | has a price | gains | avg Δbiomass | avg ΔT   (of %d runs, act at tick %d, to tick %d)" % [runs, ACT_TICK, TOTAL])
+	print("action               | changed | has a price | gains | avg Δbiomass | avg ΔT   (of %d runs, act %s, watched %d ticks)"
+			% [runs, "at the first crisis after tick %d" % WARM_UP if at_decision else "at tick %d" % ACT_TICK, WATCH])
 	for action: String in ACTIONS:
 		var row: Array = totals[action]
 		var verdict := "ALWAYS BEST" if row[2] == runs and row[1] == 0 else ("no effect" if row[0] < 2 else "")
@@ -93,13 +117,23 @@ func _run_info(planet: Dictionary) -> Dictionary:
 	return {"personality": planet["personality"], "data_fingerprints": planet["fingerprints"], "lineage": []}
 
 
-func _save_at_act_tick(archetype: String, seed_value: int) -> Dictionary:
+## The save the actions branch from: the tick before ACT_TICK, or the end of
+## the first crisis tick (the player decides after seeing it).
+func _save_before_act(archetype: String, seed_value: int, at_decision: bool) -> Dictionary:
 	var planet := _planet(archetype, seed_value)
-	(planet["manager"] as SimulationManager).run_ticks(ACT_TICK - 1)
-	return SaveSystem.capture(planet["manager"], _run_info(planet))
+	var manager: SimulationManager = planet["manager"]
+	if not at_decision:
+		manager.run_ticks(ACT_TICK - 1)
+		return SaveSystem.capture(manager, _run_info(planet))
+	var watch := CrisisWatch.new()
+	manager.attach_log(watch)
+	while watch.tick == -1 and manager.tick() < 20000:
+		manager.step()
+	print("%-10s seed %d crisis at tick %d: %s" % [archetype, seed_value, manager.tick(), watch.what])
+	return SaveSystem.capture(manager, _run_info(planet))
 
 
-func _continue(archetype: String, seed_value: int, save: Dictionary, action: String) -> Outcome:
+func _continue(archetype: String, seed_value: int, save: Dictionary, action: String, act_tick: int) -> Outcome:
 	var planet := _planet(archetype, seed_value)
 	var manager: SimulationManager = planet["manager"]
 	SaveSystem.restore(manager, save, _run_info(planet))
@@ -110,14 +144,14 @@ func _continue(archetype: String, seed_value: int, save: Dictionary, action: Str
 		if not submitted.is_ok():
 			printerr(submitted.errors)
 	var temperature_sum := 0.0
-	for tick in range(ACT_TICK, TOTAL + 1):
+	for tick in range(act_tick, act_tick + WATCH + 1):
 		manager.step()
 		temperature_sum += manager.snapshot().get_value(Param.TEMPERATURE)
 	var outcome := Outcome.new()
 	outcome.lines = recorder.lines
 	outcome.extinctions = recorder.extinctions
 	outcome.biomass = manager.snapshot().get_value(Param.BIOMASS)
-	outcome.mean_temperature = temperature_sum / float(TOTAL - ACT_TICK + 1)
+	outcome.mean_temperature = temperature_sum / float(WATCH + 1)
 	var biosphere := manager.system(BiosphereSystem.ID) as BiosphereSystem
 	for id: String in ["bacteria", "algae", "moss", "shrub", "tree"]:
 		if biosphere.population(StringName(id)) > ALIVE_ABOVE:

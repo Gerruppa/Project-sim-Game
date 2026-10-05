@@ -65,6 +65,14 @@ func apply_coefficients(effective: Object) -> void:
 	_k = effective
 
 
+## Species ids in catalog order.
+func species_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for species in _species:
+		ids.append(species.id)
+	return ids
+
+
 ## NAN for unknown species.
 func population(species_id: StringName) -> float:
 	var index := _index_of(species_id)

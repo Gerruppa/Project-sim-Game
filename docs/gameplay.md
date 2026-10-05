@@ -16,7 +16,7 @@ Dowody: kroniki seedów 7 i 13 (15 000 ticków). Planeta opowiada historie
 |---|---|---|
 | Przyczyny wymierania w kronice | KEEP | 9a (zrobione) |
 | Interwencje (5 akcji, cooldowny) | KEEP | 9b (zrobione) |
-| Punkty decyzji (przebieg sam się zatrzymuje) | KEEP | 9c |
+| Punkty decyzji (przebieg sam się zatrzymuje) | KEEP | 9c (zrobione) |
 | Ambicje (opcjonalne cele z języka warunków) | POSTPONE | po 9c |
 | Porównanie dwóch przyszłości z jednego zapisu (`lineage`) | POSTPONE | po 9c |
 | Dziennik odkryć | POSTPONE | krok 10+ |
@@ -95,6 +95,28 @@ cooldownem (`cooldown_group: mirrors`). Dane: `resources/interventions/intervent
   `--load epoka.json --act seed_species:moss --ticks 2000`
 - pomiar zabawy: `simulation/tests/tools/intervention_report.gd`
 
+# Implementacja 9c: punkty decyzji
+
+Pętla gracza w konsoli:
+
+```bash
+./godot/run_simulation.sh --until decision --story                      # do pierwszego punktu decyzji
+./godot/run_simulation.sh --load decision.json --act cull_species:shrub --until decision --story
+```
+
+- punkt decyzji: pierwsze zdarzenie z `decision_points.events`
+  (`interventions.json`: początek zdarzenia świata, wymarcie, pojawienie
+  się gatunku) po okresie ochronnym `grace_ticks` (100) od startu
+  przebiegu; okres ochronny sprawia, że gracz najpierw widzi skutki
+  własnej akcji (zasiane mchy „pojawiają się” w pierwszym ticku)
+- przebieg kończy się po ticku punktu decyzji (w czasie rzeczywistym:
+  po klatce, w której wypadł), zapisuje się do `saves/decision.json`
+  (albo `--save PLIK`) i pokazuje: zdania kroniki z tego ticku,
+  interwencje z gotowością („gotowe” / „od ticku N”), populacje
+  gatunków i komendę, która kontynuuje
+- stała nazwa zapisu: pętla to zawsze ta sama komenda
+- `DecisionWatcher` (`tools/`) tylko obserwuje; `--ticks` jest limitem
+
 # Pomiar (intervention_report.gd)
 
 3 archetypy × 3 seedy, akcja w ticku 2500, obserwacja do 6500, porównanie
@@ -123,6 +145,37 @@ i zasiew chmur prawie nie miały ceny, a pył i wulkany już były dylematami.
   nie obejmuje
 - zasiew drzew w ticku 2500 zawsze zawodzi (za mało tlenu i gleby):
   zostawione celowo, bo kronika mówi dlaczego
+
+## Pomiar w punktach decyzji (`--at decision`)
+
+Ta sama próba, ale akcja zapada w pierwszym kryzysie po ticku 1500
+(w 7 z 9 przebiegów to początek suszy, w 2 wymarcie gatunku), czyli
+tam, gdzie gracz naprawdę decyduje. Obserwacja: 4000 ticków.
+
+| Akcja | Zmienia kronikę | Cena | Zysk | Śr. Δ biomasy | Śr. ΔT |
+|---|---|---|---|---|---|
+| Zasiew krzewów | 9/9 | 5 | 0 | +0,04 | +0,03 |
+| Zasiew drzew | 9/9 | 9 | 0 | 0,00 | +0,01 |
+| Przerzedzenie mchów | 8/9 | 1 | 0 | −0,08 | −0,05 |
+| Przerzedzenie krzewów | 4/9 | 0 | 0 | −0,03 | −0,01 |
+| Lustra (+8) | 9/9 | 5 | 1 | −0,26 | +0,92 |
+| Pył (−8) | 9/9 | 5 | 0 | −0,35 | −2,12 |
+| Zasiew chmur | 9/9 | 2 | 0 | −0,13 | +0,04 |
+| Przebudzenie wulkanów | 9/9 | 1 | 1 | +0,29 | +1,53 |
+
+Wniosek: w kryzysie prawie każda akcja kosztuje, a prawie żadna nie
+pomaga. Gracz w suszy nie ma dobrego ruchu, więc to nie jest dylemat,
+tylko kara za działanie. Dwie przyczyny:
+
+- planeta jest silnie samoregulująca (termostat węglowy, odrastanie
+  gatunków): po 4000 tickach różnice w biomasie są rzędu 1%
+- żadna akcja nie celuje w suszę: zasiew chmur obniża próg deszczu, ale
+  susza to spadek wilgotności, której deszcz jeszcze ubywa
+
+Przerzedzenie krzewów zmieniło kronikę tylko w 4/9, bo w momencie kryzysu
+krzewów często jeszcze nie ma (raport punktu decyzji pokazuje populacje,
+więc gracz to widzi). Jedyny zysk luster: chaotyczna planeta seed 3,
+chłodna (24°), gdzie ciepło uratowało gatunek.
 
 # Kryteria akceptacji
 

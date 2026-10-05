@@ -33,7 +33,8 @@ static func seeding(id: String = "seed", overrides: Dictionary = {}) -> Dictiona
 
 
 static func parse(defs: Array) -> SimResult:
-	return InterventionCatalog.from_data({"interventions_version": 1, "interventions": defs}, Q.specs(), command_specs())
+	return InterventionCatalog.from_data({"interventions_version": 1, "interventions": defs,
+			"decision_points": {"events": ["species_extinct"], "grace_ticks": 10}}, Q.specs(), command_specs())
 
 
 static func catalog(defs: Array) -> InterventionCatalog:

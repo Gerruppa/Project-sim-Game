@@ -28,6 +28,9 @@ const USAGE := """Usage: run_simulation.sh [options]
                      --act seed_species:moss  --act mirrors_cool  --act cloud_seeding
                      known: seed_species, cull_species, mirrors_warm, mirrors_cool,
                      cloud_seeding, volcanic_awakening (res://resources/interventions/interventions.json)
+  --until decision  stop at the first decision point (a drought starts, a species
+                     appears or dies out), save it to <save directory>/decision.json
+                     (or --save PATH) and show what the player can do; --ticks is the limit
   --save PATH     save the run when it ends
   --load PATH     continue a saved run (seed and personality come from the save;
                   --ticks counts ticks after the save)
@@ -59,7 +62,7 @@ static func parse_args(args: PackedStringArray) -> SimResult:
 				options["quiet"] = true
 			"--story":
 				options["story"] = true
-			"--climate", "--atmosphere", "--species", "--biosphere", "--events", "--personality", "--save", "--load":
+			"--climate", "--atmosphere", "--species", "--biosphere", "--events", "--personality", "--save", "--load", "--until":
 				if i + 1 >= args.size() or args[i + 1].begins_with("--"):
 					result.add_error("%s needs a value" % arg)
 					break
@@ -74,6 +77,8 @@ static func parse_args(args: PackedStringArray) -> SimResult:
 			_:
 				result.add_error("unknown option %s" % arg)
 		i += 1
+	if options.has("until") and options["until"] != "decision":
+		result.add_error("--until takes 'decision'")
 	if options.has("load") and (options.has("seed") or options.has("personality")):
 		result.add_error("--load takes seed and personality from the save; drop --seed/--personality")
 	if result.is_ok():
@@ -186,6 +191,42 @@ static func submit_acts(manager: SimulationManager, acts: Array) -> SimResult:
 		var submitted := manager.submit(InterventionSystem.ID, parsed.value["action"], parsed.value["args"]) if parsed.is_ok() else parsed
 		result.errors.append_array(submitted.errors)
 	return result
+
+
+## Default save of a decision point: one fixed name, so the loop is always
+## --load decision.json --act ... --until decision.
+const DECISION_SAVE := "decision.json"
+
+
+static func create_watcher(manager: SimulationManager) -> SimResult:
+	var texts := ChronicleTexts.load_json(ChronicleTexts.DEFAULT_PATH)
+	if not texts.is_ok():
+		return texts
+	var catalog := (manager.system(InterventionSystem.ID) as InterventionSystem).catalog()
+	return SimResult.success(DecisionWatcher.new(catalog.decision_events, catalog.decision_grace, manager.tick(), texts.value))
+
+
+## What the player reads at a decision point: what happened, where it was
+## saved, what they can do now and the command that continues the run.
+static func decision_report(manager: SimulationManager, watcher: DecisionWatcher, save_path: String) -> PackedStringArray:
+	var lines := PackedStringArray(["", "=== Punkt decyzji: tick %d ===" % manager.tick()])
+	lines.append_array(watcher.sentences())
+	lines.append("Zapis: %s" % save_path)
+	lines.append("Interwencje:")
+	var hand := manager.system(InterventionSystem.ID) as InterventionSystem
+	var biosphere := manager.system(BiosphereSystem.ID) as BiosphereSystem
+	for id in hand.catalog().ids():
+		var def := hand.catalog().get_def(id)
+		var usage := String(id) + "".join(PackedStringArray(def.args.map(func(a: String) -> String: return ":<" + a + ">")))
+		var ready := hand.ready_at(id)
+		lines.append("  %-28s %-24s %s" % [usage, def.name, "gotowe" if ready <= manager.tick() + 1 else "od ticku %d" % ready])
+	if biosphere != null:
+		var species := PackedStringArray()
+		for data in biosphere.species_ids():
+			species.append("%s %.1f" % [data, biosphere.population(data)])
+		lines.append("Gatunki (populacja 0-100): " + ", ".join(species))
+	lines.append("Dalej: ./godot/run_simulation.sh --load %s --act <interwencja> --until decision --story" % save_path.get_file())
+	return lines
 
 
 ## File-name friendly id; the timestamp only names files, it never enters the logs.

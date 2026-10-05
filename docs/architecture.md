@@ -925,7 +925,7 @@ res://  (godot/)
     tests/          unit, integration, simulation, architecture,
                     support (test-only helpers), golden, tools
   resources/        data assets (planet/, simulation/, chronicle/, ...)
-  tools/            console runner, RunSaver (outside simulation/: file and process work)
+  tools/            console runner, RunSaver, DecisionWatcher (outside simulation/: file and process work)
 ```
 
 ---

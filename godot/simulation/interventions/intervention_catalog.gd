@@ -11,6 +11,11 @@ const KEYS := ["id", "name", "args", "cooldown", "cooldown_group", "duration", "
 const ARG_KINDS: Array[String] = ["species"]
 
 var _defs: Array[InterventionDef] = []
+## Event types that stop a run waiting for the player (--until decision).
+var decision_events: Array[StringName] = []
+## Ticks after the run starts before a decision point counts, so the player
+## first sees what their own action caused (seeding moss "emerges" moss).
+var decision_grace := 0
 
 
 ## specs: system id -> coefficient spec (modifier targets).
@@ -27,6 +32,7 @@ static func from_data(data: Dictionary, specs: Dictionary, command_specs: Dictio
 	if typeof(raw) != TYPE_ARRAY:
 		return SimResult.failure("interventions: 'interventions' must be a list")
 	var catalog := InterventionCatalog.new()
+	_parse_decision_points(data.get("decision_points"), catalog, result)
 	var seen: Array[StringName] = []
 	for i in (raw as Array).size():
 		var def := _parse(raw[i], i, specs, command_specs, result)
@@ -39,6 +45,16 @@ static func from_data(data: Dictionary, specs: Dictionary, command_specs: Dictio
 	if result.is_ok():
 		result.value = catalog
 	return result
+
+
+static func _parse_decision_points(raw: Variant, catalog: InterventionCatalog, result: SimResult) -> void:
+	if typeof(raw) != TYPE_DICTIONARY or typeof(raw.get("events")) != TYPE_ARRAY or (raw["events"] as Array).is_empty() \
+			or not (raw["events"] as Array).all(func(e: Variant) -> bool: return typeof(e) == TYPE_STRING and not (e as String).is_empty()):
+		result.add_error("interventions: 'decision_points' needs 'events' (a list of event types) and 'grace_ticks'")
+		return
+	for event: String in raw["events"]:
+		catalog.decision_events.append(StringName(event))
+	catalog.decision_grace = _whole(raw.get("grace_ticks"), "decision_points.grace_ticks", "interventions", result)
 
 
 static func _parse(raw: Variant, index: int, specs: Dictionary, command_specs: Dictionary, result: SimResult) -> InterventionDef:

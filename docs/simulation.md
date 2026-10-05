@@ -325,6 +325,7 @@ GODOT_BIN=... ./godot/run_simulation.sh --ticks 2500 --save epoka.json          
 GODOT_BIN=... ./godot/run_simulation.sh --load epoka.json --ticks 1000          # dalsze 1000 ticków
 GODOT_BIN=... ./godot/run_simulation.sh --autosave 500                          # autozapis co 500 ticków (0 = wyłączony)
 GODOT_BIN=... ./godot/run_simulation.sh --load epoka.json --act seed_species:moss --act cloud_seeding  # interwencje gracza
+GODOT_BIN=... ./godot/run_simulation.sh --until decision --story               # zatrzymaj w punkcie decyzji (docs/gameplay.md)
 ```
 
 Osobowość planety: `"personality"` w `sim_config.json` (`random` = losowana
