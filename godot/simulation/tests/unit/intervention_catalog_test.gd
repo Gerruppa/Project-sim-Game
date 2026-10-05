@@ -70,3 +70,40 @@ func test_rejects_unknown_keys_args_and_duplicates() -> void:
 func test_reports_all_errors_at_once() -> void:
 	var result := I.parse([I.timed("a", {"name": "", "duration": 0}), I.seeding("b", {"cooldown": "soon"})])
 	assert_int(result.errors.size()).is_greater_equal(3)
+
+
+func _levels(default_level: String = "strong") -> Dictionary:
+	return {"default": default_level, "options": {"weak": {"scale": 0.25, "name": "lekko"}, "strong": {"scale": 1.0, "name": "mocno"}}}
+
+
+func test_reads_levels_and_scales_modifiers() -> void:
+	var def := I.catalog([I.timed("warm", {"levels": _levels()})]).get_def(&"warm")
+	assert_str(def.default_level).is_equal("strong")
+	assert_float(def.scaled_value({"operation": "add", "value": 8.0}, "weak")).is_equal(2.0)
+	assert_float(def.scaled_value({"operation": "add", "value": 8.0}, "strong")).is_equal(8.0)
+	# multiply scales the distance from 1: x3 at a quarter is x1.5
+	assert_float(def.scaled_value({"operation": "multiply", "value": 3.0}, "weak")).is_equal(1.5)
+	assert_float(def.scaled_value({"operation": "multiply", "value": 0.6}, "weak")).is_equal(0.9)
+
+
+func test_project_mirrors_and_dust_have_three_levels() -> void:
+	for id: StringName in [&"mirrors_warm", &"mirrors_cool"]:
+		var def := I.project_catalog().get_def(id)
+		assert_array(def.levels.keys()).contains_exactly_in_any_order(["weak", "medium", "strong"])
+		assert_str(def.default_level).is_equal("strong")
+
+
+func test_command_line_takes_an_optional_level() -> void:
+	var catalog := I.catalog([I.timed("warm", {"levels": _levels()}), I.seeding()])
+	assert_dict(catalog.parse_text("warm:weak").value).is_equal({"action": &"warm", "args": {"level": "weak"}})
+	assert_dict(catalog.parse_text("warm").value).is_equal({"action": &"warm", "args": {}})
+	assert_str("\n".join(catalog.parse_text("warm:hot").errors)).contains("unknown level 'hot'")
+	assert_str("\n".join(catalog.parse_text("seed:moss:weak").errors)).contains("seed:<species>")
+	assert_str(InterventionCatalog.usage(catalog.get_def(&"warm"))).is_equal("warm[:weak|strong]")
+
+
+func test_rejects_bad_levels() -> void:
+	assert_str(_errors(I.timed("x", {"levels": _levels("medium")}))).contains("default")
+	assert_str(_errors(I.timed("x", {"levels": {"default": "a", "options": {"a": {"scale": 1.5, "name": "x"}}}}))).contains("scale")
+	assert_str(_errors(I.timed("x", {"levels": {"default": "a", "options": {"a": {"scale": 0.5}}}}))).contains("name")
+	assert_str(_errors(I.seeding("x", {"levels": _levels()}))).contains("has none")

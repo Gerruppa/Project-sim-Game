@@ -1,7 +1,7 @@
 extends SceneTree
 ## Fun check for interventions (docs/gameplay.md): does every action change
 ## the planet's story, does it have a price, and is any action always best?
-##   godot --headless --path godot -s res://simulation/tests/tools/intervention_report.gd -- [--seeds N] [--at decision]
+##   godot --headless --path godot -s res://simulation/tests/tools/intervention_report.gd -- [--seeds N] [--at decision] [--actions a,b]
 ## For every archetype and seed: run to the act tick, save, then continue
 ## once without intervention and once per action, and compare what followed.
 ## The act tick is ACT_TICK, or with --at decision the first crisis after
@@ -65,16 +65,19 @@ class Outcome:
 func _init() -> void:
 	var seeds := 3
 	var at_decision := false
+	var actions: Array = ACTIONS
 	var args := OS.get_cmdline_user_args()
 	for i in args.size():
 		if args[i] == "--seeds" and i + 1 < args.size():
 			seeds = args[i + 1].to_int()
 		elif args[i] == "--at" and i + 1 < args.size():
 			at_decision = args[i + 1] == "decision"
+		elif args[i] == "--actions" and i + 1 < args.size():
+			actions = Array(args[i + 1].split(","))
 	var started := Time.get_ticks_msec()
 	# action -> [changed, priced, gained, Δbiomass sum, ΔT sum]
 	var totals := {}
-	for action: String in ACTIONS:
+	for action: String in actions:
 		totals[action] = [0, 0, 0, 0.0, 0.0]
 	var runs := 0
 	for archetype: String in ARCHETYPES:
@@ -83,7 +86,7 @@ func _init() -> void:
 			var save := _save_before_act(archetype, seed_value, at_decision)
 			var act_tick := int(save["tick"]) + 1
 			var base := _continue(archetype, seed_value, save, "", act_tick)
-			for action: String in ACTIONS:
+			for action: String in actions:
 				var outcome := _continue(archetype, seed_value, save, action, act_tick)
 				var row: Array = totals[action]
 				var changed := outcome.lines != base.lines
@@ -103,7 +106,7 @@ func _init() -> void:
 	print("")
 	print("action               | changed | has a price | gains | avg Δbiomass | avg ΔT   (of %d runs, act %s, watched %d ticks)"
 			% [runs, "at the first crisis after tick %d" % WARM_UP if at_decision else "at tick %d" % ACT_TICK, WATCH])
-	for action: String in ACTIONS:
+	for action: String in actions:
 		var row: Array = totals[action]
 		var verdict := "ALWAYS BEST" if row[2] == runs and row[1] == 0 else ("no effect" if row[0] < 2 else "")
 		print("%-20s | %3d     | %3d         | %3d   | %+8.2f     | %+6.2f %s" % [action, row[0], row[1], row[2],

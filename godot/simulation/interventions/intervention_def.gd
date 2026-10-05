@@ -22,6 +22,28 @@ var story: Dictionary[String, String] = {}
 var modifiers: Array[Dictionary] = []
 ## Each entry: {"target", "action", "args"}; "$<arg>" values are filled in.
 var commands: Array[Dictionary] = []
+## Optional strengths the player picks with the "level" argument:
+## level id -> {"scale": 0..1, "name": word for the chronicle}. Empty when
+## the intervention has one strength.
+var levels: Dictionary[String, Dictionary] = {}
+## Level used when the player names none.
+var default_level := ""
+
+
+## The level a command asks for (its "level" argument or the default).
+func level_of(args: Dictionary) -> String:
+	return str(args.get("level", default_level))
+
+
+## A modifier value at a level: "add" scales the amount, "multiply" scales
+## the distance from 1, so a weaker level always lies between no effect and
+## full strength.
+func scaled_value(modifier: Dictionary, level: String) -> float:
+	var value: float = modifier["value"]
+	if levels.is_empty() or not levels.has(level):
+		return value
+	var scale: float = levels[level]["scale"]
+	return value * scale if modifier["operation"] == "add" else 1.0 + (value - 1.0) * scale
 
 
 func source() -> StringName:

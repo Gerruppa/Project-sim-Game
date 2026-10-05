@@ -6,7 +6,7 @@ extends RefCounted
 ## load error, not an intervention that silently does nothing.
 
 const DEFAULT_PATH := "res://resources/interventions/interventions.json"
-const KEYS := ["id", "name", "args", "cooldown", "cooldown_group", "duration", "story", "modifiers", "commands"]
+const KEYS := ["id", "name", "args", "cooldown", "cooldown_group", "duration", "story", "modifiers", "commands", "levels"]
 ## Argument kinds the player can pass.
 const ARG_KINDS: Array[String] = ["species"]
 
@@ -91,6 +91,7 @@ static func _parse(raw: Variant, index: int, specs: Dictionary, command_specs: D
 		def.cooldown_group = StringName(group)
 	_parse_effects(data, def, label, specs, command_specs, result)
 	_parse_story(data.get("story"), def, label, result)
+	_parse_levels(data.get("levels"), def, label, result)
 	if def.cooldown < def.duration:
 		result.add_error("%s: cooldown must be at least the duration (one copy active at a time)" % label)
 	return def
@@ -145,6 +146,32 @@ static func _check_command(command: Variant, def: InterventionDef, label: String
 	return ok
 
 
+## {"default": id, "options": {id: {"scale": 0..1, "name": text}}}. Only for
+## interventions with modifiers: a level scales modifier values.
+static func _parse_levels(raw: Variant, def: InterventionDef, label: String, result: SimResult) -> void:
+	if raw == null:
+		return
+	if def.modifiers.is_empty():
+		result.add_error("%s: levels scale modifiers; this intervention has none" % label)
+		return
+	if typeof(raw) != TYPE_DICTIONARY or typeof(raw.get("options")) != TYPE_DICTIONARY or (raw["options"] as Dictionary).is_empty():
+		result.add_error("%s: 'levels' needs 'options' {id: {scale, name}} and a 'default'" % label)
+		return
+	for id: Variant in raw["options"]:
+		var option: Variant = raw["options"][id]
+		if typeof(id) != TYPE_STRING or (id as String).is_empty() or (id as String).contains(":") \
+				or typeof(option) != TYPE_DICTIONARY or not (typeof(option.get("scale")) in [TYPE_INT, TYPE_FLOAT]) \
+				or float(option["scale"]) <= 0.0 or float(option["scale"]) > 1.0 \
+				or typeof(option.get("name")) != TYPE_STRING or (option["name"] as String).is_empty():
+			result.add_error("%s: level '%s' needs a scale in (0, 1] and a name" % [label, id])
+			continue
+		def.levels[id] = {"scale": float(option["scale"]), "name": option["name"]}
+	if typeof(raw.get("default")) != TYPE_STRING or not def.levels.has(raw["default"]):
+		result.add_error("%s: levels 'default' must be one of %s" % [label, def.levels.keys()])
+	else:
+		def.default_level = raw["default"]
+
+
 static func _parse_story(raw: Variant, def: InterventionDef, label: String, result: SimResult) -> void:
 	var needed: Array[String] = ["applied"]
 	if def.duration > 0:
@@ -196,10 +223,25 @@ func parse_text(text: String) -> SimResult:
 	if def == null:
 		return SimResult.failure("unknown intervention '%s'; known: %s" % [parts[0], ids_text()])
 	var values := parts.slice(1)
-	if values.size() != def.args.size():
-		return SimResult.failure("%s needs %s" % [def.id, "no arguments" if def.args.is_empty()
-				else "%s, e.g. %s:%s" % [def.args, def.id, ":".join(PackedStringArray(def.args.map(func(a: String) -> String: return "<" + a + ">")))]])
+	# One value more than the arguments is the level, when the intervention has levels.
+	var with_level := not def.levels.is_empty() and values.size() == def.args.size() + 1
+	if values.size() != def.args.size() and not with_level:
+		var needed := "no arguments" if def.args.is_empty() and def.levels.is_empty() else "arguments, e.g. " + usage(def)
+		return SimResult.failure("%s needs %s" % [def.id, needed])
 	var args := {}
 	for i in def.args.size():
 		args[def.args[i]] = values[i]
+	if with_level:
+		if not def.levels.has(values[-1]):
+			return SimResult.failure("%s: unknown level '%s'; known: %s" % [def.id, values[-1], ", ".join(PackedStringArray(def.levels.keys()))])
+		args["level"] = values[-1]
 	return SimResult.success({"action": def.id, "args": args})
+
+
+## How to write the intervention on the command line, e.g.
+## "seed_species:<species>" or "mirrors_cool[:weak|medium|strong]".
+static func usage(def: InterventionDef) -> String:
+	var text := String(def.id) + "".join(PackedStringArray(def.args.map(func(a: String) -> String: return ":<" + a + ">")))
+	if not def.levels.is_empty():
+		text += "[:%s]" % "|".join(PackedStringArray(def.levels.keys()))
+	return text

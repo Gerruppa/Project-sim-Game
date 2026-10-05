@@ -24,8 +24,9 @@ const USAGE := """Usage: run_simulation.sh [options]
   --events PATH      world event definitions (default res://resources/events/events.json)
   --personality NAME harmonious, chaotic, guardian, random or none (default from sim_config.json)
                      other files describe planets of a different character
-  --act NAME[:ARG]   intervene at the first tick of the run (repeatable), e.g.
-                     --act seed_species:moss  --act mirrors_cool  --act cloud_seeding
+  --act NAME[:ARG][:LEVEL]  intervene at the first tick of the run (repeatable), e.g.
+                     --act seed_species:moss  --act mirrors_cool:weak  --act cloud_seeding
+                     mirrors and dust take a level: weak, medium or strong (default)
                      known: seed_species, cull_species, mirrors_warm, mirrors_cool,
                      cloud_seeding, aquifer_release, volcanic_awakening
                      (res://resources/interventions/interventions.json)
@@ -218,9 +219,8 @@ static func decision_report(manager: SimulationManager, watcher: DecisionWatcher
 	var biosphere := manager.system(BiosphereSystem.ID) as BiosphereSystem
 	for id in hand.catalog().ids():
 		var def := hand.catalog().get_def(id)
-		var usage := String(id) + "".join(PackedStringArray(def.args.map(func(a: String) -> String: return ":<" + a + ">")))
 		var ready := hand.ready_at(id)
-		lines.append("  %-28s %-24s %s" % [usage, def.name, "gotowe" if ready <= manager.tick() + 1 else "od ticku %d" % ready])
+		lines.append("  %-40s %-24s %s" % [InterventionCatalog.usage(def), def.name, "gotowe" if ready <= manager.tick() + 1 else "od ticku %d" % ready])
 	if biosphere != null:
 		var species := PackedStringArray()
 		for data in biosphere.species_ids():

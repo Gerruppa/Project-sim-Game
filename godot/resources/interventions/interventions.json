@@ -32,8 +32,16 @@
 			"cooldown_group": "mirrors",
 			"duration": 500,
 			"story": {
-				"applied": "Gracz rozkłada lustra orbitalne: planeta dostaje więcej światła.",
+				"applied": "Gracz rozkłada lustra orbitalne ({level_name}): planeta dostaje więcej światła.",
 				"ended": "Lustra orbitalne składają się."
+			},
+			"levels": {
+				"default": "strong",
+				"options": {
+					"weak": {"scale": 0.25, "name": "lekko"},
+					"medium": {"scale": 0.5, "name": "umiarkowanie"},
+					"strong": {"scale": 1.0, "name": "z pełną mocą"}
+				}
 			},
 			"modifiers": [{"target": "climate.base_temperature", "operation": "add", "value": 8.0}]
 		},
@@ -44,8 +52,16 @@
 			"cooldown_group": "mirrors",
 			"duration": 500,
 			"story": {
-				"applied": "Gracz rozpyla pył na orbicie: planeta dostaje mniej światła.",
+				"applied": "Gracz rozpyla pył na orbicie ({level_name}): planeta dostaje mniej światła.",
 				"ended": "Pył orbitalny opada."
+			},
+			"levels": {
+				"default": "strong",
+				"options": {
+					"weak": {"scale": 0.25, "name": "lekko"},
+					"medium": {"scale": 0.5, "name": "umiarkowanie"},
+					"strong": {"scale": 1.0, "name": "z pełną mocą"}
+				}
 			},
 			"modifiers": [{"target": "climate.base_temperature", "operation": "add", "value": -8.0}]
 		},

@@ -92,7 +92,7 @@ cooldownem (`cooldown_group: mirrors`). Dane: `resources/interventions/intervent
   `culled` („przerzedziła je ręka gracza”)
 - zdarzenia z fazy Begin są publikowane przed zdarzeniami systemów:
   „Gracz zasiewa mchy.” stoi w kronice przed „Pojawiają się mchy.”
-- konsola: `--act NAZWA[:ARG]` (powtarzalne), np.
+- konsola: `--act NAZWA[:ARG][:POZIOM]` (powtarzalne), np.
   `--load epoka.json --act seed_species:moss --ticks 2000`
 - pomiar zabawy: `simulation/tests/tools/intervention_report.gd`
 
@@ -238,8 +238,35 @@ uratowały gatunek), a w kryzysie innego typu (wymarcie krzewów) szkodzą
 (−7 biomasy). Zasiew chmur w suszy szkodzi: deszcz wysusza powietrze.
 Gracz musi rozpoznać kryzys, żeby dobrać narzędzie.
 
-Otwarte: lustra i pył są w kryzysie prawie zawsze szkodliwe (młot zamiast
-skalpela, opcja C).
+Lustra i pył były w kryzysie prawie zawsze szkodliwe (młot zamiast
+skalpela); rozwiązane poziomami siły (opcja C, niżej).
+
+# Poziomy siły (decyzja C, 2026-10-05)
+
+Interwencja z modyfikatorami może mieć `levels` w danych:
+`{"default": id, "options": {id: {"scale": 0..1, "name": słowo do kroniki}}}`.
+Gracz wybiera poziom po dwukropku: `--act mirrors_cool:weak`; bez poziomu
+działa domyślny. Skalowanie: `add` → wartość × skala, `multiply` →
+1 + (wartość − 1) × skala, więc słabszy poziom leży zawsze między „nic”
+a pełną siłą. Cooldown i czas trwania są wspólne: gracz wybiera dawkę,
+nie częstotliwość. Kronika: „Gracz rozpyla pył na orbicie (lekko): …”.
+
+Lustra i pył mają poziomy `weak` (0,25 → ±2°), `medium` (0,5 → ±4°)
+i `strong` (1,0 → ±8°, domyślny). Pomiar w pierwszym kryzysie
+(9 przebiegów, średnie z 2000 ticków po akcji):
+
+| Akcja | Cena | Zysk | Śr. Δ biomasy |
+|---|---|---|---|
+| Lustra lekko (+2) | 3 | 4 | +0,08 |
+| Lustra umiarkowanie (+4) | 6 | 4 | −1,70 |
+| Lustra z pełną mocą (+8) | 8 | 1 | −4,60 |
+| Pył lekko (−2) | 4 | 2 | −1,13 |
+| Pył umiarkowanie (−4) | 5 | 2 | −2,12 |
+| Pył z pełną mocą (−8) | 7 | 0 | −5,74 |
+
+Lekkie lustra są prawdziwym dylematem (zysk 4, cena 3), a ryzyko rośnie
+z siłą. Pełna moc zostaje na sytuacje, w których planeta naprawdę musi się
+zmienić (np. wyjście z epoki lodowej).
 
 # Trwałe wymieranie (decyzja B, 2026-10-05)
 

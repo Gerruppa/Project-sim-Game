@@ -122,3 +122,44 @@ func test_never_returns_deltas() -> void:
 	var system := _system()
 	system.apply_command(_command(1, "warm"))
 	assert_array(system.compute(C.snapshot({}))).is_empty()
+
+
+func _leveled() -> InterventionSystem:
+	return _system([I.timed("warm", {"levels": {"default": "strong", "options": {
+			"weak": {"scale": 0.25, "name": "lekko"}, "strong": {"scale": 1.0, "name": "mocno"}}}})])
+
+
+func test_level_scales_the_modifier_and_names_itself() -> void:
+	var system := _leveled()
+	system.apply_command(_command(1, "warm", {"level": "weak"}))
+	var event := system.take_events(1)[0]
+	assert_str(event.data["level"]).is_equal("weak")
+	assert_str(event.data["level_name"]).is_equal("lekko")
+	_ticks(system, 1, 1)
+	assert_float(_registry.modifiers()[0].value).is_equal(1.0)
+
+
+func test_without_a_level_the_default_applies() -> void:
+	var system := _leveled()
+	system.apply_command(_command(1, "warm"))
+	assert_str(system.take_events(1)[0].data["level_name"]).is_equal("mocno")
+	_ticks(system, 1, 1)
+	assert_float(_registry.modifiers()[0].value).is_equal(4.0)
+
+
+func test_validates_levels() -> void:
+	var system := _leveled()
+	assert_bool(system.validate_command(_command(1, "warm", {"level": "weak"})).is_ok()).is_true()
+	assert_str("\n".join(system.validate_command(_command(1, "warm", {"level": "hot"})).errors)).contains("unknown level")
+	assert_str("\n".join(_system().validate_command(_command(1, "warm", {"level": "weak"})).errors)).contains("unknown argument")
+
+
+func test_level_survives_a_save() -> void:
+	var first := _leveled()
+	first.apply_command(_command(5, "warm", {"level": "weak"}))
+	_ticks(first, 5, 6)
+	_registry = I.registry()
+	var restored := _leveled()
+	restored.load_state(JSON.parse_string(JSON.stringify(first.save_state())))
+	restored.restore_modifiers(_registry)
+	assert_float(_registry.modifiers()[0].value).is_equal(1.0)

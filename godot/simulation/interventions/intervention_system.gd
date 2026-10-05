@@ -55,7 +55,10 @@ func validate_command(command: SimCommand) -> SimResult:
 			result.add_error("%s: '%s' is not a species of this planet; known: %s"
 					% [def.id, value, ", ".join(PackedStringArray(_species.map(func(id: StringName) -> String: return String(id))))])
 	for arg: Variant in command.args:
-		if not def.args.has(arg):
+		if arg == "level" and not def.levels.is_empty():
+			if not def.levels.has(str(command.args[arg])):
+				result.add_error("%s: unknown level '%s'; known: %s" % [def.id, command.args[arg], ", ".join(PackedStringArray(def.levels.keys()))])
+		elif not def.args.has(arg):
 			result.add_error("%s: unknown argument '%s'" % [def.id, arg])
 	if command.tick < ready_at(def.id):
 		result.add_error("%s is not ready: available from tick %d" % [def.name, ready_at(def.id)])
@@ -80,6 +83,9 @@ func apply_command(command: SimCommand) -> Array[SimCommand]:
 		_to_register.append(entry)
 	var data := {"id": String(def.id), "name": def.name, "story": def.story["applied"], "duration": def.duration}
 	data.merge(command.args)
+	if not def.levels.is_empty():
+		data["level"] = def.level_of(command.args)
+		data["level_name"] = def.levels[data["level"]]["name"]
 	emit_event(APPLIED_EVENT, data)
 	return def.follow_ups(command.tick, command.args)
 
@@ -110,8 +116,8 @@ func restore_modifiers(registry: ModifierRegistry) -> void:
 func _register(entry: Dictionary, registry: ModifierRegistry) -> void:
 	var def := _catalog.get_def(StringName(entry["id"]))
 	for raw in def.modifiers:
-		var modifier := Modifier.new(StringName(raw["target"]), StringName(raw["operation"]), raw["value"],
-				def.source(), entry["ends"])
+		var modifier := Modifier.new(StringName(raw["target"]), StringName(raw["operation"]),
+				def.scaled_value(raw, def.level_of(entry["args"])), def.source(), entry["ends"])
 		# Planets without the target system (e.g. no biosphere) skip it.
 		if registry.has_target(modifier.system_id()):
 			registry.add(modifier)
