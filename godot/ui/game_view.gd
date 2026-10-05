@@ -8,6 +8,8 @@ extends Control
 ## The game is a GameSession, the same one the console plays; this node only
 ## shows it and turns clicks into GameSession.submit. Options come from the
 ## command line (as play.sh), or from `options` set before entering the tree.
+## Without either (a double-clicked exported game) it starts with a
+## new-game screen: random or chosen planet, its character, or the last save.
 
 ## Time speeds offered to the player (ticks per second at base rate 1).
 const SPEEDS: Array[int] = [10, 100, 1000]
@@ -15,9 +17,14 @@ const DEFAULT_SPEED := 100
 ## Ticks between two chart samples.
 const SAMPLE_EVERY := 10
 const CHART_PARAMS: Array[String] = ["temperature", "humidity", "oxygen", "biomass", "co2"]
+## Planet characters on the new-game screen: [personality option, label].
+const CHARACTERS := [["random", "losowy"], ["harmonious", "Harmonijna"], ["chaotic", "Chaotyczna"],
+		["guardian", "Strażnik"]]
 
 ## Set before add_child to skip the command line (tests).
 var options := {}
+## The command line options are read from; tests replace it.
+var command_line := OS.get_cmdline_user_args()
 
 var session: GameSession
 var _scheduler: TickScheduler
@@ -40,17 +47,32 @@ var _actions: HFlowContainer
 var _continue_button: Button
 var _action_rows := {}
 var _error: Label
+var _new_game_box: HBoxContainer
+var _seed_edit: LineEdit
+var _character: OptionButton
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_build()
 	if options.is_empty():
-		var parsed := PlaySession.parse_args(OS.get_cmdline_user_args())
+		if command_line.is_empty():
+			_show_new_game()
+			return
+		var parsed := PlaySession.parse_args(command_line)
 		if not parsed.is_ok():
 			_show_error("\n".join(parsed.errors) + "\n" + PlaySession.USAGE)
 			return
 		options = parsed.value
+	open_game(options)
+
+
+## Opens a game with play.sh options and shows it (intro for a new game).
+func open_game(game_options: Dictionary) -> void:
+	options = game_options
+	if _new_game_box != null:
+		_new_game_box.queue_free()
+		_new_game_box = null
 	var created := GameSession.create(options, _on_chronicle_line)
 	if not created.is_ok():
 		_show_error("\n".join(created.errors))
@@ -68,6 +90,57 @@ func _ready() -> void:
 		_show_intro()
 	else:
 		start()
+
+
+## The first screen of a double-clicked game: which planet to play.
+func _show_new_game() -> void:
+	_decision_title.text = "Genesis Error · nowa planeta"
+	_decision_text.text = "Każdy numer to inna planeta. Zostaw pole puste, żeby wylosować; ten sam numer daje zawsze tę samą planetę."
+	_new_game_box = HBoxContainer.new()
+	_actions.add_child(_new_game_box)
+	var seed_label := Label.new()
+	seed_label.text = "Numer planety:"
+	_new_game_box.add_child(seed_label)
+	_seed_edit = LineEdit.new()
+	_seed_edit.placeholder_text = "losowy"
+	_seed_edit.custom_minimum_size = Vector2(110, 0)
+	_new_game_box.add_child(_seed_edit)
+	var character_label := Label.new()
+	character_label.text = "  Charakter:"
+	_new_game_box.add_child(character_label)
+	_character = OptionButton.new()
+	for pair: Array in CHARACTERS:
+		_character.add_item(str(pair[1]))
+		_character.set_item_metadata(_character.item_count - 1, pair[0])
+	_new_game_box.add_child(_character)
+	var start_button := Button.new()
+	start_button.text = "Nowa gra ▶"
+	start_button.pressed.connect(new_game)
+	_new_game_box.add_child(start_button)
+	var config: SimConfig = SimConfig.load_json(SimConfig.DEFAULT_PATH).value
+	if config != null and FileAccess.file_exists(SimulationRunner.resolve_save_path(SimulationRunner.DECISION_SAVE, config)):
+		var load_button := Button.new()
+		load_button.text = "Wczytaj ostatnią grę"
+		load_button.pressed.connect(load_last_game)
+		_new_game_box.add_child(load_button)
+
+
+## Fills the new-game screen as a player would (tests).
+func choose_planet(seed_text: String, character: int = 0) -> void:
+	_seed_edit.text = seed_text
+	_character.select(character)
+
+
+## Starts the planet chosen on the new-game screen (random when empty).
+func new_game() -> void:
+	var text := _seed_edit.text.strip_edges()
+	var seed_value := text.to_int() if text.is_valid_int() else randi_range(1, 99999)
+	var character: String = _character.get_item_metadata(_character.selected)
+	open_game(PlaySession.parse_args(PackedStringArray(["--seed", str(seed_value), "--personality", character])).value)
+
+
+func load_last_game() -> void:
+	open_game(PlaySession.parse_args(PackedStringArray(["--load", SimulationRunner.DECISION_SAVE])).value)
 
 
 ## Lets the planet run until the next decision point.

@@ -109,12 +109,17 @@ static func _read_number(option: String, text: String, options: Dictionary, resu
 	options[key] = value
 
 
-## Relative paths are resolved against the Godot project directory.
-static func resolve_directory(directory: String) -> String:
+## Relative paths are resolved against the Godot project directory. In an
+## exported game there is no project directory (res:// is read-only inside
+## the package), so they go to the game's user folder: "../saves" becomes
+## user://saves.
+static func resolve_directory(directory: String, exported: bool = OS.has_feature("template")) -> String:
 	if directory.begins_with("res://") or directory.begins_with("user://"):
 		return ProjectSettings.globalize_path(directory)
 	if directory.is_absolute_path():
 		return directory
+	if exported:
+		return ProjectSettings.globalize_path("user://").path_join(directory.trim_prefix("../")).simplify_path()
 	return ProjectSettings.globalize_path("res://").path_join(directory).simplify_path()
 
 

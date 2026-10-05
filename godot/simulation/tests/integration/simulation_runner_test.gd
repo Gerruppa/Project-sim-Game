@@ -106,6 +106,15 @@ func test_relative_log_directory_resolves_against_project() -> void:
 	assert_str(resolved).is_equal(ProjectSettings.globalize_path("res://").path_join("../logs/simulation_runs").simplify_path())
 
 
+func test_exported_game_keeps_relative_directories_in_its_user_folder() -> void:
+	# An exported game has no project directory; ../saves must not land
+	# next to the executable or inside the read-only package.
+	assert_str(SimulationRunner.resolve_directory("../saves", true)) \
+			.is_equal(ProjectSettings.globalize_path("user://saves"))
+	assert_str(SimulationRunner.resolve_directory("../logs/simulation_runs", true)) \
+			.is_equal(ProjectSettings.globalize_path("user://logs/simulation_runs"))
+
+
 func test_virtual_log_directory_is_globalized() -> void:
 	assert_str(SimulationRunner.resolve_directory("user://runs")).is_equal(ProjectSettings.globalize_path("user://runs"))
 

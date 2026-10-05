@@ -25,6 +25,21 @@ export GODOT_BIN="<path to Godot_v4.7.2-stable_win64_console.exe>"
 
 Player guide (Polish): [docs/jak_grac.md](docs/jak_grac.md).
 
+### Package for external testers
+
+```bash
+./godot/export_game.sh   # -> build/GenesisError-<date>-<commit>.zip
+```
+
+One `GenesisError.exe` (Windows x64, no install) and
+`INSTRUKCJA.txt` ([docs/instrukcja_testera.txt](docs/instrukcja_testera.txt):
+how to play and what to report). Needs the Godot 4.7.2 export templates
+(Windows x86_64) in `%APPDATA%/Godot/export_templates/4.7.2.stable/`.
+Started without options, the game opens a new-game screen (planet number
+or random, character, last save). An exported game keeps saves and
+chronicles in its user folder
+(`%APPDATA%/Godot/app_userdata/Genesis Error/`).
+
 ## Develop
 
 ```bash

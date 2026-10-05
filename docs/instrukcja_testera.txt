@@ -1,0 +1,111 @@
+GENESIS ERROR - prototyp do testów
+==================================
+
+Dziękuję, że testujesz! To wczesny prototyp: prosta grafika, wszystko po
+polsku. Sprawdzamy, czy sama gra jest ciekawa, a nie jak wygląda.
+
+
+1. URUCHOMIENIE (Windows 10/11, 64-bit)
+---------------------------------------
+
+1. Rozpakuj ZIP do dowolnego folderu (np. na Pulpit).
+2. Uruchom GenesisError.exe.
+3. Windows może pokazać ostrzeżenie "System Windows ochronił ten komputer"
+   (gra nie ma płatnego podpisu cyfrowego). Kliknij "Więcej informacji",
+   potem "Uruchom mimo to".
+
+Nic nie trzeba instalować. Gra nie łączy się z internetem.
+
+
+2. O CO CHODZI
+--------------
+
+Opiekujesz się młodą, martwą planetą. Nie budujesz niczego: obserwujesz,
+jak planeta żyje, i od czasu do czasu w nią ingerujesz.
+
+Życie pojawia się samo, etapami:
+bakterie -> glony -> mchy -> krzewy -> drzewa.
+Każdy etap potrzebuje innych warunków (ciepła, wody, tlenu, gleby).
+Planeta ma też własne kryzysy: susze, epoki lodowe, przegrzanie, pożary.
+
+CEL: "Dojrzała planeta" - wszystkie 5 etapów życia żyje jednocześnie
+przez 2 lata.
+
+Dodatkowe nagrody:
+  * gwiazdki: Bez strat (nic nie wymarło), Szybko (wygrana przed rokiem
+    30), Lekką ręką (od 1 do 5 akcji, lustra i pył tylko "lekko")
+  * 7 ambicji, np. "Pierwszy las", "Przetrwać zimę", "Nie ruszaj"
+    (wygrana bez żadnej akcji)
+
+
+3. JAK GRAĆ
+-----------
+
+Ekran startowy: wpisz numer planety albo zostaw pole puste (losowa).
+Ten sam numer to zawsze ta sama planeta - możesz zagrać ją drugi raz
+i sprawdzić, co by było, gdybyś zrobił coś inaczej.
+Charakter planety: Harmonijna (spokojna), Chaotyczna (więcej kryzysów),
+Strażnik (sama się leczy), albo losowy.
+
+Okno:
+  * po lewej: planeta (kolor = temperatura, biel = lód, zieleń = życie,
+    białe kropki = chmury, niebieska poświata = tlen), pod nią cel
+  * na środku: wykres w czasie oraz tabele z paskami;
+    strzałki pokazują, co wzrosło (↑) i zmalało (↓) od ostatniej decyzji
+  * po prawej: kronika planety - co się wydarzyło i DLACZEGO
+  * na dole: panel decyzji i przyciski akcji
+
+Gra sama się zatrzymuje, gdy dzieje się coś ważnego (PUNKT DECYZJI).
+Przeczytaj, co się stało, i podpowiedź. Potem:
+  * kliknij akcję (gatunek i siłę wybierasz z listy obok przycisku),
+  * albo nic nie rób,
+  * i kliknij "Dalej".
+
+Przyciski akcji działają w punkcie decyzji i w pauzie: w każdej chwili
+możesz kliknąć "Pauza" i działać.
+Tempo: x10 (wolno), x100 (domyślnie), x1000 (szybko).
+Szare przyciski się odnawiają; najedź myszą, żeby zobaczyć, od kiedy
+będą dostępne.
+
+Akcje:
+  Zasiew gatunku      dodaje trochę wybranego gatunku (przywraca wymarłe)
+  Przerzedzenie       zostawia 10% gatunku
+  Lustra orbitalne    ocieplają planetę (lekko / umiarkowanie / z pełną mocą)
+  Pył orbitalny       ochładza planetę (lekko / umiarkowanie / z pełną mocą)
+  Zasiew chmur        więcej deszczu
+  Wody podziemne      więcej wilgoci w powietrzu
+  Przebudzenie        wulkany wydzielają więcej CO2 (cieplej na długo)
+    wulkanów
+
+Wskazówka: gatunek, który wymarł, prawie nigdy nie wraca sam.
+
+Gra zapisuje się w każdym punkcie decyzji. Po ponownym uruchomieniu
+kliknij "Wczytaj ostatnią grę".
+
+Partia trwa zwykle kilkanaście minut (zależy od tempa i od tego, jak
+długo czytasz kronikę).
+
+
+4. CO MNIE INTERESUJE (najważniejsza część!)
+--------------------------------------------
+
+Po 1-3 partiach odpisz proszę krótko na pytania:
+
+ 1. Czy choć raz pomyślałeś "ciekawe, co się stanie, jeśli..."?
+    Przy czym?
+ 2. Co cię zaskoczyło? Co było niezrozumiałe?
+ 3. Czy wiedziałeś, co możesz zrobić w punkcie decyzji?
+    Czy podpowiedzi pomagały?
+ 4. Których akcji używałeś najczęściej, a których wcale? Dlaczego?
+ 5. Czy gra zatrzymywała się za często, za rzadko, w sam raz?
+ 6. Czy cel i gwiazdki motywowały? Czy wygrałeś?
+ 7. Czy chciałbyś zagrać jeszcze raz (inną planetą albo tą samą)?
+ 8. Jedna rzecz, którą byś zmienił.
+
+Bardzo pomoże, jeśli dołączysz kroniki swoich partii. To pliki tekstowe:
+  wpisz w pasku adresu Eksploratora Windows
+    %APPDATA%\Godot\app_userdata\Genesis Error\logs\simulation_runs
+  i skopiuj pliki *.chronicle.txt (jeden na partię).
+
+Błędy i dziwne zachowania też są cenne: napisz, co się stało, i podaj
+numer planety (widać go na górze okna, "seed").

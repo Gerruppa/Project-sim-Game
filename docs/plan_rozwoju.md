@@ -49,6 +49,8 @@ mutacją), pomiar narzędziami z rozdziału 1, dokumentacja, commit na prośbę.
 - Zebrać: czy pojawia się „ciekawe, co jeśli…”, które akcje są używane,
   czy podpowiedzi pomagają, czy tempo punktów decyzji jest dobre, czy cele
   motywują.
+- Testy zewnętrzne: paczka z `./godot/export_game.sh`, odpowiedzi na
+  pytania z `docs/instrukcja_testera.txt` i kroniki partii testerów.
 - Wynik: lista poprawek UX i balansu do etapu B.
 
 ### Etap B. Domknięcie luk z pomiarów
@@ -77,7 +79,10 @@ mutacją), pomiar narzędziami z rozdziału 1, dokumentacja, commit na prośbę.
 
 Pierwsza wersja gotowa: `./godot/play_window.sh` (rysunek planety, wykres,
 tabele, kronika, cele, panel decyzji z przyciskami, tempo x10/x100/x1000,
-pauza). Dalej: dopracowanie po sesjach gry, potem wizualizacja docelowa.
+pauza). Paczka dla testerów zewnętrznych: `./godot/export_game.sh`
+(ZIP z `GenesisError.exe` i instrukcją z pytaniami do testera). Dalej:
+dopracowanie po sesjach gry i odpowiedziach testerów, potem wizualizacja
+docelowa.
 
 - Okno Godota: wykresy parametrów w czasie, kronika na żywo, panel celów,
   przyciski akcji wysyłające te same polecenia

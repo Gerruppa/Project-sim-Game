@@ -67,6 +67,15 @@ Okno pokazuje planetę na żywo:
 Gra zapisuje się w każdym punkcie decyzji (`saves/decision.json`), tak samo
 jak w konsoli; zapis z okna wczytasz też w konsoli i odwrotnie.
 
+### Paczka dla testerów
+
+`./godot/export_game.sh` buduje `build/GenesisError-<data>-<commit>.zip`:
+samodzielny `GenesisError.exe` i `INSTRUKCJA.txt`
+(`docs/instrukcja_testera.txt`). Uruchomiona bez opcji gra pokazuje ekran
+nowej gry (numer planety albo losowa, charakter, wczytanie ostatniej gry).
+Zapisy i kroniki wersji samodzielnej trafiają do
+`%APPDATA%\Godot\app_userdata\Genesis Error\`.
+
 ## 2a. Gra w konsoli z menu
 
 ```bash

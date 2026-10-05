@@ -75,7 +75,8 @@ godot/                                          the Godot project (res://)
   game/            game layer: planet assembly, game session, menus, goals, hints, saves
   ui/              the window: planet drawing, charts, panels
   tools/           entry points: run_simulation.gd, play.gd
-  play_window.sh, play.sh, run_simulation.sh, run_tests.sh
+  play_window.sh, play.sh, run_simulation.sh, run_tests.sh,
+  export_game.sh (tester ZIP), export_presets.cfg
   addons/gdUnit4/  test framework
 logs/simulation_runs/, saves/                   run logs and saves (not in git)
 .claude/skills/                                 project skills for Claude Code

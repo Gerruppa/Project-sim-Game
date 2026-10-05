@@ -112,3 +112,34 @@ func test_decision_shows_what_changed_since_the_planet_last_ran_on() -> void:
 	view.act("aquifer_release")
 	changes = view.session.planet_rows().map(func(row: Dictionary) -> String: return row["change"])
 	assert_bool(changes.any(func(change: String) -> bool: return change != "=")).is_true()
+
+
+func _open_without_options() -> GameView:
+	_view = GameView.new()
+	_view.command_line = PackedStringArray()
+	add_child(_view)
+	return _view
+
+
+func test_double_clicked_game_asks_which_planet_first() -> void:
+	var view := _open_without_options()
+	assert_object(view.session).is_null()
+	assert_str(view.decision_text()).contains("nowa planeta")
+	assert_str(view.error_text()).is_empty()
+
+
+func test_new_game_screen_starts_the_chosen_planet() -> void:
+	var view := _open_without_options()
+	view.choose_planet("13", 2)
+	view.new_game()
+	assert_int(view.session.manager.config().seed()).is_equal(13)
+	assert_str(String(view.session.manager.config().personality())).is_equal("chaotic")
+	assert_str(view.decision_text()).contains("Witaj w Genesis Error")
+
+
+func test_new_game_screen_draws_a_planet_when_no_number_is_given() -> void:
+	var view := _open_without_options()
+	view.choose_planet("  ")
+	view.new_game()
+	assert_object(view.session).is_not_null()
+	assert_int(view.session.manager.config().seed()).is_between(1, 99999)

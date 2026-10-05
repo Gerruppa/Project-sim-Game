@@ -17,12 +17,12 @@ saves/
 .godot/
 # gdUnit4 HTML/XML test reports
 godot/reports/
-# Export settings may contain credentials and local paths
-export_presets.cfg
+# Export credentials (export_presets.cfg is kept: it holds no secrets)
 export_credentials.cfg
 # Build output
 godot/build/
 godot/export/
+build/
 *.translation
 # Mono/.NET (not used yet, but Godot creates these if C# is enabled)
 .mono/
