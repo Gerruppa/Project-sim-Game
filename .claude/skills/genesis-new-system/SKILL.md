@@ -74,8 +74,9 @@ godot/simulation/tests/integration/<area>_*_test.gd
 - In tests: `SimulationManager.create(config, schema)` then
   `manager.register_system(system, interval)` (interval in ticks; 1 = every
   tick). See `tests/simulation/scheduler_determinism_test.gd` for the pattern.
-- In the console run: register it in `godot/tools/run_simulation.gd`
-  where the comment marks domain system registration.
+- In the game and the console run: register it in
+  `SimulationRunner.build_planet` (`godot/game/simulation_runner.gd`), in the
+  CLAUDE.md order; its save state goes through `save_state`/`load_state`.
 - The pipeline calls `compute` in the Compute phase with the snapshot of the
   previous tick; never call other systems or the pipeline from a system.
 

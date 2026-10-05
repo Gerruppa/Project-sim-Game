@@ -50,25 +50,22 @@ Never reverse this order.
 
 # CURRENT PROJECT GOAL
 
-The current goal is NOT to create a game.
+The simulation has proven it can generate surprises, instability,
+adaptation, evolution and stories (steps 1-8).
 
-The current goal is to create a simulation that produces interesting outcomes.
+The current goal is a console prototype that proves
+the player's decisions are interesting:
+decision points, interventions, hints and goals
+(`./godot/play.sh`, player guide: docs/jak_grac.md).
 
-No visual layer is required.
+No visual layer is required yet.
+Visualization (step 10) comes after playtests in the console.
 
-No UI is required.
+Every new mechanic must first show in the console
+(chronicle, logs, decision screen)
+that it creates decisions worth making.
 
-No player interaction is required.
-
-The simulation must first prove that it can generate:
-
-- surprises
-- instability
-- adaptation
-- evolution
-- interesting stories
-
-Only then can gameplay systems be added.
+Next stages and all ideas: docs/plan_rozwoju.md.
 
 ---
 
@@ -114,12 +111,13 @@ They keep the simulation trustworthy enough to be fun.
 
 Current stage:
 
-There is no player yet.
-The "player" is the observer reading the logs.
+The player plays in the console (`./godot/play.sh`)
+and reads the planet's chronicle.
 
-A feature is fun now if the logs show
+A feature is fun now if the decision screens and the chronicle show
 surprises, stories and causes worth understanding,
-and if it prepares decisions for the gameplay layer.
+and if the player gets a decision worth making.
+Measure it (tools in godot/simulation/tests/tools/) before keeping it.
 
 Most dangerous state:
 
@@ -643,11 +641,18 @@ simulation/interventions/
 
 simulation/tests/
 
+game/ (game layer above the simulation: SimulationRunner,
+PlaySession, GoalTracker, DecisionWatcher, HintAdvisor, saves)
+
+tools/ (entry points only: run_simulation.gd, play.gd)
+
 resources/
 
-docs/
+Outside res:// (repository root):
 
-logs/
+docs/ (design, player guide, plan: docs/plan_rozwoju.md)
+
+logs/ and saves/ (generated, not in git)
 
 ---
 

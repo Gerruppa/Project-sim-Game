@@ -26,7 +26,7 @@ Rules for every skill:
 
 - Refer to project documents, do not copy them.
   `CLAUDE.md`, `docs/architecture.md`, `docs/simulation.md`,
-  `DESIGN_PRINCIPLES.md`, `CORE_LOOP.md` stay the source of truth.
+  `docs/DESIGN_PRINCIPLES.md`, `docs/CORE_LOOP.md` stay the source of truth.
 - Contain project-specific knowledge: procedures, checklists, pitfalls.
 - Update the skill when the documents it relies on change.
 

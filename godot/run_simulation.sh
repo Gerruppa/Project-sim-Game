@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs the simulation in the console (headless).
-# Usage: GODOT_BIN=/path/to/godot ./run_simulation.sh [options] (options: USAGE in tools/simulation_runner.gd)
+# Usage: GODOT_BIN=/path/to/godot ./run_simulation.sh [options] (options: USAGE in game/simulation_runner.gd)
 # Logs: logs/simulation_runs/<run id>.log, .jsonl, .chronicle.txt; saves: saves/
 set -u
 

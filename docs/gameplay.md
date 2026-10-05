@@ -116,7 +116,7 @@ Pętla gracza w konsoli:
   interwencje z gotowością („gotowe” / „od ticku N”), populacje
   gatunków i komendę, która kontynuuje
 - stała nazwa zapisu: pętla to zawsze ta sama komenda
-- `DecisionWatcher` (`tools/`) tylko obserwuje; `--ticks` jest limitem
+- `DecisionWatcher` (`game/`) tylko obserwuje; `--ticks` jest limitem
 
 # Pomiar (intervention_report.gd)
 
@@ -295,7 +295,7 @@ zobaczeniu nadużycia w prawdziwej grze.
 # Cele: wygrana, gwiazdki i ambicje (2026-10-05)
 
 Decyzja: cel główny i ambicje razem, gwiazdki za styl, po wygranej gra
-trwa dalej. Dane: `resources/goals/goals.json`; `GoalTracker` (`tools/`)
+trwa dalej. Dane: `resources/goals/goals.json`; `GoalTracker` (`game/`)
 tylko obserwuje i zapisuje postęp w zapisie gry (`extras`).
 
 - **Dojrzała planeta**: wszystkie 5 etapów życia (populacja ≥ 1) przez

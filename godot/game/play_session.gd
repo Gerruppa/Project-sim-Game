@@ -17,7 +17,8 @@ const USAGE := """Usage: play.sh [options]
   --personality NAME   harmonious, chaotic, guardian, random (default) or none
   --load FILE          continue a saved game (default save: decision.json)
   --save FILE          where decision points are saved (default decision.json)
-  --no-hints           hide the hints (toggle in game with h)"""
+  --no-hints           hide the hints (toggle in game with h)
+  --full-logs          also write the full technical logs (.log, .jsonl; large)"""
 
 
 ## A log sink that writes through the session's output.
@@ -53,12 +54,14 @@ var _last_tick := -1
 
 static func parse_args(args: PackedStringArray) -> SimResult:
 	var result := SimResult.new()
-	var options := {"hints": true, "save": SimulationRunner.DECISION_SAVE, "act": []}
+	var options := {"hints": true, "full_logs": false, "save": SimulationRunner.DECISION_SAVE, "act": []}
 	var i := 0
 	while i < args.size():
 		match args[i]:
 			"--no-hints":
 				options["hints"] = false
+			"--full-logs":
+				options["full_logs"] = true
 			"--seed", "--personality", "--load", "--save":
 				if i + 1 >= args.size():
 					result.add_error("%s needs a value" % args[i])
@@ -108,15 +111,17 @@ static func create(options: Dictionary, read: Callable, write: Callable) -> SimR
 	session._manager.attach_log(session._goals)
 	for warning: String in opened.value["warnings"]:
 		write.call("UWAGA: %s\n" % warning)
-	# Full logs on disk as in every run (tests switch them off with
-	# "file_logs": false); the chronicle also goes to the player.
+	# On disk: the chronicle of the game; the full technical logs only with
+	# --full-logs (a long game writes hundreds of MB of them). Tests switch
+	# files off with "file_logs": false. The chronicle also goes to the player.
 	if options.get("file_logs", true):
 		var log_id := SimulationRunner.run_id(config.seed())
-		var log := SimulationRunner.create_log(config, log_id, false)
-		var chronicle := SimulationRunner.create_chronicle(config, log_id, false)
-		for created: SimResult in [log, chronicle]:
-			if created.is_ok() and created.value != null:
-				session._manager.attach_log(created.value)
+		var created: Array[SimResult] = [SimulationRunner.create_chronicle(config, log_id, false)]
+		if options.get("full_logs", false):
+			created.append(SimulationRunner.create_log(config, log_id, false))
+		for result: SimResult in created:
+			if result.is_ok() and result.value != null:
+				session._manager.attach_log(result.value)
 	session._manager.attach_log(PlanetChronicle.new([SessionSink.new(write)], texts.value))
 	return SimResult.success(session)
 

@@ -3,9 +3,9 @@ extends RefCounted
 ## Console glue around SimulationManager: command-line options, building the
 ## planet, log files and saves.
 ##
-## Kept out of simulation/ because it does file and process work.
-## The SceneTree entry point (run_simulation.gd) only calls into this class,
-## so everything here is testable.
+## Part of the game layer (game/): kept out of simulation/ because it does
+## file and process work. The entry points in tools/ (run_simulation.gd,
+## play.gd) only call into game/, so everything here is testable.
 
 const DEFAULT_TICKS := 3600
 const DEFAULT_SECONDS := 60.0

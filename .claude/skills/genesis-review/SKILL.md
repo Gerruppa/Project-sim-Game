@@ -12,8 +12,8 @@ list. If something is good, say it in one line and move on.
 ## Read first
 
 The diff or files under review, then the relevant parts of `CLAUDE.md`,
-`docs/architecture.md`, `docs/simulation.md`, `DESIGN_PRINCIPLES.md` and
-`CORE_LOOP.md`. Run the test suite if code changed (`genesis-qa`).
+`docs/architecture.md`, `docs/simulation.md`, `docs/DESIGN_PRINCIPLES.md` and
+`docs/CORE_LOOP.md`. Run the test suite if code changed (`genesis-qa`).
 
 ## Checklist
 

@@ -20,6 +20,15 @@ Never tune from a single run. Use many seeds:
   temperature, time in ice, ice ages, CO2 and O2 ranges, oxygenation tick, biomass, first trees, forest time, species alive, extinctions). Use it as the
   pattern for other systems (`extends SceneTree`, run with `--headless -s`);
   bigger batches can write CSV to `logs/simulation_runs/` (ignored by git).
+- Gameplay measurement tools in the same folder (all compare a run with an
+  otherwise identical run, so the difference is only what is measured):
+  `intervention_report.gd` (price and gain of actions; `--at decision|
+  extinction|event:<id>`, `--actions a,b`), `intervention_trace.gd` (peak
+  and duration of an action's effect), `event_impact.gd` (one world event's
+  effect, `--event id`), `goal_report.gd` (goals without a player),
+  `goal_bot.gd` (a bot playing by the hints). Results go to docs/gameplay.md.
+- `planet_report.gd --limits` adds each parameter's range and time at the
+  edges of the scale.
 - Every run also writes `logs/simulation_runs/*.jsonl`, one record per tick
   with all changes and causes, ready for offline analysis.
 

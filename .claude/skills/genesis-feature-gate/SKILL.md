@@ -1,6 +1,6 @@
 ---
 name: genesis-feature-gate
-description: Gate and specification step for any new feature, system or mechanic in Genesis Error, run before implementation. Applies the CLAUDE.md acceptance criteria template, the DESIGN_PRINCIPLES.md checklist, the CORE_LOOP.md validation test and the system build order. Use this whenever the user proposes or asks to add a new feature, mechanic, system, species, event or player action, or asks "should we add X?", even if they want to jump straight to code.
+description: Gate and specification step for any new feature, system or mechanic in Genesis Error, run before implementation. Applies the CLAUDE.md acceptance criteria template, the docs/DESIGN_PRINCIPLES.md checklist, the docs/CORE_LOOP.md validation test and the system build order. Use this whenever the user proposes or asks to add a new feature, mechanic, system, species, event or player action, or asks "should we add X?", even if they want to jump straight to code.
 ---
 
 # Feature gate
@@ -22,7 +22,7 @@ Atmosphere → Biosphere → Personality → Events → Save → Gameplay →
 Visualization. "Never skip steps." If the feature belongs to a later step,
 say so and record it for later instead of building it now.
 
-## 2. Design checklist (DESIGN_PRINCIPLES.md)
+## 2. Design checklist (docs/DESIGN_PRINCIPLES.md)
 
 Answer each with yes/no and one line of reasoning:
 
@@ -39,7 +39,7 @@ Answer each with yes/no and one line of reasoning:
 
 Mostly "no" → recommend not building it.
 
-## 3. Core loop test (CORE_LOOP.md)
+## 3. Core loop test (docs/CORE_LOOP.md)
 
 Does it improve observation, hypothesis, intervention, consequences, learning?
 Three or more "no" → reject. Also check: does it touch PlanetState? A feature

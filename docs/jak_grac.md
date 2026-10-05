@@ -47,6 +47,7 @@ echo 'export GODOT_BIN="C:/Users/jkapk/AppData/Local/Microsoft/WinGet/Packages/G
 ./godot/play.sh --seed 13            # konkretna planeta (każdy numer to inna)
 ./godot/play.sh --load decision.json # wróć do zapisanej gry
 ./godot/play.sh --no-hints           # bez podpowiedzi (w grze przełączasz je klawiszem h)
+./godot/play.sh --full-logs          # także pełne logi techniczne (duże)
 ```
 
 W każdym punkcie decyzji gra pokazuje:
@@ -407,8 +408,11 @@ deterministyczna), więc różnice wynikają wyłącznie z Twojej decyzji.
 | `saves/decision.json` | ostatni punkt decyzji |
 | `saves/<przebieg>.autosave.json` | autozapis co 1000 ticków |
 | `logs/simulation_runs/<przebieg>.chronicle.txt` | kronika całego przebiegu |
-| `logs/simulation_runs/<przebieg>.log` | pełny log: każda zmiana każdego parametru z przyczyną |
-| `logs/simulation_runs/<przebieg>.jsonl` | to samo dla narzędzi (JSON Lines) |
+| `logs/simulation_runs/<przebieg>.log` | pełny log: każda zmiana każdego parametru z przyczyną (tryb komend; w grze z menu tylko z `--full-logs`) |
+| `logs/simulation_runs/<przebieg>.jsonl` | to samo dla narzędzi, JSON Lines (jak wyżej) |
+
+Pełne logi są duże: długa gra to nawet 100 MB. Dlatego gra z menu
+domyślnie zapisuje tylko kronikę. Stare logi możesz bezpiecznie usuwać.
 
 ---
 

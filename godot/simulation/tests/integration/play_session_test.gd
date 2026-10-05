@@ -92,6 +92,8 @@ func test_parses_play_options() -> void:
 	var options: Dictionary = PlaySession.parse_args(PackedStringArray(["--seed", "7", "--no-hints"])).value
 	assert_int(options["seed"]).is_equal(7)
 	assert_bool(options["hints"]).is_false()
+	assert_bool(options["full_logs"]).is_false()
+	assert_bool(PlaySession.parse_args(PackedStringArray(["--full-logs"])).value["full_logs"]).is_true()
 	assert_bool(PlaySession.parse_args(PackedStringArray(["--load", "a.json", "--seed", "2"])).is_ok()).is_false()
 	assert_bool(PlaySession.parse_args(PackedStringArray(["--fast"])).is_ok()).is_false()
 

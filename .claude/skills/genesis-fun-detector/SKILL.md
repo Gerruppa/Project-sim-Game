@@ -14,7 +14,7 @@ This skill answers one question: **"Is this actually fun?"**
 Not "Is it realistic?". Not "Is it technically impressive?".
 Not "Is it scientifically accurate?". Only: "Will players enjoy interacting with it?"
 
-Read first: `CORE_LOOP.md`, `DESIGN_PRINCIPLES.md`, `docs/vision.md`
+Read first: `docs/CORE_LOOP.md`, `docs/DESIGN_PRINCIPLES.md`, `docs/vision.md`
 and the CLAUDE.md section FUN DETECTOR.
 
 ## Priority and scope
@@ -108,7 +108,7 @@ Promote features that:
 - increase player curiosity,
 - generate long-term consequences,
 - encourage observation,
-- support the Core Loop (`CORE_LOOP.md`).
+- support the Core Loop (`docs/CORE_LOOP.md`).
 
 ## Brutal honesty mode
 

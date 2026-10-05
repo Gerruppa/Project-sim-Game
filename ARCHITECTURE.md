@@ -54,9 +54,11 @@ Dependencies point down only. The simulation does not know the upper layers exis
 # Repository layout
 
 ```text
-CLAUDE.md, DESIGN_PRINCIPLES.md, CORE_LOOP.md   vision and rules
+README.md                                       what it is, how to play
+CLAUDE.md                                       rules for development
 ARCHITECTURE.md                                 this page
-docs/                                           detailed design
+docs/                                           design (DESIGN_PRINCIPLES, CORE_LOOP,
+                                                master plan), player guide, plan
 godot/                                          the Godot project (res://)
   project.godot
   resources/                                    data (JSON)
@@ -70,9 +72,11 @@ godot/                                          the Godot project (res://)
     personality/   PersonalitySystem, archetype catalog
     scheduling/    TickScheduler, TickPipeline, SimulationManager
     tests/         gdUnit4: unit, integration, simulation, architecture
-  tools/           console entry points
+  game/            game layer: planet assembly, menus, goals, hints, saves
+  tools/           entry points: run_simulation.gd, play.gd
+  play.sh, run_simulation.sh, run_tests.sh
   addons/gdUnit4/  test framework
-logs/simulation_runs/                           run logs (not in git)
+logs/simulation_runs/, saves/                   run logs and saves (not in git)
 .claude/skills/                                 project skills for Claude Code
 .github/workflows/                              CI on Linux, Windows, macOS
 ```

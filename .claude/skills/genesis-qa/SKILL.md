@@ -54,7 +54,8 @@ GODOT_BIN=... ./godot/run_tests.sh -a res://simulation/tests/unit/x_test.gd   # 
 - A full-planet tick costs ~0.4 ms. For long scenarios run the simulation
   once in the suite's `before()` and let several tests assert on what it
   recorded (see `tests/integration/biosphere_behavior_test.gd`). The whole
-  suite takes ~1.5 min; keep new balance tests small (few seeds).
+  suite takes ~3 min (more if a stale Godot process still runs: check and
+  stop hung processes first); keep new balance tests small (few seeds).
 
 ## Failure scenarios to always consider
 

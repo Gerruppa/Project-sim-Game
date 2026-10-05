@@ -534,18 +534,29 @@ never touch determinism or the golden trace.
 
 ---
 
-## Console runner
+## Game layer and console entry points
 
-`godot/tools/run_simulation.gd` (SceneTree entry) and
-`godot/tools/simulation_runner.gd` (options, log files; testable).
-Kept outside `simulation/` because it does file and process work.
+Dependencies point down: `tools/` → `game/` → `simulation/`.
+
+- `godot/tools/` holds only the SceneTree entry points:
+  `run_simulation.gd` (command mode) and `play.gd` (the game with menus)
+- `godot/game/` is the game layer above the simulation, kept outside
+  `simulation/` because it does file and process work and talks to the
+  player: `SimulationRunner` (options, building the planet, opening runs,
+  log files), `PlaySession` (menus, screens), `GoalTracker` (victory,
+  stars, ambitions), `DecisionWatcher`, `HintAdvisor`, `RunSaver`,
+  `ConsoleInput`
+- the simulation never references `game/`; the game layer only observes
+  the run (RunObserver) and sends commands (`SimulationManager.submit`)
 
 ```bash
 GODOT_BIN=... ./godot/run_simulation.sh                  # batch, 3600 ticks
 GODOT_BIN=... ./godot/run_simulation.sh --realtime --speed 10 --seconds 60
 ```
 
-Domain systems are registered in `run_simulation.gd` as they are built.
+Domain systems are registered in `SimulationRunner.build_planet`
+(`godot/game/simulation_runner.gd`) as they are built; the game and the
+command mode share it.
 
 ---
 
@@ -903,7 +914,7 @@ which also avoids the shared-instance problem of cached Resources.
 # FILE STRUCTURE
 
 The Godot project lives in `godot/`, so `res://` is `godot/`.
-Documentation stays in the repository root (`docs/`).
+Documentation stays in the repository (`docs/`, outside `res://`).
 
 ```text
 res://  (godot/)
@@ -925,7 +936,9 @@ res://  (godot/)
     tests/          unit, integration, simulation, architecture,
                     support (test-only helpers), golden, tools
   resources/        data assets (planet/, simulation/, chronicle/, ...)
-  tools/            console runner, RunSaver, DecisionWatcher (outside simulation/: file and process work)
+  game/             game layer: SimulationRunner, PlaySession, GoalTracker, DecisionWatcher,
+                    HintAdvisor, RunSaver, ConsoleInput (above simulation/)
+  tools/            entry points only: run_simulation.gd, play.gd
 ```
 
 ---
