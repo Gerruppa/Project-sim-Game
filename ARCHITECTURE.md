@@ -118,7 +118,7 @@ logs/simulation_runs/                           run logs (not in git)
 | 7. EventSystem | done: drought, guardian healing, planet chronicle |
 | 8. SaveSystem | done: save/load/autosave, data fingerprints, lineage placeholder |
 | 9. Gameplay layer | done: extinction causes, interventions (CommandQueue, --act), decision points (--until decision); docs/gameplay.md |
-| 10. Visualization | planned |
+| 10. Visualization | planned; next stages and all ideas: docs/plan_rozwoju.md |
 
 ---
 
