@@ -10,23 +10,54 @@
 				"end_time_limit": "Susza wygasa, choć powietrze wciąż jest suche."
 			},
 			"trigger": {
-				"condition": {"all": [
-					{"measure": "value", "param": "temperature", "op": ">", "value": 22},
-					{"measure": "anomaly", "param": "humidity", "window": 500, "op": "<", "value": -3.5}
-				]},
+				"condition": {
+					"all": [
+						{
+							"measure": "value",
+							"param": "temperature",
+							"op": ">",
+							"value": 22
+						},
+						{
+							"measure": "anomaly",
+							"param": "humidity",
+							"window": 500,
+							"op": "<",
+							"value": -3.5
+						}
+					]
+				},
 				"for_ticks": 30
 			},
 			"end": {
-				"condition": {"measure": "anomaly", "param": "humidity", "window": 500, "op": ">", "value": -1},
+				"condition": {
+					"measure": "anomaly",
+					"param": "humidity",
+					"window": 500,
+					"op": ">",
+					"value": -1
+				},
 				"for_ticks": 20
 			},
 			"min_duration": 60,
 			"max_duration": 400,
 			"cooldown": 300,
 			"modifiers": [
-				{"target": "climate.water_availability", "operation": "multiply", "value": 0.6},
-				{"target": "biosphere.growth_scale", "operation": "multiply", "value": 0.6},
-				{"target": "biosphere.fire_rate", "operation": "multiply", "value": 2.0}
+				{
+					"target": "climate.water_availability",
+					"operation": "multiply",
+					"value": 0.6
+				},
+				{
+					"target": "biosphere.growth_scale",
+					"operation": "multiply",
+					"value": 0.6
+				},
+				{
+					"target": "biosphere.fire_rate",
+					"operation": "multiply",
+					"value": 2.0
+				}
 			]
 		},
 		{
@@ -37,24 +68,218 @@
 				"end": "Planeta się wyleczyła: życie wróciło blisko dawnego szczytu.",
 				"end_time_limit": "Leczenie nie wystarczyło: życie wciąż jest daleko od dawnego szczytu."
 			},
-			"personality": ["guardian"],
+			"personality": [
+				"guardian"
+			],
 			"trigger": {
-				"condition": {"all": [
-					{"measure": "max", "param": "biomass", "window": 500, "op": ">", "value": 5},
-					{"measure": "drop_from_peak", "param": "biomass", "window": 500, "op": ">", "value": 0.3}
-				]},
+				"condition": {
+					"all": [
+						{
+							"measure": "max",
+							"param": "biomass",
+							"window": 500,
+							"op": ">",
+							"value": 5
+						},
+						{
+							"measure": "drop_from_peak",
+							"param": "biomass",
+							"window": 500,
+							"op": ">",
+							"value": 0.3
+						}
+					]
+				},
 				"for_ticks": 5
 			},
 			"end": {
-				"condition": {"measure": "drop_from_peak", "param": "biomass", "window": 500, "op": "<", "value": 0.1},
+				"condition": {
+					"measure": "drop_from_peak",
+					"param": "biomass",
+					"window": 500,
+					"op": "<",
+					"value": 0.1
+				},
 				"for_ticks": 10
 			},
 			"min_duration": 50,
 			"max_duration": 300,
 			"cooldown": 200,
 			"modifiers": [
-				{"target": "biosphere.growth_scale", "operation": "multiply", "value": 1.25},
-				{"target": "biosphere.stress_scale", "operation": "multiply", "value": 0.8}
+				{
+					"target": "biosphere.growth_scale",
+					"operation": "multiply",
+					"value": 1.25
+				},
+				{
+					"target": "biosphere.stress_scale",
+					"operation": "multiply",
+					"value": 0.8
+				}
+			]
+		},
+		{
+			"id": "ice_age",
+			"name": "Epoka lodowa",
+			"story": {
+				"start": "Epoka lodowa: lód odbija światło, a planeta chłodzi się sama.",
+				"end": "Lody ustępują, planeta się ociepla.",
+				"end_time_limit": "Epoka lodowa słabnie, choć lód wciąż trzyma planetę."
+			},
+			"trigger": {
+				"condition": {
+					"measure": "mean",
+					"param": "temperature",
+					"window": 200,
+					"op": "<",
+					"value": 16
+				},
+				"for_ticks": 20
+			},
+			"end": {
+				"condition": {
+					"measure": "mean",
+					"param": "temperature",
+					"window": 200,
+					"op": ">",
+					"value": 20
+				},
+				"for_ticks": 20
+			},
+			"min_duration": 100,
+			"max_duration": 2000,
+			"cooldown": 500,
+			"modifiers": [
+				{
+					"target": "biosphere.growth_scale",
+					"operation": "multiply",
+					"value": 0.6
+				},
+				{
+					"target": "biosphere.stress_scale",
+					"operation": "multiply",
+					"value": 1.25
+				}
+			]
+		},
+		{
+			"id": "fire_season",
+			"name": "Sezon pożarów",
+			"story": {
+				"start": "Sezon pożarów: suche rośliny zapalają się od byle iskry.",
+				"end": "Sezon pożarów mija.",
+				"end_time_limit": "Pożary przygasają, choć ryzyko zostaje."
+			},
+			"trigger": {
+				"condition": {
+					"all": [
+						{
+							"measure": "value",
+							"param": "oxygen",
+							"op": ">",
+							"value": 18
+						},
+						{
+							"measure": "mean",
+							"param": "humidity",
+							"window": 100,
+							"op": "<",
+							"value": 32
+						},
+						{
+							"measure": "value",
+							"param": "biomass",
+							"op": ">",
+							"value": 20
+						}
+					]
+				},
+				"for_ticks": 30
+			},
+			"end": {
+				"condition": {
+					"any": [
+						{
+							"measure": "value",
+							"param": "oxygen",
+							"op": "<",
+							"value": 16
+						},
+						{
+							"measure": "mean",
+							"param": "humidity",
+							"window": 100,
+							"op": ">",
+							"value": 35
+						},
+						{
+							"measure": "value",
+							"param": "biomass",
+							"op": "<",
+							"value": 12
+						}
+					]
+				},
+				"for_ticks": 20
+			},
+			"min_duration": 120,
+			"max_duration": 500,
+			"cooldown": 400,
+			"modifiers": [
+				{
+					"target": "biosphere.fire_o2_low",
+					"operation": "add",
+					"value": -10
+				},
+				{
+					"target": "biosphere.fire_rate",
+					"operation": "multiply",
+					"value": 3.0
+				}
+			]
+		},
+		{
+			"id": "overheating",
+			"name": "Przegrzanie",
+			"story": {
+				"start": "Przegrzanie: gorący klimat wyczerpuje życie.",
+				"end": "Upał słabnie.",
+				"end_time_limit": "Przegrzanie słabnie, ale planeta wciąż jest gorąca."
+			},
+			"trigger": {
+				"condition": {
+					"measure": "mean",
+					"param": "temperature",
+					"window": 200,
+					"op": ">",
+					"value": 40
+				},
+				"for_ticks": 30
+			},
+			"end": {
+				"condition": {
+					"measure": "mean",
+					"param": "temperature",
+					"window": 200,
+					"op": "<",
+					"value": 37
+				},
+				"for_ticks": 20
+			},
+			"min_duration": 100,
+			"max_duration": 1000,
+			"cooldown": 500,
+			"modifiers": [
+				{
+					"target": "biosphere.growth_scale",
+					"operation": "multiply",
+					"value": 0.6
+				},
+				{
+					"target": "biosphere.stress_scale",
+					"operation": "multiply",
+					"value": 1.5
+				}
 			]
 		}
 	]

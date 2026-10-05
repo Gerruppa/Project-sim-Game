@@ -46,3 +46,20 @@ func test_droughts_happen_and_end_on_every_seed() -> void:
 		var healing: Array = stats.get("guardian_healing", [0, 0, 0])
 		assert_int(healing[0]).override_failure_message("seed %d: the guardian never healed" % seed_value).is_greater(0)
 		assert_int(healing[0] - healing[1]).is_between(0, 1)
+
+
+## Every world event ends properly, and the crises of a warmer and a colder
+## planet both happen on the guardian runs (fire seasons need forests, so
+## they are measured with event_impact.gd instead).
+func test_every_event_ends_and_climate_crises_happen() -> void:
+	var catalog := E.project_catalog()
+	var seen := {}
+	for seed_value in range(1, SEEDS + 1):
+		var stats := _run(seed_value, &"guardian")
+		for id: String in stats:
+			var entry: Array = stats[id]
+			seen[id] = seen.get(id, 0) + entry[0]
+			assert_int(entry[0] - entry[1]).override_failure_message("seed %d: %s did not end" % [seed_value, id]).is_between(0, 1)
+			assert_int(entry[2]).is_less_equal(catalog.get_def(StringName(id)).max_duration)
+	for id: String in ["ice_age", "overheating"]:
+		assert_int(seen.get(id, 0)).override_failure_message("no %s in %d runs" % [id, SEEDS]).is_greater(0)

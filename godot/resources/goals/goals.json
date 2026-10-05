@@ -1,0 +1,95 @@
+{
+	"goals_version": 1,
+	"victory": {
+		"id": "mature_planet",
+		"name": "Dojrzała planeta",
+		"text": "Wszystkie etapy życia żyją naraz i utrzymują się przez 2 lata.",
+		"species": [
+			"bacteria",
+			"algae",
+			"moss",
+			"shrub",
+			"tree"
+		],
+		"min_population": 1.0,
+		"for_ticks": 720
+	},
+	"stars": [
+		{
+			"id": "no_losses",
+			"name": "Bez strat",
+			"text": "żaden gatunek nie wymarł"
+		},
+		{
+			"id": "fast",
+			"name": "Szybko",
+			"text": "wygrana przed rokiem {max_years}",
+			"max_years": 30
+		},
+		{
+			"id": "light_hand",
+			"name": "Lekką ręką",
+			"text": "od {min_interventions} do {max_interventions} akcji, a lustra i pył tylko lekko",
+			"max_interventions": 5,
+			"min_interventions": 1
+		}
+	],
+	"ambitions": [
+		{
+			"id": "oxygenated",
+			"name": "Oddech planety",
+			"text": "tlen powyżej 15 przed rokiem 13",
+			"kind": "parameter",
+			"param": "oxygen",
+			"op": ">",
+			"value": 15,
+			"before_year": 13
+		},
+		{
+			"id": "first_forest",
+			"name": "Pierwszy las",
+			"text": "drzewa z populacją powyżej 10",
+			"kind": "species",
+			"species": "tree",
+			"min_population": 10
+		},
+		{
+			"id": "survive_winter",
+			"name": "Przetrwać zimę",
+			"text": "epoka lodowa minęła bez wymarcia, a żyły co najmniej 4 etapy życia",
+			"kind": "event_survived",
+			"event": "ice_age",
+			"min_alive": 4
+		},
+		{
+			"id": "survive_fire",
+			"name": "Po pożarze",
+			"text": "sezon pożarów minął, a drzewa mają populację co najmniej 10",
+			"kind": "event_survived",
+			"event": "fire_season",
+			"species": "tree",
+			"min_population": 10
+		},
+		{
+			"id": "gardener",
+			"name": "Ogrodnik",
+			"text": "przywróć zasiewem gatunek, który wymarł",
+			"kind": "player_returned"
+		},
+		{
+			"id": "tame_chaos",
+			"name": "Ujarzmić chaos",
+			"text": "drzewa na planecie chaotycznej",
+			"kind": "species",
+			"species": "tree",
+			"min_population": 1,
+			"archetype": "chaotic"
+		},
+		{
+			"id": "hands_off",
+			"name": "Nie ruszaj",
+			"text": "dojrzała planeta bez żadnej akcji",
+			"kind": "victory_untouched"
+		}
+	]
+}

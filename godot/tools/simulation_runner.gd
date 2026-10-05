@@ -119,8 +119,8 @@ static func resolve_directory(directory: String) -> String:
 
 
 ## Opens a run as the options ask: a new planet, or a saved one continued.
-## Value: {"manager", "config", "run" (for SaveSystem.capture), "warnings",
-## "loaded" (bool)}. A save decides seed and personality, so it is read
+## Value: {"manager", "config", "run" (for SaveSystem.capture; its "extras"
+## hold the save's game-layer data), "warnings", "loaded" (bool)}. A save decides seed and personality, so it is read
 ## before the planet is built.
 static func open_run(options: Dictionary) -> SimResult:
 	var config_result := SimConfig.load_json(SimConfig.DEFAULT_PATH)
@@ -134,6 +134,7 @@ static func open_run(options: Dictionary) -> SimResult:
 
 	var save_data := {}
 	var lineage := []
+	var extras := {}
 	if options.has("load"):
 		var load_path := resolve_save_path(options["load"], config)
 		var read := SaveSystem.read(load_path)
@@ -144,13 +145,14 @@ static func open_run(options: Dictionary) -> SimResult:
 		config = config.with_seed(header.value["seed"]).with_personality(header.value["personality"])
 		lineage = (header.value["lineage"] as Array).duplicate()
 		lineage.append({"save": load_path.get_file(), "tick": header.value["tick"]})
+		extras = header.value["extras"]
 
 	var planet := build_planet(config, options)
 	if not planet.is_ok():
 		return planet
 	var manager: SimulationManager = planet.value["manager"]
 	var run := {"personality": planet.value["personality"], "data_fingerprints": planet.value["fingerprints"],
-			"lineage": lineage}
+			"lineage": lineage, "extras": extras}
 	var warnings := PackedStringArray()
 	if options.has("load"):
 		var restored := SaveSystem.restore(manager, save_data, run)
@@ -248,7 +250,8 @@ static func create_watcher(manager: SimulationManager) -> SimResult:
 	if not texts.is_ok():
 		return texts
 	var catalog := (manager.system(InterventionSystem.ID) as InterventionSystem).catalog()
-	return SimResult.success(DecisionWatcher.new(catalog.decision_events, catalog.decision_grace, manager.tick(), texts.value))
+	return SimResult.success(DecisionWatcher.new(catalog.decision_events, catalog.decision_grace, manager.tick(), texts.value,
+			manager.snapshot().schema()))
 
 
 ## What the player reads at a decision point: what happened, where it was

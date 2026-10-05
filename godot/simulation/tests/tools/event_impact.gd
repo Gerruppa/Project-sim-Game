@@ -1,8 +1,8 @@
 extends SceneTree
 ## How much does a world event hurt the planet? Runs every archetype and seed
-## twice, with and without the EventSystem (it has no randomness, so the runs
-## differ only by what events do), and compares them while the event is active
-## and in the ticks after it ends.
+## twice: with every event, and with every event except the measured one
+## (events have no randomness, so the runs differ only by what that event
+## does), and compares them while it is active and in the ticks after it.
 ##   godot --headless --path godot -s res://simulation/tests/tools/event_impact.gd -- [--seeds N] [--ticks N] [--event id]
 
 const ARCHETYPES := ["harmonious", "chaotic", "guardian"]
@@ -10,6 +10,8 @@ const PARAMS: Array[StringName] = [&"humidity", &"precipitation", &"temperature"
 const SPECIES: Array[StringName] = [&"algae", &"moss", &"shrub", &"tree"]
 ## Ticks after an event ends that still count as its aftermath.
 const AFTERMATH := 300
+## The project's events without the measured one (written at start).
+const WITHOUT_PATH := "user://event_impact_without.json"
 
 
 class EventSpan extends RunObserver:
@@ -49,6 +51,7 @@ func _init() -> void:
 			"--seeds": seeds = args[i + 1].to_int()
 			"--ticks": ticks = args[i + 1].to_int()
 			"--event": event_id = args[i + 1]
+	_write_catalog_without(event_id)
 	var names: Array[StringName] = PARAMS.duplicate()
 	for species in SPECIES:
 		names.append(StringName("pop_" + species))
@@ -89,9 +92,9 @@ func _init() -> void:
 			extinctions[1] += lost[1]
 	print("%s: %d events in %d runs x %d ticks, mean length %.0f ticks" % [event_id, events, seeds * ARCHETYPES.size(),
 			ticks, float(event_ticks) / maxi(events, 1)])
-	print("extinctions in all runs: %d with events, %d without" % [extinctions[0], extinctions[1]])
+	print("extinctions in all runs: %d with %s, %d without it" % [extinctions[0], event_id, extinctions[1]])
 	for phase: String in ["during", "after"]:
-		print("\n%s (%d ticks): mean with events vs without (difference)" % [phase, phase_ticks[phase]])
+		print("\n%s (%d ticks): mean with %s vs without it (difference)" % [phase, phase_ticks[phase], event_id])
 		for name in names:
 			if not sums[phase].has(name):
 				continue
@@ -107,8 +110,16 @@ func _planet(archetype: String, seed_value: int, with_events: bool) -> Dictionar
 			.with_personality(StringName(archetype))
 	var options: Dictionary = SimulationRunner.parse_args(PackedStringArray()).value
 	if not with_events:
-		options["events"] = "res://simulation/tests/tools/no_events.json"
+		options["events"] = WITHOUT_PATH
 	return SimulationRunner.build_planet(config, options).value
+
+
+func _write_catalog_without(event_id: String) -> void:
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(EventCatalog.DEFAULT_PATH))
+	data["events"] = (data["events"] as Array).filter(func(e: Dictionary) -> bool: return e["id"] != event_id)
+	var file := FileAccess.open(WITHOUT_PATH, FileAccess.WRITE)
+	file.store_string(JSON.stringify(data))
+	file.close()
 
 
 func _value(planet: Dictionary, name: StringName) -> float:

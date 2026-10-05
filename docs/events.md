@@ -268,6 +268,30 @@ Wynik: 6–11 susz na 15 000 ticków na seed, trwają 80–400 ticków,
 ok. 30% kończy się limitem czasu (widoczne sprzężenie: susza podtrzymuje
 własną przyczynę, aż limit albo pogoda ją przerwie).
 
+## Kryzysy klimatyczne i pożary (2026-10-05)
+
+Trzy kolejne zdarzenia świata, każde z warunkiem ze stanu planety i
+skutkiem przez modyfikatory biosfery. Dobrane pomiarem
+`event_impact.gd` (3 archetypy × 3 seedy × 12 000 ticków; przebieg
+porównawczy ma wszystkie zdarzenia oprócz mierzonego):
+
+| Zdarzenie | Warunek startu | Koniec | Skutki | Wystąpienia | Wpływ w trakcie |
+|---|---|---|---|---|---|
+| Epoka lodowa | średnia temperatura (200 ticków) < 16 | średnia > 20 | wzrost ×0,6, stres ×1,25 | 38, ~530 ticków | biomasa −3,3, mchy −12,6 |
+| Przegrzanie | średnia temperatura (200) > 40 | średnia < 37 | wzrost ×0,6, stres ×1,5 | 35, ~230 ticków | biomasa −1,5, +2 wymarcia |
+| Sezon pożarów | tlen > 18, wilgotność (100) < 32, biomasa > 20 | tlen < 16 lub wilgotność > 35 lub biomasa < 12 | ogień od tlenu 12 (`fire_o2_low` −10), pożary ×3 | 12, ~140 ticków | drzewa −14 (po: −20), krzewy +6 |
+
+Lekcje z pomiaru:
+
+- mnożnik stresu sam nic nie robi, gdy gatunki są jeszcze w swoim zakresie
+  temperatur (krzewy i drzewa znoszą do 45°); dopiero wolniejszy wzrost
+  daje odczuwalny kryzys
+- pożary zaczynają się od tlenu 22, a sezon przy tlenie 22-23 ledwo je
+  rusza; obniżenie progu zapłonu w czasie sezonu robi z niego kryzys:
+  las płonie, krzewy zajmują jego miejsce
+- pierwsza wersja narzędzia porównywała „wszystkie zdarzenia” z „żadnymi”
+  i przypisywała kryzysom skutki susz; poprawione
+
 ## Planeta leczy się: pomiar
 
 Spadek biomasy > 30% od szczytu występuje 4–11 razy na przebieg.

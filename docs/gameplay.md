@@ -292,6 +292,67 @@ Rekomendacja: najpierw 3 (najbardziej „ekologiczna”, wzmacnia pętlę
 obserwacji), potem 1 jako regulacja tempa. Wprowadzać dopiero po
 zobaczeniu nadużycia w prawdziwej grze.
 
+# Cele: wygrana, gwiazdki i ambicje (2026-10-05)
+
+Decyzja: cel główny i ambicje razem, gwiazdki za styl, po wygranej gra
+trwa dalej. Dane: `resources/goals/goals.json`; `GoalTracker` (`tools/`)
+tylko obserwuje i zapisuje postęp w zapisie gry (`extras`).
+
+- **Dojrzała planeta**: wszystkie 5 etapów życia (populacja ≥ 1) przez
+  720 ticków (2 lata)
+- **gwiazdki**: Bez strat (zero wymierań), Szybko (przed rokiem 30),
+  Lekką ręką (1-5 akcji, lustra i pył tylko lekko)
+- **ambicje**: Oddech planety (tlen > 15 przed rokiem 13), Pierwszy las,
+  Przetrwać zimę (bez wymarcia, ≥ 4 etapy życia), Po pożarze (drzewa ≥ 10
+  po sezonie), Ogrodnik (przywrócić wymarły gatunek zasiewem), Ujarzmić
+  chaos (drzewa na planecie chaotycznej), Nie ruszaj (wygrana bez akcji)
+
+Pomiar 1, bez gracza (`goal_report.gd`, 3 archetypy × 4 seedy × 30 000
+ticków): 7 z 12 planet dojrzewa samych (lata 25-59), chaotyczne nigdy (bez
+drzew). Pierwsza wersja dawała **3 gwiazdki za nicnierobienie** (Lekką
+ręką bez dolnej granicy) i ambicje, które przychodziły same (tlen 12/12,
+zima 11/12, pożar 9/12). Poprawione: Lekką ręką wymaga co najmniej jednej
+akcji, ambicje mają warunki, których bierność zwykle nie spełnia.
+
+Pomiar 2, bot grający według podpowiedzi (`goal_bot.gd`): wygrywa 9 z 12
+gier (w tym jedną chaotyczną; drzewa na wszystkich 4 chaotycznych), ale
+w latach 24-46, czyli nie szybciej niż planeta sama: wąskim gardłem jest
+tlen pochłaniany przez skorupę, a żadna akcja tego nie skraca. Dlatego
+„Szybko” to rok 30 (próg 20 był nieosiągalny dla nikogo), a tlen przed
+rokiem 13 (próg 10 też). Bot robi 8-45 akcji, więc nie zdobywa Lekkiej
+ręki: trzy gwiazdki to kilka dobrych decyzji, nie odruch.
+
+Otwarte: gracz nie ma narzędzia, które przyspiesza natlenienie; jeśli
+„Szybko” ma nagradzać umiejętność, potrzebna byłaby taka akcja albo
+balans skorupy.
+
+# Więcej kryzysów (2026-10-05)
+
+Nowe zdarzenia świata: epoka lodowa, przegrzanie, sezon pożarów
+(`docs/events.md`). Każde jest punktem decyzji i ma podpowiedź. Akcje
+w pierwszym wystąpieniu kryzysu (`intervention_report.gd --at event:<id>`,
+3 archetypy × 5 seedów, średnie z 2000 ticków):
+
+| Kryzys | Akcja | Cena | Zysk | Śr. Δ biomasy |
+|---|---|---|---|---|
+| Epoka lodowa (15) | lustra lekko | 5 | 9 | −0,17 |
+| | lustra umiarkowanie | 6 | 7 | −0,87 |
+| | lustra z pełną mocą | 12 | 4 | −3,78 |
+| | wulkany | 9 | 5 | −1,51 |
+| Przegrzanie (15) | pył lekko | 3 | 8 | +0,75 |
+| | wody podziemne | 1 | 8 | +0,41 |
+| | pył z pełną mocą | 12 | 4 | −3,00 |
+| | wulkany | 10 | 1 | −1,21 |
+| Sezon pożarów (11) | wody podziemne | 0 | 1 | +0,08 |
+| | przerzedzenie krzewów | 9 | 0 | −1,62 |
+| | przerzedzenie drzew | 1 | 0 | −0,36 |
+
+Epoka lodowa i przegrzanie są tym, czego brakowało: lekka, dobrana akcja
+pomaga, przesadzona szkodzi. Sezon pożarów to kryzys „do obejrzenia”: las
+płonie, krzewy go zastępują, a żadna akcja wyraźnie nie pomaga
+(podpowiedź mówi to uczciwie). Otwarte: przerzedzanie nadal nie ma
+kryzysu, w którym pomaga.
+
 # Poziomy siły (decyzja C, 2026-10-05)
 
 Interwencja z modyfikatorami może mieć `levels` w danych:

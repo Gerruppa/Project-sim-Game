@@ -73,14 +73,14 @@ func test_cooling_down_action_is_refused_with_its_ready_tick() -> void:
 
 func test_waiting_runs_the_planet_to_the_next_decision() -> void:
 	_session(["", "0", "q"]).play()
-	assert_str(_text()).contains("=== Punkt decyzji: tick 333 (rok 1) ===")
+	assert_str(_text()).contains("=== Punkt decyzji: tick 294 (rok 1) ===")
 
 
 func test_loaded_game_skips_the_intro() -> void:
 	_session(["", "q"]).play()
 	_create(PackedStringArray(["--load", SAVE, "--save", SAVE]), ["q"]).play()
 	assert_str(_text()).not_contains("Witaj w Genesis Error.")
-	assert_str(_text()).contains("=== Punkt decyzji: tick 333")
+	assert_str(_text()).contains("=== Punkt decyzji: tick 294")
 
 
 func test_hints_can_start_hidden() -> void:
@@ -99,9 +99,9 @@ func test_parses_play_options() -> void:
 func test_second_screen_shows_what_changed_since_the_first() -> void:
 	_session(["", "0", "q"]).play()
 	var text := _text()
-	assert_str(text).contains("Planeta (zmiana od poprzedniej decyzji, 203 ticki temu):")
-	assert_str(text).contains("↓ 9.5")
-	assert_str(text).contains("glony            1   nowe")
+	assert_str(text).contains("Planeta (zmiana od poprzedniej decyzji, 164 ticki temu):")
+	assert_str(text).contains("Temperatura            35.0   ↓ 5.5")
+	assert_str(text).contains("bakterie        15   ↑ 14")
 
 
 func test_species_that_died_since_the_last_decision_is_marked() -> void:
@@ -115,3 +115,28 @@ func test_trend_shows_direction_and_hides_noise() -> void:
 	assert_str(PlaySession.trend(0.04, 1)).is_equal("=")
 	assert_str(PlaySession.trend(-0.4, 0)).is_equal("=")
 	assert_str(PlaySession.trend(23.2, 0)).is_equal("↑ 23")
+
+
+func test_world_event_causes_use_the_players_parameter_names() -> void:
+	# Seed 3: an ice age starts at tick 531, the third decision point.
+	_create(PackedStringArray(["--seed", "3", "--save", SAVE]), ["", "0", "0", "q"]).play()
+	var text := _text()
+	assert_str(text).contains("Co się stało:  Epoka lodowa:")
+	assert_str(text).contains("(Temperatura średnio")
+	assert_str(text).not_contains("(temperature")
+
+
+func test_screen_shows_the_goal_and_ambitions() -> void:
+	_session(["", "c", "q"]).play()
+	var text := _text()
+	assert_str(text).contains("Cel:           Dojrzała planeta: etapy życia 1/5, brakuje: glony, mchy, krzewy, drzewa")
+	assert_str(text).contains("Ambicje:       0/7")
+	assert_str(text).contains("Cel główny: Dojrzała planeta.")
+	assert_str(text).contains("☆ Szybko: wygrana przed rokiem 30")
+	assert_str(text).contains("[ ] Ogrodnik: przywróć zasiewem gatunek, który wymarł")
+
+
+func test_goal_progress_is_saved_with_the_game() -> void:
+	_session(["", "3", "1", "", "q"]).play()
+	var saved: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ProjectSettings.globalize_path(SAVE)))
+	assert_int(int(saved["extras"]["goals"]["interventions"])).is_equal(1)

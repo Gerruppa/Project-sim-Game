@@ -1,7 +1,7 @@
 extends SceneTree
 ## Fun check for interventions (docs/gameplay.md): does every action change
 ## the planet's story, does it have a price, and is any action always best?
-##   godot --headless --path godot -s res://simulation/tests/tools/intervention_report.gd -- [--seeds N] [--at decision|extinction] [--actions a,b]
+##   godot --headless --path godot -s res://simulation/tests/tools/intervention_report.gd -- [--seeds N] [--at decision|extinction|event:<id>] [--actions a,b]
 ## For every archetype and seed: run to the act tick, save, then continue
 ## once without intervention and once per action, and compare what followed.
 ## The act tick is ACT_TICK, or with --at decision the first crisis after
@@ -12,7 +12,8 @@ extends SceneTree
 ## --at extinction acts at the first species dying out after WARM_UP;
 ## "$extinct" in an action is replaced by that species (seed_species:$extinct
 ## asks whether bringing a lost species back pays off). Runs without an
-## extinction are skipped.
+## extinction are skipped. --at event:<id> acts when that world event first
+## starts (e.g. event:fire_season).
 
 const ACT_TICK := 2500
 ## How long consequences are watched after the act.
@@ -50,6 +51,8 @@ class CrisisWatch extends RunObserver:
 	var what := ""
 	var species := ""
 	var types: Array[StringName]
+	## Only this world event counts, when set.
+	var event_id := ""
 
 	func _init(types_value: Array[StringName]) -> void:
 		types = types_value
@@ -58,7 +61,8 @@ class CrisisWatch extends RunObserver:
 		bus.subscribe_all(_on_event)
 
 	func _on_event(event: SimEvent) -> void:
-		if tick == -1 and event.tick > WARM_UP and types.has(event.type):
+		if tick == -1 and event.tick > WARM_UP and types.has(event.type) \
+				and (event_id.is_empty() or event.data.get("id") == event_id):
 			tick = event.tick
 			species = str(event.data.get("species", ""))
 			what = "%s %s" % [event.type, event.data.get("id", species)]
@@ -154,9 +158,13 @@ func _save_before_act(archetype: String, seed_value: int, at_mode: String) -> Di
 	var types: Array[StringName] = CRISES
 	if at_mode == "extinction":
 		types = [&"species_extinct"]
+	elif at_mode.begins_with("event:"):
+		types = [&"world_event_started"]
 	var watch := CrisisWatch.new(types)
+	if at_mode.begins_with("event:"):
+		watch.event_id = at_mode.substr(6)
 	manager.attach_log(watch)
-	while watch.tick == -1 and manager.tick() < 20000:
+	while watch.tick == -1 and manager.tick() < 30000:
 		manager.step()
 	if watch.tick == -1:
 		print("%-10s seed %d: no %s, skipped" % [archetype, seed_value, at_mode])

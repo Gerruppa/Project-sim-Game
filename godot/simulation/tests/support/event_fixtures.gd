@@ -42,6 +42,12 @@ static func project_catalog() -> EventCatalog:
 	return EventCatalog.load_json(EventCatalog.DEFAULT_PATH, P.project_schema(), Q.specs(), ARCHETYPES).value
 
 
+## The project's catalog with only the given events, as written in data.
+static func project_events(ids: Array) -> EventCatalog:
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(EventCatalog.DEFAULT_PATH))
+	return catalog((data["events"] as Array).filter(func(e: Dictionary) -> bool: return ids.has(e["id"])))
+
+
 ## Registry that knows the coefficients of the project's systems.
 static func registry() -> ModifierRegistry:
 	var result := ModifierRegistry.new()

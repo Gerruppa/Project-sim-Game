@@ -25,6 +25,12 @@ func attach(bus: EventBus) -> void:
 	bus.subscribe_all(_on_event)
 
 
+## For a chronicle joining a run that already started (begin_run was
+## before it): parameter names come from this schema.
+func use_schema(schema: ParameterSchema) -> void:
+	_schema = schema
+
+
 func begin_run(seed_value: int, initial: PlanetSnapshot) -> void:
 	_schema = initial.schema()
 	var resumed := "" if initial.tick() == 0 else " | wznowiona od ticku %d" % initial.tick()

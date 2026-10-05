@@ -17,7 +17,9 @@ const MIGRATIONS := {}
 
 ## `run` describes how the planet was built:
 ##   personality: archetype id; data_fingerprints: file name -> SHA-256;
-##   lineage: saves this run continues (placeholder for branching runs).
+##   lineage: saves this run continues (placeholder for branching runs);
+##   extras: plain data of layers above the simulation (the game's goals),
+##   stored as given and handed back by read_header.
 static func capture(manager: SimulationManager, run: Dictionary) -> Dictionary:
 	var planet := PlanetStateCodec.encode(manager.current_state())
 	planet["state_hash"] = manager.state_hash()
@@ -33,6 +35,7 @@ static func capture(manager: SimulationManager, run: Dictionary) -> Dictionary:
 		"personality": String(run.get("personality", PersonalityCatalog.NONE)),
 		"data_fingerprints": run.get("data_fingerprints", {}),
 		"lineage": run.get("lineage", []),
+		"extras": run.get("extras", {}),
 		"planet": planet,
 		"systems": systems,
 		"commands": manager.command_queue().save_state(),
@@ -65,8 +68,9 @@ static func read_header(data: Dictionary) -> SimResult:
 		if typeof(data.get(key)) != TYPE_DICTIONARY:
 			result.add_error("save: '%s' must be an object" % key)
 	if result.is_ok():
+		var extras: Variant = data.get("extras", {})
 		result.value = {"seed": seed_read.value, "tick": int(tick), "personality": StringName(data["personality"]),
-				"lineage": data.get("lineage", [])}
+				"lineage": data.get("lineage", []), "extras": extras if typeof(extras) == TYPE_DICTIONARY else {}}
 	return result
 
 

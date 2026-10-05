@@ -18,7 +18,8 @@ func _planet(with_events: bool) -> SimulationManager:
 	manager.register_system(BiosphereSystem.new(BiosphereConfig.load_json(BiosphereConfig.DEFAULT_PATH).value,
 			SpeciesCatalog.load_json(SpeciesCatalog.DEFAULT_PATH).value, SEED))
 	if with_events:
-		manager.register_system(EventSystem.new(E.project_catalog()))
+		# Only the drought: other crises would start in the same run.
+		manager.register_system(EventSystem.new(E.project_events(["drought"])))
 	return manager
 
 

@@ -89,6 +89,25 @@
 		"guardian_healing": {
 			"text": "Planeta-Strażnik sama leczy rany: życie odrasta szybciej. Często najlepiej poczekać.",
 			"acts": []
+		},
+		"ice_age": {
+			"text": "Epoka lodowa: zimno spowalnia rośliny, a lód sam się wzmacnia. Lekkie ocieplenie pomagało w większości epok; mocne często szkodziło.",
+			"acts": [
+				"mirrors_warm:weak"
+			]
+		},
+		"fire_season": {
+			"text": "Sezon pożarów: płoną głównie drzewa, a krzewy zajmują ich miejsce. Żadna akcja nie pomagała wyraźnie: często najlepiej przeczekać. Przerzedzanie krzewów raczej szkodzi.",
+			"acts": [
+				"aquifer_release"
+			]
+		},
+		"overheating": {
+			"text": "Przegrzanie: upał spowalnia wzrost i wyczerpuje życie. Pomagały lekkie ochłodzenie i wody podziemne; mocny pył i wulkany szkodziły.",
+			"acts": [
+				"mirrors_cool:weak",
+				"aquifer_release"
+			]
 		}
 	},
 	"succession": {

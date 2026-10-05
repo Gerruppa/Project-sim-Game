@@ -94,8 +94,9 @@ Co robisz?
   mu brakuje) albo o siłę (Enter = domyślna)
 - możesz zrobić **kilka akcji** w jednym punkcie decyzji; **Enter** albo
   **0** puszcza planetę dalej
-- **?** wyjaśnia każdą akcję jednym zdaniem, **h** ukrywa i pokazuje
-  podpowiedzi, **q** zapisuje i kończy
+- **?** wyjaśnia każdą akcję jednym zdaniem, **c** pokazuje cele,
+  gwiazdki i ambicje, **h** ukrywa i pokazuje podpowiedzi, **q** zapisuje
+  i kończy
 - gra **zapisuje się sama** w każdym punkcie decyzji (`saves/decision.json`),
   więc możesz przerwać w dowolnej chwili (także zamykając okno)
 - gdy przez 5000 ticków nic się nie dzieje, gra i tak się zatrzyma
@@ -105,6 +106,47 @@ wymarcia), co może pomóc (na podstawie pomiarów na wielu planetach, np.
 „w suszy pomagają wody podziemne”) i czego brakuje następnemu etapowi życia
 (np. „mchom brakuje tlenu: 0.5, potrzeba ok. 2”). Podpowiedź to wskazówka,
 nie przepis: planeta potrafi zaskoczyć.
+
+### Cel gry, gwiazdki i ambicje
+
+**Cel główny: Dojrzała planeta.** Wygrywasz, gdy wszystkie pięć etapów
+życia (bakterie, glony, mchy, krzewy, drzewa) żyje jednocześnie przez
+2 lata (720 ticków). Ekran pokazuje postęp:
+
+```text
+Cel:           Dojrzała planeta: etapy życia 3/5, brakuje: krzewy, drzewa
+Ambicje:       1/7: Ogrodnik
+```
+
+Po wygranej gra mówi, w którym roku się udało i ile gwiazdek zdobyłeś,
+i pozwala grać dalej (ambicje wciąż czekają).
+
+**Gwiazdki** (za styl ogrodnika, każda osobno):
+
+| Gwiazdka | Warunek |
+|---|---|
+| Bez strat | żaden gatunek nie wymarł |
+| Szybko | wygrana przed rokiem 30 |
+| Lekką ręką | od 1 do 5 akcji, a lustra i pył tylko lekko |
+
+Bez żadnej akcji zdobędziesz najwyżej dwie gwiazdki (od tego jest
+ambicja „Nie ruszaj”). Trzy gwiazdki to sztuka kilku dobrych, lekkich
+decyzji bez straty gatunku.
+
+**Ambicje** (dodatkowe osiągnięcia, lista pod klawiszem **c**):
+
+| Ambicja | Warunek |
+|---|---|
+| Oddech planety | tlen powyżej 15 przed rokiem 13 |
+| Pierwszy las | drzewa z populacją powyżej 10 |
+| Przetrwać zimę | epoka lodowa minęła bez wymarcia, przy co najmniej 4 etapach życia |
+| Po pożarze | po sezonie pożarów drzewa mają populację co najmniej 10 |
+| Ogrodnik | przywróć zasiewem gatunek, który wymarł |
+| Ujarzmić chaos | drzewa na planecie chaotycznej |
+| Nie ruszaj | dojrzała planeta bez żadnej akcji |
+
+Planety różnią się trudnością: łagodne i Strażnik często dojrzewają same,
+na chaotycznej drzewa bez Twojej pomocy się nie pojawiają.
 
 ## 3. Gra komendami (dla zaawansowanych)
 
@@ -189,7 +231,8 @@ Dalej: ./godot/run_simulation.sh --load decision.json --act <interwencja> --unti
 - **od ticku N**: akcja się odnawia (cooldown); komenda z nią zostanie odrzucona
 - **(wymarłe)**: gatunek zniknął i sam prawie nie wróci
 
-Punkt decyzji wypada przy: **początku zdarzenia** (np. suszy),
+Punkt decyzji wypada przy: **początku zdarzenia** (susza, epoka lodowa,
+przegrzanie, sezon pożarów),
 **wymarciu gatunku**, **pojawieniu się gatunku**. Przez pierwsze 100 ticków
 po każdej Twojej akcji planeta się nie zatrzymuje, żebyś zdążył zobaczyć
 skutki.
@@ -287,6 +330,14 @@ krzewy, a bez krzewów drzewa.
   poniżej swojej normy. Mniej wody, rośliny rosną wolniej (×0,6), pożarów
   jest dwa razy więcej. Mija, gdy wilgotność wróci do normy (najpóźniej po
   400 tickach).
+- **Epoka lodowa**: gdy średnia temperatura spadnie poniżej 16. Rośliny
+  rosną wolniej i gorzej znoszą zimno. Lekkie lustra pomagały w większości
+  epok, mocne często szkodziły.
+- **Przegrzanie**: gdy średnia temperatura przekroczy 40. Upał spowalnia
+  wzrost. Pomagały lekki pył i wody podziemne.
+- **Sezon pożarów**: gdy jest dużo tlenu, sucho i jest co palić. Rośliny
+  zapalają się od byle iskry: płoną głównie drzewa, a krzewy zajmują ich
+  miejsce. Żadna akcja nie pomagała wyraźnie.
 - **Planeta leczy się** (tylko Strażnik): gdy biomasa spadnie o ponad 30%
   od szczytu, życie przez pewien czas rośnie szybciej i lepiej znosi stres.
 
@@ -379,5 +430,5 @@ deterministyczna), więc różnice wynikają wyłącznie z Twojej decyzji.
 
 - brak grafiki: planetę poznajesz z kroniki i liczb
 - akcja zawsze zaczyna działać w następnym ticku po punkcie decyzji
-- nie ma celów ani wygranej: grasz, żeby zrozumieć planetę („ciekawe, co
-  się stanie, jeśli…”)
+- cele są proste (jeden cel główny, trzy gwiazdki, siedem ambicji); dalej
+  najważniejsze jest zrozumienie planety („ciekawe, co się stanie, jeśli…”)

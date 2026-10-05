@@ -32,6 +32,8 @@ class SessionSink extends LogSink:
 
 
 var _manager: SimulationManager
+var _run: Dictionary
+var _goals: GoalTracker
 var _saver: RunSaver
 var _save_path: String
 var _advisor: HintAdvisor
@@ -84,9 +86,10 @@ static func create(options: Dictionary, read: Callable, write: Callable) -> SimR
 		return opened
 	var advisor := HintAdvisor.load_json()
 	var texts := ChronicleTexts.load_json(ChronicleTexts.DEFAULT_PATH)
-	if not advisor.is_ok() or not texts.is_ok():
+	var goals := GoalTracker.load_json()
+	if not advisor.is_ok() or not texts.is_ok() or not goals.is_ok():
 		var failed := SimResult.new()
-		failed.errors = advisor.errors + texts.errors
+		failed.errors = advisor.errors + texts.errors + goals.errors
 		return failed
 	var session := PlaySession.new()
 	session._manager = opened.value["manager"]
@@ -98,7 +101,11 @@ static func create(options: Dictionary, read: Callable, write: Callable) -> SimR
 	session._write = write
 	var config: SimConfig = opened.value["config"]
 	session._save_path = SimulationRunner.resolve_save_path(options["save"], config)
-	session._saver = RunSaver.new(session._manager, opened.value["run"], "", 0)
+	session._run = opened.value["run"]
+	session._saver = RunSaver.new(session._manager, session._run, "", 0)
+	session._goals = GoalTracker.new(goals.value, session._manager, String(session._run["personality"]))
+	session._goals.load_state(session._run.get("extras", {}).get("goals", {}))
+	session._manager.attach_log(session._goals)
 	for warning: String in opened.value["warnings"]:
 		write.call("UWAGA: %s\n" % warning)
 	# Full logs on disk as in every run (tests switch them off with
@@ -127,6 +134,8 @@ func play() -> int:
 		if _manager.is_halted():
 			_say("Symulacja zatrzymała się z błędem: %s" % ", ".join(_manager.errors()))
 			return 1
+		# Goals ride along in the save, so progress survives a load.
+		_run["extras"] = {"goals": _goals.save_state()}
 		var saved := _saver.save_to(_save_path)
 		if not saved.is_ok():
 			_say("Nie udało się zapisać gry: %s" % ", ".join(saved.errors))
@@ -140,7 +149,8 @@ func play() -> int:
 ## Returns the watcher, whose point() is null for a quiet checkpoint.
 func _run_round() -> DecisionWatcher:
 	var catalog := _hand().catalog()
-	var watcher := DecisionWatcher.new(catalog.decision_events, catalog.decision_grace, _manager.tick(), _texts)
+	var watcher := DecisionWatcher.new(catalog.decision_events, catalog.decision_grace, _manager.tick(), _texts,
+			_manager.snapshot().schema())
 	_manager.attach_log(watcher)
 	for i in ROUND_LIMIT:
 		if not _manager.step() or watcher.reached():
@@ -158,6 +168,15 @@ func screen(watcher: DecisionWatcher) -> String:
 				func(s: String) -> String: return s.substr(s.find("] ") + 2)))))
 	else:
 		lines.append("Co się stało:  przez %d ticków nic ważnego, planeta żyje spokojnie." % ROUND_LIMIT)
+	var news := _goals.take_news()
+	if not news.is_empty():
+		lines.append("")
+		for item in news:
+			lines.append("*** " + item + " ***")
+		if _goals.won() and _goals.victory_tick() > _last_tick:
+			lines.append("Możesz grać dalej: ambicje wciąż czekają.")
+		lines.append("")
+	lines.append_array(_goals.status_lines(_texts.species))
 	lines.append_array(_planet_lines())
 	lines.append_array(_life_lines())
 	_remember()
@@ -180,7 +199,7 @@ func menu() -> String:
 		var ready := _hand().ready_at(ids[i])
 		lines.append(" %d) %-26s %s" % [i + 1, def.name, "gotowe" if ready <= _manager.tick() + 1 else "od ticku %d" % ready])
 	lines.append(" 0) Czekaj, nic nie rób (albo Enter)")
-	lines.append(" ?) Wyjaśnij akcje   h) %s podpowiedzi   q) Zapisz i wyjdź" % ("Ukryj" if _hints else "Pokaż"))
+	lines.append(" ?) Wyjaśnij akcje   c) Cele   h) %s podpowiedzi   q) Zapisz i wyjdź" % ("Ukryj" if _hints else "Pokaż"))
 	return "\n".join(lines)
 
 
@@ -200,12 +219,14 @@ func _decide() -> bool:
 				return false
 			"?":
 				_say(_help())
+			"c":
+				_say(_goals.goals_text())
 			"h":
 				_hints = not _hints
 				_say("Podpowiedzi %s." % ("włączone" if _hints else "ukryte"))
 			_:
 				if not choice.is_valid_int() or int(choice) < 1 or int(choice) > _hand().catalog().ids().size():
-					_say("Nie rozumiem „%s”. Wpisz numer z menu, 0, ?, h albo q." % choice)
+					_say("Nie rozumiem „%s”. Wpisz numer z menu, 0, ?, c, h albo q." % choice)
 					continue
 				if _act(_hand().catalog().ids()[int(choice) - 1]):
 					_say("Możesz zrobić coś jeszcze albo nacisnąć Enter, żeby puścić planetę dalej.")

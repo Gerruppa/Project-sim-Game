@@ -15,10 +15,15 @@ var _point: SimEvent = null
 
 
 ## start_tick: tick the run starts from; points count from start_tick + grace.
-func _init(events: Array[StringName], grace: int, start_tick: int, texts: ChronicleTexts) -> void:
+## schema: parameter names for a watcher joining a run already started
+## (begin_run, which would give them, has passed by then).
+func _init(events: Array[StringName], grace: int, start_tick: int, texts: ChronicleTexts,
+		schema: ParameterSchema = null) -> void:
 	_events = events.duplicate()
 	_first_tick = start_tick + 1 + grace
 	_chronicle = PlanetChronicle.new([_sink], texts)
+	if schema != null:
+		_chronicle.use_schema(schema)
 
 
 func attach(bus: EventBus) -> void:
