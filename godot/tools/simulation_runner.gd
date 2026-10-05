@@ -213,6 +213,13 @@ static func create_watcher(manager: SimulationManager) -> SimResult:
 static func decision_report(manager: SimulationManager, watcher: DecisionWatcher, save_path: String) -> PackedStringArray:
 	var lines := PackedStringArray(["", "=== Punkt decyzji: tick %d ===" % manager.tick()])
 	lines.append_array(watcher.sentences())
+	# What the player needs for a hypothesis: the planet's state in its own words.
+	var snapshot := manager.snapshot()
+	var schema := snapshot.schema()
+	var values := PackedStringArray()
+	for i in schema.size():
+		values.append("%s %.1f" % [schema.def_at(i).display_name(), snapshot.get_value_at(i)])
+	lines.append("Planeta (skala 0-100): " + ", ".join(values))
 	lines.append("Zapis: %s" % save_path)
 	lines.append("Interwencje:")
 	var hand := manager.system(InterventionSystem.ID) as InterventionSystem

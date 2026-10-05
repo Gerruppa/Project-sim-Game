@@ -83,6 +83,8 @@ func test_report_shows_the_point_interventions_and_how_to_continue() -> void:
 	assert_str(report).contains("seed_species:<species>")
 	assert_str(report).contains("od ticku 1501")
 	assert_str(report).contains("bacteria 1.0")
+	assert_str(report).contains("Planeta (skala 0-100): Temperatura ")
+	assert_str(report).contains("Tlen ")
 	assert_str(report).contains("--load decision.json --act <interwencja> --until decision")
 
 
