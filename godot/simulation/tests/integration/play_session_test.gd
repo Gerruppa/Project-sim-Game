@@ -36,7 +36,8 @@ func test_new_game_shows_the_intro_and_the_first_decision_with_a_menu() -> void:
 	assert_str(text).contains("Witaj w Genesis Error.")
 	assert_str(text).contains("=== Punkt decyzji: tick 130 (rok 1) ===")
 	assert_str(text).contains("Co się stało:  Pojawiają się bakterie.")
-	assert_str(text).contains("Planeta:       Temperatura ")
+	assert_str(text).contains("Planeta:\n  Temperatura ")
+	assert_str(text).contains("Życie:\n  bakterie ")
 	assert_str(text).contains("Podpowiedź:")
 	assert_str(text).contains(" 1) Zasiew gatunku")
 	assert_str(text).contains("Wróć do gry: ./godot/play.sh --load decision.json")
@@ -93,3 +94,24 @@ func test_parses_play_options() -> void:
 	assert_bool(options["hints"]).is_false()
 	assert_bool(PlaySession.parse_args(PackedStringArray(["--load", "a.json", "--seed", "2"])).is_ok()).is_false()
 	assert_bool(PlaySession.parse_args(PackedStringArray(["--fast"])).is_ok()).is_false()
+
+
+func test_second_screen_shows_what_changed_since_the_first() -> void:
+	_session(["", "0", "q"]).play()
+	var text := _text()
+	assert_str(text).contains("Planeta (zmiana od poprzedniej decyzji, 203 ticki temu):")
+	assert_str(text).contains("↓ 9.5")
+	assert_str(text).contains("glony            1   nowe")
+
+
+func test_species_that_died_since_the_last_decision_is_marked() -> void:
+	_session(["", "0", "1", "3", "", "q"]).play()
+	assert_str(_text()).contains("mchy       WYMARŁE   wymarły od ostatniej decyzji")
+
+
+func test_trend_shows_direction_and_hides_noise() -> void:
+	assert_str(PlaySession.trend(9.46, 1)).is_equal("↑ 9.5")
+	assert_str(PlaySession.trend(-0.6, 1)).is_equal("↓ 0.6")
+	assert_str(PlaySession.trend(0.04, 1)).is_equal("=")
+	assert_str(PlaySession.trend(-0.4, 0)).is_equal("=")
+	assert_str(PlaySession.trend(23.2, 0)).is_equal("↑ 23")

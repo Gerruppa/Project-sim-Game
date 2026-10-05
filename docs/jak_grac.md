@@ -54,8 +54,21 @@ W każdym punkcie decyzji gra pokazuje:
 ```text
 === Punkt decyzji: tick 333 (rok 1) ===
 Co się stało:  Pojawiają się glony.
-Planeta:       Temperatura 31.0 · Wilgotność 30.8 · Tlen 0.5 · Biomasa 1.3 · ...
-Życie:         bakterie 24 · glony 1 · mchy – · krzewy – · drzewa –
+Planeta (zmiana od poprzedniej decyzji, 203 ticki temu):
+  Temperatura            31.0   ↓ 9.5
+  Wilgotność             30.8   ↓ 5.4
+  Tlen                    0.5   ↓ 0.6
+  Biomasa                 1.3   ↑ 1.3
+  Zachmurzenie           47.2   ↓ 2.4
+  Opady                   9.6   ↓ 2.4
+  Dwutlenek węgla        37.4   ↓ 2.8
+  Utlenienie skorupy      0.2   ↑ 0.1
+Życie:
+  bakterie        24   ↑ 23
+  glony            1   nowe
+  mchy             –
+  krzewy           –
+  drzewa           –
 
 Podpowiedź:
  • Następny etap życia: mchy. Brakuje: tlenu (0.5, potrzeba ok. 2), gleby, czyli biomasy (1.3, potrzeba 3).
@@ -73,6 +86,10 @@ Co robisz?
 >
 ```
 
+- **strzałki** pokazują, co się zmieniło od poprzedniego punktu decyzji:
+  `↑`/`↓` z wielkością zmiany, `=` gdy nic się nie zmieniło; gatunki mają
+  statusy **nowe**, **wróciły** i **wymarły od ostatniej decyzji**. Tak
+  widać skutki Twojej ostatniej akcji (na pierwszym ekranie strzałek nie ma)
 - wpisz **numer akcji** i Enter; gra dopyta o gatunek (z informacją, czego
   mu brakuje) albo o siłę (Enter = domyślna)
 - możesz zrobić **kilka akcji** w jednym punkcie decyzji; **Enter** albo
