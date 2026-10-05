@@ -26,7 +26,8 @@ Otwórz Git Bash i wpisz:
 ```bash
 cd /d/PythonProject_game
 export GODOT_BIN="C:/Users/jkapk/AppData/Local/Microsoft/WinGet/Packages/GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe/Godot_v4.7.2-stable_win64_console.exe"
-./godot/play.sh
+./godot/play_window.sh     # gra w oknie
+./godot/play.sh            # albo w konsoli
 ```
 
 To wszystko: gra pokaże wstęp, a potem będzie pytać, co robisz.
@@ -40,7 +41,33 @@ echo 'export GODOT_BIN="C:/Users/jkapk/AppData/Local/Microsoft/WinGet/Packages/G
 
 ---
 
-## 2. Gra z menu (zalecane)
+## 2. Gra w oknie (najwygodniej)
+
+```bash
+./godot/play_window.sh                 # nowa planeta w oknie
+./godot/play_window.sh --seed 13       # konkretna planeta
+./godot/play_window.sh --load decision.json
+```
+
+Okno pokazuje planetę na żywo:
+
+- **rysunek planety**: kolor zależy od temperatury, przy zimnie rosną białe
+  czapy lodowe, zielone plamy to życie (biomasa), białe kropki to chmury,
+  niebieska poświata to tlen
+- **wykres** temperatury, wilgotności, tlenu, biomasy i CO₂ w czasie
+- **tabele** parametrów i gatunków z paskami i strzałkami zmian od
+  ostatniej decyzji
+- **kronika** planety (prawa kolumna) i **cel** z ambicjami (pod planetą)
+- **panel decyzji** na dole: gra sama się zatrzymuje w punkcie decyzji,
+  pokazuje, co się stało, i podpowiedź; akcje to przyciski (gatunek i siłę
+  wybierasz z listy obok przycisku), **Dalej ▶** puszcza planetę dalej
+- **x10 / x100 / x1000**: tempo (ticków na sekundę), **Pauza**: zatrzymaj
+  w dowolnej chwili i działaj
+
+Gra zapisuje się w każdym punkcie decyzji (`saves/decision.json`), tak samo
+jak w konsoli; zapis z okna wczytasz też w konsoli i odwrotnie.
+
+## 2a. Gra w konsoli z menu
 
 ```bash
 ./godot/play.sh                      # nowa planeta (charakter losowy)

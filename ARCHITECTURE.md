@@ -72,9 +72,10 @@ godot/                                          the Godot project (res://)
     personality/   PersonalitySystem, archetype catalog
     scheduling/    TickScheduler, TickPipeline, SimulationManager
     tests/         gdUnit4: unit, integration, simulation, architecture
-  game/            game layer: planet assembly, menus, goals, hints, saves
+  game/            game layer: planet assembly, game session, menus, goals, hints, saves
+  ui/              the window: planet drawing, charts, panels
   tools/           entry points: run_simulation.gd, play.gd
-  play.sh, run_simulation.sh, run_tests.sh
+  play_window.sh, play.sh, run_simulation.sh, run_tests.sh
   addons/gdUnit4/  test framework
 logs/simulation_runs/, saves/                   run logs and saves (not in git)
 .claude/skills/                                 project skills for Claude Code
@@ -122,7 +123,7 @@ logs/simulation_runs/, saves/                   run logs and saves (not in git)
 | 7. EventSystem | done: drought, guardian healing, planet chronicle |
 | 8. SaveSystem | done: save/load/autosave, data fingerprints, lineage placeholder |
 | 9. Gameplay layer | done: extinction causes, interventions (CommandQueue, --act), decision points (--until decision); docs/gameplay.md |
-| 10. Visualization | planned; next stages and all ideas: docs/plan_rozwoju.md |
+| 10. Visualization | in progress: debug visualization in a window (godot/ui/, ./godot/play_window.sh); next stages: docs/plan_rozwoju.md |
 
 ---
 

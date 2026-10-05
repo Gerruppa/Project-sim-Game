@@ -536,7 +536,15 @@ never touch determinism or the golden trace.
 
 ## Game layer and console entry points
 
-Dependencies point down: `tools/` → `game/` → `simulation/`.
+Dependencies point down: `ui/` and `tools/` → `game/` → `simulation/`.
+
+- `godot/ui/` is the window (step 10, debug visualization): `GameView`
+  (`ui/main.tscn`, the project's main scene), `PlanetView` (code-drawn
+  planet), `HistoryChart` (parameters over time). Godot nodes and signals
+  live only here. It shows a `GameSession` and turns clicks into
+  `GameSession.submit`; time comes from `TickScheduler` (x10/x100/x1000)
+- `GameSession` (`game/`) is the game as data, shared by the window and
+  the console (`PlaySession` only formats it as text)
 
 - `godot/tools/` holds only the SceneTree entry points:
   `run_simulation.gd` (command mode) and `play.gd` (the game with menus)
@@ -936,8 +944,9 @@ res://  (godot/)
     tests/          unit, integration, simulation, architecture,
                     support (test-only helpers), golden, tools
   resources/        data assets (planet/, simulation/, chronicle/, ...)
-  game/             game layer: SimulationRunner, PlaySession, GoalTracker, DecisionWatcher,
-                    HintAdvisor, RunSaver, ConsoleInput (above simulation/)
+  game/             game layer: GameSession, SimulationRunner, PlaySession, GoalTracker,
+                    DecisionWatcher, HintAdvisor, RunSaver, ConsoleInput (above simulation/)
+  ui/               the window: GameView (main.tscn), PlanetView, HistoryChart
   tools/            entry points only: run_simulation.gd, play.gd
 ```
 

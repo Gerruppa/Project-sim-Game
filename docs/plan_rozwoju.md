@@ -73,7 +73,11 @@ mutacją), pomiar narzędziami z rozdziału 1, dokumentacja, commit na prośbę.
   czeka.
 - Najkrótsza droga do celu gry: „ciekawe, co się stanie, jeśli…”.
 
-### Etap D. Krok 10: wizualizacja debugowa
+### Etap D. Krok 10: wizualizacja debugowa (rozpoczęta)
+
+Pierwsza wersja gotowa: `./godot/play_window.sh` (rysunek planety, wykres,
+tabele, kronika, cele, panel decyzji z przyciskami, tempo x10/x100/x1000,
+pauza). Dalej: dopracowanie po sesjach gry, potem wizualizacja docelowa.
 
 - Okno Godota: wykresy parametrów w czasie, kronika na żywo, panel celów,
   przyciski akcji wysyłające te same polecenia

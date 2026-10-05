@@ -58,8 +58,9 @@ the player's decisions are interesting:
 decision points, interventions, hints and goals
 (`./godot/play.sh`, player guide: docs/jak_grac.md).
 
-No visual layer is required yet.
-Visualization (step 10) comes after playtests in the console.
+Step 10 has started with a debug visualization in a window
+(`./godot/play_window.sh`): the planet drawn live, charts, buttons.
+It shows the same GameSession as the console; the simulation is unchanged.
 
 Every new mechanic must first show in the console
 (chronicle, logs, decision screen)
@@ -644,7 +645,10 @@ simulation/tests/
 game/ (game layer above the simulation: SimulationRunner,
 PlaySession, GoalTracker, DecisionWatcher, HintAdvisor, saves)
 
-tools/ (entry points only: run_simulation.gd, play.gd)
+ui/ (the window, step 10: GameView, PlanetView, HistoryChart;
+Godot nodes and signals only here)
+
+tools/ (console entry points only: run_simulation.gd, play.gd)
 
 resources/
 
