@@ -24,6 +24,10 @@ const USAGE := """Usage: run_simulation.sh [options]
   --events PATH      world event definitions (default res://resources/events/events.json)
   --personality NAME harmonious, chaotic, guardian, random or none (default from sim_config.json)
                      other files describe planets of a different character
+  --act NAME[:ARG]   intervene at the first tick of the run (repeatable), e.g.
+                     --act seed_species:moss  --act mirrors_cool  --act cloud_seeding
+                     known: seed_species, cull_species, mirrors_warm, mirrors_cool,
+                     cloud_seeding, volcanic_awakening (res://resources/interventions/interventions.json)
   --save PATH     save the run when it ends
   --load PATH     continue a saved run (seed and personality come from the save;
                   --ticks counts ticks after the save)
@@ -38,13 +42,19 @@ static func parse_args(args: PackedStringArray) -> SimResult:
 	var options := {"realtime": false, "ticks": DEFAULT_TICKS, "speed": 1, "seconds": DEFAULT_SECONDS,
 			"quiet": false, "story": false, "climate": ClimateConfig.DEFAULT_PATH, "atmosphere": AtmosphereConfig.DEFAULT_PATH,
 			"species": SpeciesCatalog.DEFAULT_PATH, "biosphere": BiosphereConfig.DEFAULT_PATH,
-			"events": EventCatalog.DEFAULT_PATH}
+			"events": EventCatalog.DEFAULT_PATH, "act": []}
 	var i := 0
 	while i < args.size():
 		var arg := args[i]
 		match arg:
 			"--realtime":
 				options["realtime"] = true
+			"--act":
+				if i + 1 >= args.size() or args[i + 1].begins_with("--"):
+					result.add_error("--act needs an intervention, e.g. --act seed_species:moss")
+					break
+				i += 1
+				(options["act"] as Array).append(args[i])
 			"--quiet":
 				options["quiet"] = true
 			"--story":
@@ -149,6 +159,11 @@ static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
 		return events
 	var archetype: StringName = personality.value.archetype_id()
 	manager.register_system(EventSystem.new(events.value, archetype))
+	# The player's hand, last: it reaches others only through modifiers and commands.
+	var interventions := InterventionCatalog.load_json(InterventionCatalog.DEFAULT_PATH, specs, {&"biosphere": BiosphereSystem.COMMANDS})
+	if not interventions.is_ok():
+		return interventions
+	manager.register_system(InterventionSystem.new(interventions.value, (catalog.value as SpeciesCatalog).ids()))
 
 	return SimResult.success({
 		"manager": manager,
@@ -157,9 +172,20 @@ static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
 			"parameters": ParameterSchema.DEFAULT_PATH, "climate": options["climate"],
 			"atmosphere": options["atmosphere"], "species": options["species"],
 			"biosphere": options["biosphere"], "personality": PersonalityCatalog.DEFAULT_PATH,
-			"events": options["events"],
+			"events": options["events"], "interventions": InterventionCatalog.DEFAULT_PATH,
 		}),
 	})
+
+
+## Queues every --act for the next tick. All errors at once.
+static func submit_acts(manager: SimulationManager, acts: Array) -> SimResult:
+	var result := SimResult.new()
+	var hand := manager.system(InterventionSystem.ID) as InterventionSystem
+	for text: String in acts:
+		var parsed := hand.catalog().parse_text(text)
+		var submitted := manager.submit(InterventionSystem.ID, parsed.value["action"], parsed.value["args"]) if parsed.is_ok() else parsed
+		result.errors.append_array(submitted.errors)
+	return result
 
 
 ## File-name friendly id; the timestamp only names files, it never enters the logs.

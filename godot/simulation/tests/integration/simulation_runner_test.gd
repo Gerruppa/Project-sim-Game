@@ -213,7 +213,7 @@ func test_build_planet_registers_every_system_in_order() -> void:
 	var ids: Array[StringName] = []
 	for system in (built.value["manager"] as SimulationManager).systems():
 		ids.append(system.system_id())
-	assert_array(ids).is_equal([&"climate", &"atmosphere", &"biosphere", &"personality", &"events"])
+	assert_array(ids).is_equal([&"climate", &"atmosphere", &"biosphere", &"personality", &"events", &"interventions"])
 	assert_str(built.value["personality"]).is_equal("none")
 	assert_int((built.value["fingerprints"]["climate"] as String).length()).is_equal(64)
 
@@ -245,3 +245,17 @@ func test_autosave_zero_never_saves() -> void:
 	manager.run_ticks(5)
 	assert_object(saver.after_ticks().value).is_null()
 	assert_bool(FileAccess.file_exists(saver.autosave_path())).is_false()
+
+
+func test_parses_repeated_interventions() -> void:
+	assert_array(_options(["--act", "seed_species:moss", "--act", "mirrors_cool"])["act"]).is_equal(["seed_species:moss", "mirrors_cool"])
+	assert_array(_options([])["act"]).is_empty()
+	assert_bool(SimulationRunner.parse_args(PackedStringArray(["--act"])).is_ok()).is_false()
+
+
+func test_submit_acts_queues_valid_interventions_and_reports_all_bad_ones() -> void:
+	var manager: SimulationManager = SimulationRunner.build_planet(_config(), _options([])).value["manager"]
+	assert_bool(SimulationRunner.submit_acts(manager, ["seed_species:moss", "cloud_seeding"]).is_ok()).is_true()
+	assert_int(manager.command_queue().pending().size()).is_equal(2)
+	var bad := SimulationRunner.submit_acts(manager, ["seed_species:lichen", "comet", "mirrors_cool:moss"])
+	assert_int(bad.errors.size()).is_equal(3)

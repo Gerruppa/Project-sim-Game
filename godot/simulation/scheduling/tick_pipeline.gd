@@ -2,7 +2,7 @@ class_name TickPipeline
 extends RefCounted
 ## The fixed order of one tick. No other module defines this order.
 ##
-##   1. Begin       commands (added with CommandQueue)
+##   1. Begin       commands from CommandQueue, then their follow-ups
 ##   2. Modifiers   providers add/remove modifiers, expired ones drop,
 ##                  effective coefficients reach systems
 ##   3. Compute     due systems read the snapshot of tick N-1, return deltas
@@ -65,9 +65,27 @@ func system_ids() -> Array[StringName]:
 	return ids
 
 
-## Executes tick number `tick` (the first tick is 1).
-func execute(tick: int) -> ApplyReport:
+## The registered system with this id, or null.
+func find(id: StringName) -> SimulationSystem:
+	for system in _systems:
+		if system.system_id() == id:
+			return system
+	return null
+
+
+## Executes tick number `tick` (the first tick is 1) with its commands.
+func execute(tick: int, commands: Array[SimCommand] = []) -> ApplyReport:
 	var snapshot := _state.snapshot(tick - 1)
+
+	# 1. Begin: commands in submission order; follow-ups right after the
+	# command that produced them (one level: follow-ups cannot chain).
+	for command in commands:
+		for follow_up in _run_command(command):
+			_run_command(follow_up)
+	# What the commands did comes before what the planet did in answer.
+	var begin_events: Array[SimEvent] = []
+	for system in _systems:
+		begin_events.append_array(system.take_events(tick))
 
 	# 2. Modifiers
 	_update_modifiers(snapshot, tick)
@@ -86,11 +104,14 @@ func execute(tick: int) -> ApplyReport:
 	if report.is_ok():
 		_detect(_state.snapshot(tick), tick)
 
-	# 6. Dispatch: the tick event first, then facts reported by systems
-	# (in registration order). A rejected batch never happened, so its
-	# system events are dropped.
+	# 6. Dispatch: the tick event first, then facts from commands, then facts
+	# reported by systems (in registration order). A rejected batch never
+	# happened, so its system events are dropped.
 	var type := SimEvent.TICK_APPLIED if report.is_ok() else SimEvent.BATCH_REJECTED
 	_bus.publish(SimEvent.new(type, tick, &"pipeline", {"report": report}))
+	if report.is_ok():
+		for event in begin_events:
+			_bus.publish(event)
 	for system in _systems:
 		var events := system.take_events(tick)
 		if report.is_ok():
@@ -98,6 +119,13 @@ func execute(tick: int) -> ApplyReport:
 				_bus.publish(event)
 	_bus.flush()
 	return report
+
+
+## Commands were validated when queued; a missing target can only mean a
+## follow-up for a system this planet does not run, which is skipped.
+func _run_command(command: SimCommand) -> Array[SimCommand]:
+	var target := find(command.target)
+	return target.apply_command(command) if target != null else ([] as Array[SimCommand])
 
 
 func _detect(snapshot: PlanetSnapshot, tick: int) -> void:

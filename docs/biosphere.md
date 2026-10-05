@@ -118,9 +118,30 @@ BiosphereSystem zgłasza fakty przez `emit_event` (kontrakt `SimulationSystem`):
 | Zdarzenie | Kiedy | Dane |
 |---|---|---|
 | `species_emerged` | populacja przekracza `established_population` (1) | species, population |
-| `species_extinct` | zadomowiona populacja spada do 0 | species |
+| `species_extinct` | zadomowiona populacja spada do 0 | species, cause |
 
 W logu: `[Tick 7214] EVENT species_emerged from biosphere {"population":1.0004,"species":"tree"}`.
+
+## Przyczyny wymierania (krok 9a)
+
+Gatunek ginie zwykle przez setki ticków, więc przyczyną jest **największa
+niedawna strata**, a nie ostatni tick. Każdy gatunek ma zanikające liczniki
+strat (`loss_memory` w `biosphere.json`, 0,99 ≈ ostatnie ~100 ticków):
+
+| Przyczyna | Strata |
+|---|---|
+| `heat`, `cold`, `drought`, `co2_starvation`, `oxygen_lack`, `poor_soil` | śmierć stresowa, przypisana najsłabszemu czynnikowi przydatności (`SpeciesData.limiting_factor`) |
+| `fire` | pożary |
+| `shade`, `oxygen_excess` | spadek pojemności przez cień wyższych warstw albo tlen (beztlenowce), ten, który obciął więcej |
+| `old_age` | naturalna śmiertelność bez odnowy |
+
+Przy remisie wygrywa kolejność z tabeli (`LOSS_CAUSES`), więc wynik jest
+deterministyczny. Liczniki tylko obserwują: wyłączenie pamięci
+(`loss_memory` = 0) nie zmienia populacji (test). Są zapisywane w stanie
+biosfery (`losses_exact`); zapisy bez nich wczytują się z pustą pamięcią.
+
+Kronika: `[Tick 10987] Wymierają drzewa: za zimno.` (słownik `causes`
+w `resources/chronicle/chronicle.json`).
 
 Przyczyny delt nazywają gatunek: `algae_photosynthesis`, `tree_respiration`,
 `moss_transpiration`, `shrub_wildfire`, `moss_growth`, `tree_dieback`, `census`.
@@ -174,7 +195,8 @@ Historia strojenia (prototyp w Pythonie przed implementacją):
 - `tests/unit/biosphere_config_test.gd`
 - `tests/unit/biosphere_system_test.gd`: powstawanie, poprzednik, wzrost logistyczny,
   śmierć stresowa, cień, biomasa = suma, korekta census, fotosynteza, fotooddychanie,
-  oddychanie, transpiracja, pożary, nisza, zdarzenia, determinizm
+  oddychanie, transpiracja, pożary, nisza, zdarzenia, determinizm, przyczyny wymierania
+  (upał, chłód, susza, pożar, cień), zapis i wczytanie
 - `tests/integration/biosphere_behavior_test.gd`: jeden długi przebieg całej planety
   (kolejność sukcesji, natlenienie po nasyceniu skorupy, drzewa po natlenieniu,
   przetrwanie bakterii, limit tlenu)

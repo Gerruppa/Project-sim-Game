@@ -14,7 +14,9 @@ func before_test() -> void:
 	_sink = MemoryLogSink.new()
 	var texts: ChronicleTexts = ChronicleTexts.from_data({
 		"species": {"moss": "mchy"},
-		"events": {"species_emerged": "Pojawiają się {species}.", "planet_personality": "Planeta budzi się. {description}"},
+		"events": {"species_emerged": "Pojawiają się {species}.", "planet_personality": "Planeta budzi się. {description}",
+				"species_extinct": "Wymierają {species}: {cause}."},
+		"causes": {"fire": "strawiły je pożary"},
 		"measures": {
 			"value": "{param} {value}",
 			"change": {"below": "{param} spada o {abs} w {window}", "above": "{param} rośnie o {abs} w {window}"},
@@ -81,9 +83,14 @@ func test_system_events_use_the_vocabulary_and_species_names() -> void:
 	])
 
 
+func test_extinction_says_why() -> void:
+	_publish(&"species_extinct", 10979, {"species": "moss", "cause": "fire"})
+	assert_str(_sink.lines[1]).is_equal("[Tick 10979] Wymierają mchy: strawiły je pożary.")
+
+
 func test_leaves_out_everything_without_a_sentence() -> void:
 	_publish(SimEvent.TICK_APPLIED, 1, {})
-	_publish(&"species_extinct", 2, {"species": "moss"})
+	_publish(&"species_mutated", 2, {"species": "moss"})
 	_publish(&"world_event_started", 3, {"summary": "no story here"})
 	assert_int(_sink.lines.size()).is_equal(1)
 

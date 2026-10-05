@@ -57,6 +57,19 @@ func load_state(data: Dictionary) -> SimResult:
 	return SimResult.success(self)
 
 
+## Checks a command before it is queued, so a bad request fails at once
+## instead of ticks later. Systems that accept commands override this.
+func validate_command(command: SimCommand) -> SimResult:
+	return SimResult.failure("system '%s' accepts no commands (%s)" % [system_id(), command.action])
+
+
+## Executes a validated command at the start of its tick (phase 1). May
+## return follow-up commands for other systems (an intervention seeding a
+## species asks the biosphere); they run right after, in order.
+func apply_command(_command: SimCommand) -> Array[SimCommand]:
+	return []
+
+
 ## Queues a notification for the current tick. Data should be plain values.
 func emit_event(type: StringName, data: Dictionary) -> void:
 	_pending_events.append([type, data])

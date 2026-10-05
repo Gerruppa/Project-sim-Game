@@ -5,9 +5,11 @@ extends RunObserver
 ## the full log's ~120 000, so the observer can read it without tools
 ## (CORE_LOOP.md, stage Observe).
 ##
-## Events carrying a "story" sentence (world events) are written with their
-## measured causes; other event types are written only if the vocabulary
-## has a sentence for them. Everything else is left out on purpose.
+## Events carrying a "story" sentence (world events, interventions) are
+## written with their measured causes; {field} placeholders in a story are
+## filled from the event data ("Gracz zasiewa {species}."). Other event
+## types are written only if the vocabulary has a sentence for them.
+## Everything else is left out on purpose.
 
 var _sinks: Array[LogSink]
 var _texts: ChronicleTexts
@@ -37,7 +39,7 @@ func close() -> void:
 func _on_event(event: SimEvent) -> void:
 	var sentence := ""
 	if typeof(event.data.get("story")) == TYPE_STRING:
-		sentence = event.data["story"]
+		sentence = (event.data["story"] as String).format(_fields(event.data))
 		var causes: Variant = event.data.get("causes")
 		if typeof(causes) == TYPE_ARRAY and not (causes as Array).is_empty():
 			sentence += " (%s)" % "; ".join(PackedStringArray((causes as Array).map(_phrase)))
@@ -48,13 +50,15 @@ func _on_event(event: SimEvent) -> void:
 	_write("[Tick %d] %s" % [event.tick, sentence])
 
 
-## Event data as text; species ids become their names.
+## Event data as text; species and cause ids become their words.
 func _fields(data: Dictionary) -> Dictionary:
 	var fields := {}
 	for key: Variant in data:
 		fields[key] = str(data[key])
 	if fields.has("species"):
 		fields["species"] = _texts.species.get(fields["species"], fields["species"])
+	if fields.has("cause"):
+		fields["cause"] = _texts.causes.get(fields["cause"], fields["cause"])
 	return fields
 
 

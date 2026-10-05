@@ -35,6 +35,7 @@ static func capture(manager: SimulationManager, run: Dictionary) -> Dictionary:
 		"lineage": run.get("lineage", []),
 		"planet": planet,
 		"systems": systems,
+		"commands": manager.command_queue().save_state(),
 	}
 
 
@@ -104,6 +105,12 @@ static func restore(manager: SimulationManager, data: Dictionary, run: Dictionar
 
 	var restored := manager.restore(header.value["tick"], decoded.value)
 	result.errors.append_array(restored.errors)
+	# Optional: saves from before commands existed have none queued.
+	var commands: Variant = data.get("commands", {})
+	if typeof(commands) != TYPE_DICTIONARY:
+		result.add_error("save: 'commands' must be an object")
+	else:
+		result.errors.append_array(manager.command_queue().load_state(commands).errors)
 	for system in manager.systems():
 		var loaded := system.load_state(data["systems"][String(system.system_id())])
 		result.errors.append_array(loaded.errors)

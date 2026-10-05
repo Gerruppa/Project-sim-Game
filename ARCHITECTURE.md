@@ -94,6 +94,7 @@ logs/simulation_runs/                           run logs (not in git)
 | EventBus | queued notifications about facts that already happened |
 | SimulationLog | every tick written as text and JSON Lines |
 | SaveSystem | save between ticks, load and continue bit-identically; autosave |
+| CommandQueue, InterventionSystem | the player's hand: seed, cull, mirrors, cloud seeding, volcanoes; cooldowns |
 | PlanetChronicle | the run told in sentences: emerging species, world events and their causes |
 | SimMath, SeededRng | math and randomness that give the same bits on every platform |
 | ClimateSystem | seasons, climate drift, ice-albedo tipping point, water cycle, clouds, rain |
@@ -116,7 +117,8 @@ logs/simulation_runs/                           run logs (not in git)
 | 6. PersonalitySystem | done: Harmonious, Chaotic, Guardian via ModifierRegistry |
 | 7. EventSystem | done: drought, guardian healing, planet chronicle |
 | 8. SaveSystem | done: save/load/autosave, data fingerprints, lineage placeholder |
-| 9–10. Gameplay, Visualization | planned |
+| 9. Gameplay layer | in progress: 9a extinction causes, 9b interventions (CommandQueue, --act) done; 9c decision points next (docs/gameplay.md) |
+| 10. Visualization | planned |
 
 ---
 

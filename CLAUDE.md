@@ -639,6 +639,8 @@ simulation/personality/
 
 simulation/narrative/
 
+simulation/interventions/
+
 simulation/tests/
 
 resources/

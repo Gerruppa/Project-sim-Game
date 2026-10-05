@@ -87,6 +87,28 @@ func suitability(snapshot: PlanetSnapshot) -> float:
 	return temperature_fit * water_fit * co2_fit * oxygen_fit * soil_fit
 
 
+## The factor of suitability() that limits the species most, as a loss
+## cause: heat, cold, drought, co2_starvation, oxygen_lack or poor_soil.
+## Ties keep this order, so the answer is deterministic.
+func limiting_factor(snapshot: PlanetSnapshot) -> StringName:
+	var t := snapshot.get_value(Param.TEMPERATURE)
+	var cold_fit := SimMath.smoothstep(t_min - t_margin, t_min, t)
+	var heat_fit := 1.0 - SimMath.smoothstep(t_max, t_max + t_margin, t)
+	var fits := [
+		[&"heat", heat_fit],
+		[&"cold", cold_fit],
+		[&"drought", SimMath.smoothstep(water_min - water_margin, water_min, snapshot.get_value(water))],
+		[&"co2_starvation", 1.0 if co2_need == 0.0 else SimMath.smoothstep(0.0, co2_need, snapshot.get_value(Param.CO2))],
+		[&"oxygen_lack", 1.0 if o2_need == 0.0 else SimMath.smoothstep(o2_need * 0.5, o2_need, snapshot.get_value(Param.OXYGEN))],
+		[&"poor_soil", 1.0 if biomass_need == 0.0 else SimMath.smoothstep(biomass_need * 0.5, biomass_need, snapshot.get_value(Param.BIOMASS))],
+	]
+	var weakest: Array = fits[0]
+	for fit: Array in fits:
+		if fit[1] < weakest[1]:
+			weakest = fit
+	return weakest[0]
+
+
 ## Oxygen-sensitive species keep only their refuge share of capacity once
 ## oxygen rises: anaerobes retreat to oxygen-free niches instead of vanishing.
 func oxygen_capacity_factor(oxygen_level: float) -> float:

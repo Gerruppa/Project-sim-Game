@@ -59,6 +59,10 @@ func _init() -> void:
 			_fail(restored.errors, false)
 			return
 		print("Loaded %s at tick %d" % [_options["load"], _manager.tick()])
+	var acted := SimulationRunner.submit_acts(_manager, _options["act"])
+	if not acted.is_ok():
+		_fail(acted.errors, false)
+		return
 
 	_log_id = SimulationRunner.run_id(config.seed())
 	var echo_log: bool = not _options["quiet"] and not _options["story"]

@@ -9,6 +9,7 @@ func _data() -> Dictionary:
 	return {
 		"species": {"moss": "mchy"},
 		"events": {"species_emerged": "Pojawiają się {species}."},
+		"causes": {"fire": "pożary"},
 		"measures": measures,
 	}
 
@@ -27,6 +28,12 @@ func test_project_vocabulary_names_every_project_species() -> void:
 	var catalog: SpeciesCatalog = SpeciesCatalog.load_json(SpeciesCatalog.DEFAULT_PATH).value
 	for id in catalog.ids():
 		assert_bool(texts.species.has(String(id))).override_failure_message("no chronicle name for species '%s'" % id).is_true()
+
+
+func test_project_vocabulary_explains_every_extinction_cause() -> void:
+	var texts: ChronicleTexts = ChronicleTexts.load_json(ChronicleTexts.DEFAULT_PATH).value
+	for cause in BiosphereSystem.LOSS_CAUSES:
+		assert_bool(texts.causes.has(String(cause))).override_failure_message("no chronicle phrase for cause '%s'" % cause).is_true()
 
 
 func test_reads_valid_data() -> void:
@@ -70,4 +77,4 @@ func test_rejects_empty_or_non_text_entries() -> void:
 func test_reports_all_errors_at_once() -> void:
 	var result := ChronicleTexts.from_data({})
 	assert_bool(result.is_ok()).is_false()
-	assert_int(result.errors.size()).is_greater_equal(3)
+	assert_int(result.errors.size()).is_greater_equal(4)

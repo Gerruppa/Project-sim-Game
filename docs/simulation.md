@@ -305,8 +305,8 @@ obserwator czyta go bez narzędzi.
   a w nawiasie zmierzone przyczyny z warunku startu albo końca,
 - zdarzenia systemów: słownik `resources/chronicle/chronicle.json`
   (`events`: zdanie z polami `{nazwa}` z danych zdarzenia, `species`:
-  nazwy gatunków, `measures`: fraza dla każdej miary warunku, dla miar
-  ze znakiem osobno `below` i `above`),
+  nazwy gatunków, `causes`: przyczyny wymierania, `measures`: fraza dla
+  każdej miary warunku, dla miar ze znakiem osobno `below` i `above`),
 - nazwy parametrów: `display_name` ze schematu parametrów.
 
 Zdarzenie bez zdania jest pomijane celowo. Kronika jest obserwatorem
@@ -324,6 +324,7 @@ GODOT_BIN=... ./godot/run_simulation.sh --story                                 
 GODOT_BIN=... ./godot/run_simulation.sh --ticks 2500 --save epoka.json          # zapis na końcu przebiegu
 GODOT_BIN=... ./godot/run_simulation.sh --load epoka.json --ticks 1000          # dalsze 1000 ticków
 GODOT_BIN=... ./godot/run_simulation.sh --autosave 500                          # autozapis co 500 ticków (0 = wyłączony)
+GODOT_BIN=... ./godot/run_simulation.sh --load epoka.json --act seed_species:moss --act cloud_seeding  # interwencje gracza
 ```
 
 Osobowość planety: `"personality"` w `sim_config.json` (`random` = losowana

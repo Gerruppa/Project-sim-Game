@@ -14,6 +14,16 @@ const ID := &"biosphere"
 const STATE_FORMAT := "biosphere_state"
 ## Biomass drift smaller than this is float noise, not a real mismatch.
 const CENSUS_TOLERANCE := 1e-6
+## Why populations shrink. An extinction names the cause with the largest
+## recent loss, so the chronicle can say why a species died out.
+const LOSS_CAUSES: Array[StringName] = [&"heat", &"cold", &"drought", &"co2_starvation", &"oxygen_lack",
+		&"poor_soil", &"fire", &"shade", &"oxygen_excess", &"old_age", &"culled"]
+## Commands the biosphere accepts: action -> {argument: [min, max]}.
+## Interventions name these in data, so they are validated at load time.
+const COMMANDS := {
+	&"add_population": {"species": [], "amount": [0.0, 100.0]},
+	&"scale_population": {"species": [], "factor": [0.0, 1.0]},
+}
 
 var _k: BiosphereConfig
 var _species: Array[SpeciesData]
@@ -21,6 +31,10 @@ var _rng: SeededRng
 ## Population 0..100 per species, in catalog order.
 var _populations := PackedFloat64Array()
 var _established: Array[bool] = []
+## Recent population loss per species and cause (species-major, LOSS_CAUSES
+## order), decaying by loss_memory every tick. Observation only: it never
+## changes populations.
+var _losses := PackedFloat64Array()
 
 
 func _init(config: BiosphereConfig, catalog: SpeciesCatalog, global_seed: int) -> void:
@@ -30,6 +44,7 @@ func _init(config: BiosphereConfig, catalog: SpeciesCatalog, global_seed: int) -
 	_populations.resize(_species.size())
 	_established.resize(_species.size())
 	_established.fill(false)
+	_losses.resize(_species.size() * LOSS_CAUSES.size())
 
 
 func system_id() -> StringName:
@@ -77,6 +92,7 @@ func save_state() -> Dictionary:
 		"species": species,
 		"populations_exact": ExactCodec.floats_to_text(_populations),
 		"established": _established.duplicate(),
+		"losses_exact": ExactCodec.floats_to_text(_losses),
 		"rng_state": ExactCodec.int_to_text(_rng.get_state()),
 	}
 
@@ -93,20 +109,70 @@ func load_state(data: Dictionary) -> SimResult:
 	var populations := ExactCodec.floats_from_text(data.get("populations_exact"), _species.size(), "biosphere: 'populations_exact'")
 	result.errors.append_array(populations.errors)
 	var flags: Variant = data.get("established")
-	if typeof(flags) != TYPE_ARRAY or (flags as Array).size() != _species.size() 			or not (flags as Array).all(func(flag: Variant) -> bool: return typeof(flag) == TYPE_BOOL):
+	if typeof(flags) != TYPE_ARRAY or (flags as Array).size() != _species.size() \
+			or not (flags as Array).all(func(flag: Variant) -> bool: return typeof(flag) == TYPE_BOOL):
 		result.add_error("biosphere: 'established' must hold %d true/false values" % _species.size())
 	var rng_read := ExactCodec.int_from_text(data.get("rng_state"), "biosphere: 'rng_state'")
 	result.errors.append_array(rng_read.errors)
+	# Optional: saves from before extinction causes start with no memory.
+	var losses := SimResult.success(PackedFloat64Array())
+	if data.has("losses_exact"):
+		losses = ExactCodec.floats_from_text(data["losses_exact"], _losses.size(), "biosphere: 'losses_exact'")
+		result.errors.append_array(losses.errors)
 	if not result.is_ok():
 		return result
 	for value: float in (populations.value as PackedFloat64Array):
 		if value < 0.0 or value > 100.0:
 			return SimResult.failure("biosphere: population %s outside 0..100" % value)
 	_populations = populations.value
+	_losses.fill(0.0)
+	if not (losses.value as PackedFloat64Array).is_empty():
+		_losses = losses.value
 	for i in _species.size():
 		_established[i] = flags[i]
 	_rng.set_state(rng_read.value)
 	return SimResult.success(self)
+
+
+func validate_command(command: SimCommand) -> SimResult:
+	if not COMMANDS.has(command.action):
+		return SimResult.failure("biosphere: unknown command '%s'; known: %s" % [command.action, COMMANDS.keys()])
+	var result := SimResult.new()
+	var spec: Dictionary = COMMANDS[command.action]
+	for name: String in spec:
+		var value: Variant = command.args.get(name)
+		if name == "species":
+			if typeof(value) != TYPE_STRING or _index_of(StringName(value)) == -1:
+				result.add_error("biosphere: '%s' is not a species of this planet" % [value])
+		elif not (typeof(value) in [TYPE_INT, TYPE_FLOAT]) or float(value) < spec[name][0] or float(value) > spec[name][1]:
+			result.add_error("biosphere: '%s' must be a number in %s..%s" % [name, spec[name][0], spec[name][1]])
+	for name: Variant in command.args:
+		if not spec.has(name):
+			result.add_error("biosphere: unknown argument '%s' for %s" % [name, command.action])
+	if result.is_ok():
+		result.value = command
+	return result
+
+
+## Seeding adds population (above the emergence threshold the species is
+## announced by the next compute, as any species). Culling removes a share
+## and is remembered as a loss, so a culled species dies out "culled";
+## culled below the extinction threshold it is gone at once.
+func apply_command(command: SimCommand) -> Array[SimCommand]:
+	if not validate_command(command).is_ok():
+		return []
+	var index := _index_of(StringName(command.args["species"]))
+	var before := _populations[index]
+	match command.action:
+		&"add_population":
+			_populations[index] = clampf(before + float(command.args["amount"]), 0.0, 100.0)
+		&"scale_population":
+			_populations[index] = before * float(command.args["factor"])
+			# Below a viable population the species is gone, as in compute.
+			if _populations[index] < _k.extinction_threshold:
+				_populations[index] = 0.0
+			_losses[index * LOSS_CAUSES.size() + LOSS_CAUSES.find(&"culled")] += before - _populations[index]
+	return []
 
 
 ## Weighted sum of populations: what planet biomass should be.
@@ -137,7 +203,7 @@ func compute(snapshot: PlanetSnapshot) -> Array[Delta]:
 		var species := _species[i]
 		var p := _populations[i]
 		var suit := species.suitability(snapshot)
-		next[i] = p + _population_change(i, species, p, suit, fire, oxygen)
+		next[i] = p + _population_change(i, species, p, suit, fire, oxygen, snapshot)
 		_add_effects(deltas, species, p, suit, photo_limit, fire)
 		_add(deltas, Param.BIOMASS, species.weight * (next[i] - p),
 				StringName("%s_%s" % [species.id, "growth" if next[i] > p else "dieback"]))
@@ -146,19 +212,53 @@ func compute(snapshot: PlanetSnapshot) -> Array[Delta]:
 	return deltas
 
 
-func _population_change(index: int, species: SpeciesData, p: float, suit: float, fire: float, oxygen: float) -> float:
-	var capacity := species.capacity * species.oxygen_capacity_factor(oxygen) \
-			* (1.0 - species.shade * _taller_cover(species.layer) / 100.0)
+func _population_change(index: int, species: SpeciesData, p: float, suit: float, fire: float, oxygen: float,
+		snapshot: PlanetSnapshot) -> float:
+	var oxygen_factor := species.oxygen_capacity_factor(oxygen)
+	var shade_factor := 1.0 - species.shade * _taller_cover(species.layer) / 100.0
+	var capacity := species.capacity * oxygen_factor * shade_factor
 	var crowding := p / capacity if capacity > 0.0 else 2.0
 	var noise := 1.0 + _rng.next_range(-_k.growth_noise, _k.growth_noise)
 	var growth := species.growth * _k.growth_scale * suit * noise * p * (1.0 - crowding)
+	var natural := species.base_mortality * p
+	var stress := species.stress_mortality * _k.stress_scale * (1.0 - suit) * p
+	var burned := fire * species.flammable * p
 	var death := (species.base_mortality + species.stress_mortality * _k.stress_scale * (1.0 - suit)
 			+ fire * species.flammable) * p
 	var seeding := species.seed * suit * _precursor_share(species)
 	var next_population := clampf(p + growth - death + seeding, 0.0, 100.0)
 	if next_population < _k.extinction_threshold and next_population < p:
 		next_population = 0.0
+	# Shrinking capacity shows as negative growth: shade or oxygen, whichever cut more.
+	var squeeze := maxf(-growth, 0.0)
+	var stress_cause := species.limiting_factor(snapshot) if stress > 0.0 else &"old_age"
+	var squeeze_cause := &"shade" if shade_factor <= oxygen_factor else &"oxygen_excess"
+	_remember_losses(index, {stress_cause: stress, &"fire": burned, squeeze_cause: squeeze}, natural)
 	return next_population - p
+
+
+## Decays the memory and adds this tick's losses. Natural mortality is
+## added separately so it never hides a stress cause with the same key.
+func _remember_losses(index: int, losses: Dictionary, natural: float) -> void:
+	var base := index * LOSS_CAUSES.size()
+	for k in LOSS_CAUSES.size():
+		_losses[base + k] *= _k.loss_memory
+	for cause: StringName in losses:
+		_losses[base + LOSS_CAUSES.find(cause)] += losses[cause]
+	_losses[base + LOSS_CAUSES.find(&"old_age")] += natural
+
+
+## The cause with the largest remembered loss; ties keep LOSS_CAUSES order.
+func extinction_cause(species_id: StringName) -> StringName:
+	var index := _index_of(species_id)
+	if index == -1:
+		return &""
+	var base := index * LOSS_CAUSES.size()
+	var best := 0
+	for k in LOSS_CAUSES.size():
+		if _losses[base + k] > _losses[base + best]:
+			best = k
+	return LOSS_CAUSES[best]
 
 
 ## Photosynthesis and respiration (atmosphere), transpiration (climate), fire.
@@ -186,7 +286,7 @@ func _report_milestones(index: int, species: SpeciesData, population_now: float)
 		emit_event(&"species_emerged", {"species": String(species.id), "population": population_now})
 	elif _established[index] and population_now == 0.0:
 		_established[index] = false
-		emit_event(&"species_extinct", {"species": String(species.id)})
+		emit_event(&"species_extinct", {"species": String(species.id), "cause": String(extinction_cause(species.id))})
 
 
 ## Cover of all taller land layers (layer 0 is soil and water: never shaded, never shades).

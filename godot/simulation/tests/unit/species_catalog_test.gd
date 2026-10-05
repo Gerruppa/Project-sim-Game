@@ -86,3 +86,14 @@ func test_oxygen_shrinks_anaerobes_to_their_refuge() -> void:
 	assert_float(bacteria.oxygen_capacity_factor(0.0)).is_equal(1.0)
 	assert_float(bacteria.oxygen_capacity_factor(30.0)).is_equal(0.15)
 	assert_float(S.catalog([S.species("moss")]).get_species(&"moss").oxygen_capacity_factor(90.0)).is_equal(1.0)
+
+
+func test_limiting_factor_is_the_weakest_requirement() -> void:
+	var catalog := SpeciesCatalog.from_data({"catalog_version": 1, "species": [
+			preload("res://simulation/tests/support/biosphere_fixtures.gd").species("moss", {"co2_need": 20.0})]}).value as SpeciesCatalog
+	var moss := catalog.get_species(&"moss")
+	var S := preload("res://simulation/tests/support/biosphere_fixtures.gd")
+	assert_str(moss.limiting_factor(S.snapshot({"temperature": 60.0}))).is_equal("heat")
+	assert_str(moss.limiting_factor(S.snapshot({"temperature": 3.0}))).is_equal("cold")
+	assert_str(moss.limiting_factor(S.snapshot({"humidity": 6.0}))).is_equal("drought")
+	assert_str(moss.limiting_factor(S.snapshot({"co2": 2.0}))).is_equal("co2_starvation")

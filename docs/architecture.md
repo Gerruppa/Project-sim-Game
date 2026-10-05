@@ -401,9 +401,10 @@ The single place that defines the order of a tick.
 No other module may define or change this order.
 
 Implemented now (`simulation/scheduling/tick_pipeline.gd`):
-Modifiers, Compute, Apply, Detect and Dispatch (publishes `tick_applied`
-or `batch_rejected` with the ApplyReport, then flushes the EventBus).
-Begin is a documented placeholder, filled in with CommandQueue.
+Begin (the tick's commands and their follow-ups), Modifiers, Compute,
+Apply, Detect and Dispatch (publishes `tick_applied` or `batch_rejected`
+with the ApplyReport, then the events from Begin, then the systems'
+events, then flushes the EventBus).
 
 Modifier providers (`ModifierProvider`) take part in two phases:
 `provide_modifiers(snapshot N-1)` in phase 2 and `detect(snapshot N)` in
@@ -472,16 +473,20 @@ Rules:
 
 ## CommandQueue
 
-The only entry point from outside the simulation.
+The only entry point from outside the simulation (`simulation/core/command_queue.gd`).
 
-Examples:
+- `SimulationManager.submit(target, action, args, at_tick)` asks the target
+  system to `validate_command` and queues the `SimCommand`
+- TickPipeline phase 1 (Begin) runs the tick's commands in submission order
+  through `apply_command`; a command may return follow-up commands for other
+  systems (an intervention seeding a species asks the biosphere), run right
+  after it, one level deep
+- events emitted in Begin are published before the systems' own events
+- pending commands are part of the save; same seed + same commands = same run
+- commands never bypass StateWriter: systems turn them into internal
+  changes (populations) or modifiers, never into direct state writes
 
-- add species
-- change a coefficient
-- set seed
-
-Commands run on a tick boundary.
-Commands never bypass StateWriter.
+Player interventions: `docs/gameplay.md`.
 
 ---
 
@@ -906,7 +911,7 @@ res://  (godot/)
   simulation/
     core/           PlanetState, StateWriter, Delta, SimulationSystem, CoefficientLoader,
                     EventBus, SimEvent, RunObserver, SimulationLog, log sinks,
-                    SeededRng, SimMath, ExactCodec, CommandQueue
+                    SeededRng, SimMath, ExactCodec, CommandQueue, SimCommand
     scheduling/     SimulationManager, TickScheduler, TickPipeline, SimConfig, SaveSystem
     planet/         ParameterDefs, snapshot
     climate/        ClimateSystem
@@ -916,6 +921,7 @@ res://  (godot/)
     events/         EventSystem, EventDefs
     personality/    PersonalitySystem, PersonalityCatalog, PersonalityArchetype
     narrative/      PlanetChronicle, ChronicleTexts (observers, presentation only)
+    interventions/  InterventionSystem, InterventionCatalog, InterventionDef (player's hand)
     tests/          unit, integration, simulation, architecture,
                     support (test-only helpers), golden, tools
   resources/        data assets (planet/, simulation/, chronicle/, ...)

@@ -1,0 +1,74 @@
+{
+	"interventions_version": 1,
+	"interventions": [
+		{
+			"id": "seed_species",
+			"name": "Zasiew gatunku",
+			"args": ["species"],
+			"cooldown": 300,
+			"story": {"applied": "Gracz zasiewa {species}."},
+			"commands": [
+				{"target": "biosphere", "action": "add_population", "args": {"species": "$species", "amount": 5.0}}
+			]
+		},
+		{
+			"id": "cull_species",
+			"name": "Przerzedzenie gatunku",
+			"args": ["species"],
+			"cooldown": 300,
+			"story": {"applied": "Gracz przerzedza {species}: zostaje jedna dziesiąta."},
+			"commands": [
+				{"target": "biosphere", "action": "scale_population", "args": {"species": "$species", "factor": 0.1}}
+			]
+		},
+		{
+			"id": "mirrors_warm",
+			"name": "Lustra orbitalne",
+			"cooldown": 1500,
+			"cooldown_group": "mirrors",
+			"duration": 500,
+			"story": {
+				"applied": "Gracz rozkłada lustra orbitalne: planeta dostaje więcej światła.",
+				"ended": "Lustra orbitalne składają się."
+			},
+			"modifiers": [{"target": "climate.base_temperature", "operation": "add", "value": 8.0}]
+		},
+		{
+			"id": "mirrors_cool",
+			"name": "Pył orbitalny",
+			"cooldown": 1500,
+			"cooldown_group": "mirrors",
+			"duration": 500,
+			"story": {
+				"applied": "Gracz rozpyla pył na orbicie: planeta dostaje mniej światła.",
+				"ended": "Pył orbitalny opada."
+			},
+			"modifiers": [{"target": "climate.base_temperature", "operation": "add", "value": -8.0}]
+		},
+		{
+			"id": "cloud_seeding",
+			"name": "Zasiew chmur",
+			"cooldown": 900,
+			"duration": 300,
+			"story": {
+				"applied": "Gracz zasiewa chmury: deszcz pada nawet z rzadkich chmur.",
+				"ended": "Zasiane chmury wygasają."
+			},
+			"modifiers": [
+				{"target": "climate.rain_cloud_low", "operation": "add", "value": -25.0},
+				{"target": "climate.rain_cloud_high", "operation": "add", "value": -25.0}
+			]
+		},
+		{
+			"id": "volcanic_awakening",
+			"name": "Przebudzenie wulkanów",
+			"cooldown": 2000,
+			"duration": 400,
+			"story": {
+				"applied": "Gracz budzi wulkany: do atmosfery płynie CO₂.",
+				"ended": "Wulkany zasypiają."
+			},
+			"modifiers": [{"target": "atmosphere.volcanic_co2", "operation": "multiply", "value": 3.0}]
+		}
+	]
+}

@@ -267,3 +267,88 @@ func test_load_rejects_state_of_another_catalog_or_damaged_values() -> void:
 	var bad_flags := saved.duplicate()
 	bad_flags["established"] = [1]
 	assert_bool(_system([S.species("moss")]).load_state(bad_flags).is_ok()).is_false()
+
+
+## Runs a doomed species until it dies out; returns the cause it was reported with.
+func _extinction_cause(system: BiosphereSystem, values: Dictionary, ticks: int = 400) -> String:
+	for tick in ticks:
+		_step(system, values)
+		for event in system.take_events(tick):
+			if event.type == &"species_extinct":
+				return event.data["cause"]
+	return ""
+
+
+func test_extinction_names_the_limiting_factor() -> void:
+	var hot := _system([S.species("moss", {"seed": 0.0})])
+	hot.set_population(&"moss", 5.0)
+	assert_str(_extinction_cause(hot, {"temperature": 70.0})).is_equal("heat")
+	var cold := _system([S.species("moss", {"seed": 0.0})])
+	cold.set_population(&"moss", 5.0)
+	assert_str(_extinction_cause(cold, {"temperature": 0.0})).is_equal("cold")
+	var dry := _system([S.species("moss", {"seed": 0.0})])
+	dry.set_population(&"moss", 5.0)
+	assert_str(_extinction_cause(dry, {"humidity": 0.0})).is_equal("drought")
+
+
+func test_extinction_by_fire() -> void:
+	var system := _system([S.species("tree", {"seed": 0.0, "flammable": 1.0, "stress_mortality": 0.0})],
+			S.calm({"fire_rate": 0.5}))
+	system.set_population(&"tree", 5.0)
+	assert_str(_extinction_cause(system, {"oxygen": 60.0, "humidity": 0.0})).is_equal("fire")
+
+
+func test_extinction_under_taller_plants_is_shade() -> void:
+	var system := _system([S.species("tree", {"layer": 3, "capacity": 100.0, "seed": 0.0, "base_mortality": 0.0, "stress_mortality": 0.0}),
+			S.species("moss", {"layer": 1, "seed": 0.0, "shade": 1.0, "base_mortality": 0.0})])
+	system.set_population(&"tree", 100.0)
+	system.set_population(&"moss", 5.0)
+	assert_str(_extinction_cause(system, {}, 3000)).is_equal("shade")
+
+
+func test_extinction_causes_never_change_populations() -> void:
+	# The loss memory is observation only: switching it off changes nothing.
+	var remembering := _system([S.species("moss")], S.config())
+	var forgetting := _system([S.species("moss")], S.config({"loss_memory": 0.0}))
+	for i in 50:
+		assert_dict(_step(forgetting, {"temperature": 48.0})).is_equal(_step(remembering, {"temperature": 48.0}))
+
+
+func test_old_saves_without_loss_memory_still_load() -> void:
+	var saved := _system([S.species("moss")]).save_state()
+	saved.erase("losses_exact")
+	assert_bool(_system([S.species("moss")]).load_state(saved).is_ok()).is_true()
+
+
+func _command(action: String, args: Dictionary) -> SimCommand:
+	return SimCommand.new(1, BiosphereSystem.ID, StringName(action), args)
+
+
+func test_commands_seed_and_cull_populations() -> void:
+	var system := _system([S.species("moss")])
+	system.apply_command(_command("add_population", {"species": "moss", "amount": 5.0}))
+	assert_float(system.population(&"moss")).is_equal(5.0)
+	system.apply_command(_command("add_population", {"species": "moss", "amount": 100.0}))
+	assert_float(system.population(&"moss")).is_equal(100.0)
+	system.apply_command(_command("scale_population", {"species": "moss", "factor": 0.5}))
+	assert_float(system.population(&"moss")).is_equal(50.0)
+
+
+func test_validates_commands() -> void:
+	var system := _system([S.species("moss")])
+	assert_bool(system.validate_command(_command("add_population", {"species": "moss", "amount": 5.0})).is_ok()).is_true()
+	assert_bool(system.validate_command(_command("add_population", {"species": "tree", "amount": 5.0})).is_ok()).is_false()
+	assert_bool(system.validate_command(_command("scale_population", {"species": "moss", "factor": 1.5})).is_ok()).is_false()
+	assert_bool(system.validate_command(_command("scale_population", {"species": "moss"})).is_ok()).is_false()
+	assert_bool(system.validate_command(_command("mutate", {"species": "moss"})).is_ok()).is_false()
+	assert_bool(system.validate_command(_command("add_population", {"species": "moss", "amount": 5.0, "x": 1})).is_ok()).is_false()
+
+
+func test_culled_species_dies_out_by_the_players_hand() -> void:
+	var system := _system([S.species("moss", {"seed": 0.0})])
+	system.set_population(&"moss", 2.0)
+	for i in 12:
+		system.apply_command(_command("scale_population", {"species": "moss", "factor": 0.5}))
+		_step(system)
+	var extinct := system.take_events(1).filter(func(event: SimEvent) -> bool: return event.type == &"species_extinct")
+	assert_str(extinct[0].data["cause"]).is_equal("culled")

@@ -1,7 +1,8 @@
 class_name ChronicleTexts
 extends RefCounted
 ## Vocabulary of the planet chronicle, loaded from JSON: species names,
-## sentences for system events and phrases for condition measures.
+## sentences for system events, causes of extinction and phrases for
+## condition measures.
 ##
 ## Presentation only; nothing here reaches the simulation. Parameter names
 ## come from the schema (display_name) and world event sentences from the
@@ -15,6 +16,8 @@ const SIGNED := ["below", "above"]
 var species: Dictionary[String, String] = {}
 ## event type -> sentence with {field} placeholders from the event data
 var events: Dictionary[String, String] = {}
+## loss cause id (BiosphereSystem.LOSS_CAUSES) -> phrase for {cause}
+var causes: Dictionary[String, String] = {}
 ## measure -> phrase (String) or {"below", "above"} phrases
 var measures: Dictionary[String, Variant] = {}
 
@@ -30,6 +33,7 @@ static func from_data(data: Dictionary) -> SimResult:
 	var texts := ChronicleTexts.new()
 	_read_strings(data.get("species"), "species", texts.species, result)
 	_read_strings(data.get("events"), "events", texts.events, result)
+	_read_strings(data.get("causes"), "causes", texts.causes, result)
 	var raw_measures: Variant = data.get("measures")
 	if typeof(raw_measures) != TYPE_DICTIONARY:
 		result.add_error("chronicle: 'measures' must be an object")

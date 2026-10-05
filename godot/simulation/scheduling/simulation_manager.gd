@@ -12,6 +12,7 @@ var _state: PlanetState
 var _bus := EventBus.new()
 var _scheduler: TickScheduler
 var _pipeline: TickPipeline
+var _commands := CommandQueue.new()
 var _logs: Array[RunObserver] = []
 var _tick := 0
 var _started := false
@@ -63,6 +64,32 @@ func restore(tick_value: int, saved: PlanetState) -> SimResult:
 	return restored
 
 
+## Queues a command for the next tick (or a later `at_tick`). The target
+## system validates it now, so a bad request fails here, not ticks later.
+func submit(target: StringName, action: StringName, args: Dictionary = {}, at_tick: int = -1) -> SimResult:
+	var tick_value := _tick + 1 if at_tick == -1 else at_tick
+	if tick_value <= _tick:
+		return SimResult.failure("command for tick %d: tick %d has already run" % [tick_value, _tick])
+	var system := _pipeline.find(target)
+	if system == null:
+		return SimResult.failure("no system '%s' on this planet" % target)
+	var command := SimCommand.new(tick_value, target, action, args)
+	var valid := system.validate_command(command)
+	if valid.is_ok():
+		_commands.push(command)
+		valid.value = command
+	return valid
+
+
+func command_queue() -> CommandQueue:
+	return _commands
+
+
+## The registered system with this id, or null.
+func system(id: StringName) -> SimulationSystem:
+	return _pipeline.find(id)
+
+
 func systems() -> Array[SimulationSystem]:
 	return _pipeline.systems()
 
@@ -76,7 +103,7 @@ func step() -> bool:
 	if _halted:
 		return false
 	start()
-	var report := _pipeline.execute(_tick + 1)
+	var report := _pipeline.execute(_tick + 1, _commands.take(_tick + 1))
 	if not report.is_ok():
 		_halted = true
 		_errors.append_array(report.errors)
