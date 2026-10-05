@@ -139,8 +139,8 @@ static func _facts_text(facts: Array[Dictionary]) -> String:
 	return "; ".join(parts)
 
 
-## Lifecycles and history; active modifiers are not stored, load_state
-## registers them again from the phases (one source of truth).
+## Lifecycles and history; active modifiers are not stored,
+## restore_modifiers registers them again from the phases (one source of truth).
 func save_state() -> Dictionary:
 	var events := {}
 	for i in _defs.size():
@@ -148,7 +148,7 @@ func save_state() -> Dictionary:
 	return {"format": FORMAT, "archetype": String(_archetype), "history": _history.to_dict(), "events": events}
 
 
-func load_state(data: Dictionary, registry: ModifierRegistry) -> SimResult:
+func load_state(data: Dictionary) -> SimResult:
 	if data.get("format") != FORMAT:
 		return SimResult.failure("events: format must be '%s'" % FORMAT)
 	if data.get("archetype") != String(_archetype):
@@ -170,8 +170,11 @@ func load_state(data: Dictionary, registry: ModifierRegistry) -> SimResult:
 	if not history_read.is_ok():
 		return history_read
 	_lifecycles = restored
+	return SimResult.success(self)
+
+
+func restore_modifiers(registry: ModifierRegistry) -> void:
 	for i in _defs.size():
 		registry.remove_source(source_of(_defs[i]))
 		if _lifecycles[i].phase == EventLifecycle.ACTIVE:
 			_register_modifiers(_defs[i], registry)
-	return SimResult.success(self)

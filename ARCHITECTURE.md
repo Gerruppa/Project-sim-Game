@@ -93,6 +93,7 @@ logs/simulation_runs/                           run logs (not in git)
 | SimulationManager | wires everything together, runs ticks |
 | EventBus | queued notifications about facts that already happened |
 | SimulationLog | every tick written as text and JSON Lines |
+| SaveSystem | save between ticks, load and continue bit-identically; autosave |
 | PlanetChronicle | the run told in sentences: emerging species, world events and their causes |
 | SimMath, SeededRng | math and randomness that give the same bits on every platform |
 | ClimateSystem | seasons, climate drift, ice-albedo tipping point, water cycle, clouds, rain |
@@ -114,7 +115,8 @@ logs/simulation_runs/                           run logs (not in git)
 | 5. BiosphereSystem | done: succession, oxygenation, forests and fires, anaerobe refuge |
 | 6. PersonalitySystem | done: Harmonious, Chaotic, Guardian via ModifierRegistry |
 | 7. EventSystem | done: drought, guardian healing, planet chronicle |
-| 8–10. Save, Gameplay, Visualization | planned |
+| 8. SaveSystem | done: save/load/autosave, data fingerprints, lineage placeholder |
+| 9–10. Gameplay, Visualization | planned |
 
 ---
 
@@ -126,6 +128,8 @@ export GODOT_BIN=<Godot 4.7.2 console binary>
 ./godot/run_simulation.sh                                 # 3600 ticks (1 h at x1), batch
 ./godot/run_simulation.sh --realtime --speed 10 --seconds 60
 ./godot/run_simulation.sh --personality guardian          # harmonious, chaotic, guardian, random, none
+./godot/run_simulation.sh --ticks 2500 --save epoch.json  # save when the run ends (saves/, outside git)
+./godot/run_simulation.sh --load epoch.json --ticks 1000  # continue a saved run
 ```
 
 Each run writes `logs/simulation_runs/<run id>.log` (text), `.jsonl` (JSON Lines)

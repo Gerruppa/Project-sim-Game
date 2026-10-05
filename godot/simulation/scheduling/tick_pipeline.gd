@@ -45,6 +45,15 @@ func register(system: SimulationSystem, interval: int) -> SimResult:
 	return SimResult.success(system)
 
 
+## Registered systems in registration order (the array is a copy).
+func systems() -> Array[SimulationSystem]:
+	return _systems.duplicate()
+
+
+func restore_state(saved: PlanetState) -> SimResult:
+	return _writer.restore(saved)
+
+
 func modifier_registry() -> ModifierRegistry:
 	return _registry
 

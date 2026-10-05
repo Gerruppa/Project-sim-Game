@@ -139,9 +139,11 @@ static func _read_stored_values(data: Dictionary, order: PackedStringArray, resu
 	return values
 
 
+## Approximate on purpose: Godot's decimal parsing may miss the exact double
+## by an ulp, which is noise; a hand-edited readable value differs far more.
 static func _warn_on_readable_mismatch(readable: Dictionary, order: PackedStringArray, exact: PackedFloat64Array, result: SimResult) -> void:
 	for i in order.size():
 		var value: Variant = readable.get(order[i])
-		if (typeof(value) == TYPE_FLOAT or typeof(value) == TYPE_INT) and float(value) != exact[i]:
+		if (typeof(value) == TYPE_FLOAT or typeof(value) == TYPE_INT) and not is_equal_approx(float(value), exact[i]):
 			result.add_warning("readable value of '%s' (%s) differs from exact value (%s); using exact"
 					% [order[i], value, exact[i]])

@@ -1,6 +1,7 @@
 class_name SimulationRunner
 extends RefCounted
-## Console glue around SimulationManager: command-line options and log files.
+## Console glue around SimulationManager: command-line options, building the
+## planet, log files and saves.
 ##
 ## Kept out of simulation/ because it does file and process work.
 ## The SceneTree entry point (run_simulation.gd) only calls into this class,
@@ -22,7 +23,14 @@ const USAGE := """Usage: run_simulation.sh [options]
   --biosphere PATH   biosphere coefficients (default res://resources/biosphere/biosphere.json)
   --events PATH      world event definitions (default res://resources/events/events.json)
   --personality NAME harmonious, chaotic, guardian, random or none (default from sim_config.json)
-                     other files describe planets of a different character"""
+                     other files describe planets of a different character
+  --save PATH     save the run when it ends
+  --load PATH     continue a saved run (seed and personality come from the save;
+                  --ticks counts ticks after the save)
+  --autosave N    save every N ticks to <save directory>/<run id>.autosave.json (0 = off,
+                  default from sim_config.json)
+  A bare file name for --save/--load lives in the save directory from sim_config.json;
+  other relative paths are relative to the Godot project (godot/)."""
 
 
 static func parse_args(args: PackedStringArray) -> SimResult:
@@ -41,13 +49,13 @@ static func parse_args(args: PackedStringArray) -> SimResult:
 				options["quiet"] = true
 			"--story":
 				options["story"] = true
-			"--climate", "--atmosphere", "--species", "--biosphere", "--events", "--personality":
+			"--climate", "--atmosphere", "--species", "--biosphere", "--events", "--personality", "--save", "--load":
 				if i + 1 >= args.size() or args[i + 1].begins_with("--"):
 					result.add_error("%s needs a value" % arg)
 					break
 				i += 1
 				options[arg.trim_prefix("--")] = args[i]
-			"--seed", "--ticks", "--speed", "--seconds":
+			"--seed", "--ticks", "--speed", "--seconds", "--autosave":
 				if i + 1 >= args.size():
 					result.add_error("%s needs a value" % arg)
 					break
@@ -56,6 +64,8 @@ static func parse_args(args: PackedStringArray) -> SimResult:
 			_:
 				result.add_error("unknown option %s" % arg)
 		i += 1
+	if options.has("load") and (options.has("seed") or options.has("personality")):
+		result.add_error("--load takes seed and personality from the save; drop --seed/--personality")
 	if result.is_ok():
 		result.value = options
 	return result
@@ -73,7 +83,10 @@ static func _read_number(option: String, text: String, options: Dictionary, resu
 		result.add_error("%s must be an integer" % option)
 		return
 	var value := text.to_int()
-	if key != "seed" and value < 1:
+	if key == "autosave" and value < 0:
+		result.add_error("--autosave must be >= 0 (0 = off)")
+		return
+	if key not in ["seed", "autosave"] and value < 1:
 		result.add_error("%s must be >= 1" % option)
 		return
 	options[key] = value
@@ -86,6 +99,67 @@ static func resolve_directory(directory: String) -> String:
 	if directory.is_absolute_path():
 		return directory
 	return ProjectSettings.globalize_path("res://").path_join(directory).simplify_path()
+
+
+## A bare file name lives in the save directory; other paths go through
+## resolve_directory.
+static func resolve_save_path(path: String, config: SimConfig) -> String:
+	if path.get_file() == path:
+		return resolve_directory(config.save_directory()).path_join(path)
+	return resolve_directory(path)
+
+
+## The planet as the console runs it: every system in CLAUDE.md order.
+## Value: {"manager", "personality" (archetype id), "fingerprints"
+## (SHA-256 of every data file the dynamics depend on)}.
+static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
+	var schema_result := ParameterSchema.load_json(ParameterSchema.DEFAULT_PATH)
+	if not schema_result.is_ok():
+		return schema_result
+	var manager_result := SimulationManager.create(config, schema_result.value)
+	if not manager_result.is_ok():
+		return manager_result
+	var manager: SimulationManager = manager_result.value
+
+	var climate := ClimateConfig.load_json(options["climate"])
+	var atmosphere := AtmosphereConfig.load_json(options["atmosphere"])
+	var catalog := SpeciesCatalog.load_json(options["species"])
+	var biosphere := BiosphereConfig.load_json(options["biosphere"])
+	var specs := {&"climate": ClimateConfig.SPEC, &"atmosphere": AtmosphereConfig.SPEC, &"biosphere": BiosphereConfig.SPEC}
+	var personality_catalog := PersonalityCatalog.load_json(PersonalityCatalog.DEFAULT_PATH, specs)
+	var failed := SimResult.new()
+	for loaded: SimResult in [climate, atmosphere, catalog, biosphere, personality_catalog]:
+		failed.errors.append_array(loaded.errors)
+	if not failed.is_ok():
+		return failed
+
+	# Domain systems, registered as they are built (CLAUDE.md SYSTEM PRIORITY).
+	manager.register_system(ClimateSystem.new(climate.value, config.seed()))
+	manager.register_system(AtmosphereSystem.new(atmosphere.value))
+	manager.register_system(BiosphereSystem.new(biosphere.value, catalog.value, config.seed()))
+	# Personality after them: it only adds modifiers, which reach every system before compute.
+	var personality := PersonalitySystem.create(personality_catalog.value, config.personality(), config.seed())
+	if not personality.is_ok():
+		return personality
+	manager.register_system(personality.value)
+	# Events after every system whose coefficients they modify; the archetype
+	# selects the planet's reactions.
+	var events := EventCatalog.load_json(options["events"], schema_result.value, specs, personality_catalog.value.ids())
+	if not events.is_ok():
+		return events
+	var archetype: StringName = personality.value.archetype_id()
+	manager.register_system(EventSystem.new(events.value, archetype))
+
+	return SimResult.success({
+		"manager": manager,
+		"personality": archetype,
+		"fingerprints": SaveSystem.fingerprints({
+			"parameters": ParameterSchema.DEFAULT_PATH, "climate": options["climate"],
+			"atmosphere": options["atmosphere"], "species": options["species"],
+			"biosphere": options["biosphere"], "personality": PersonalityCatalog.DEFAULT_PATH,
+			"events": options["events"],
+		}),
+	})
 
 
 ## File-name friendly id; the timestamp only names files, it never enters the logs.

@@ -274,9 +274,11 @@ Zdarzenia v1 nie używają losowości.
 ## Zapis stanu
 
 `EventSystem.save_state()` zapisuje historię (dokładne bajty floatów)
-i fazy cyklu życia. Aktywnych modyfikatorów nie zapisuje: `load_state()`
-odtwarza je z faz (jedno źródło prawdy). Podpięcie pod pliki zapisu robi
-SaveSystem (krok 8).
+i fazy cyklu życia. Aktywnych modyfikatorów nie zapisuje: po
+`load_state()` SaveSystem woła `restore_modifiers()`, które odtwarza je
+z faz (jedno źródło prawdy). Tak samo PersonalitySystem: przywrócona
+planeta odzyskuje charakter bez ponownego „Planeta budzi się”.
+Plik zapisu: `docs/simulation.md` (Plik zapisu).
 
 ---
 

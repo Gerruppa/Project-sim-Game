@@ -92,3 +92,11 @@ func test_close_closes_every_sink() -> void:
 	_chronicle.close()
 	_publish(&"species_emerged", 5, {"species": "moss"})
 	assert_int(_sink.lines.size()).is_equal(1)
+
+
+func test_resumed_run_says_where_it_continues() -> void:
+	var sink := MemoryLogSink.new()
+	var resumed := PlanetChronicle.new([sink], ChronicleTexts.load_json(ChronicleTexts.DEFAULT_PATH).value)
+	var state: PlanetState = PlanetState.create(P.schema()).value
+	resumed.begin_run(42, state.snapshot(1500))
+	assert_str(sink.lines[0]).is_equal("# Kronika planety | seed 42 | wznowiona od ticku 1500")

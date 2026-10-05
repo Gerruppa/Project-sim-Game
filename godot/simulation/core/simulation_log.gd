@@ -44,6 +44,7 @@ func begin_run(seed_value: int, initial: PlanetSnapshot) -> void:
 	_json({
 		"record": "run_start",
 		"seed": seed_value,
+		"tick": initial.tick(),
 		"engine": engine,
 		"schema_version": schema.version(),
 		"parameters": Array(schema.ids()).map(func(id: StringName) -> String: return String(id)),

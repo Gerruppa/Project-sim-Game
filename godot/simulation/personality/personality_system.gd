@@ -10,6 +10,7 @@ extends ModifierProvider
 
 const ID := &"personality"
 const STREAM_ID := "personality"
+const STATE_FORMAT := "personality_state"
 
 var _archetype: PersonalityArchetype
 var _applied := false
@@ -57,9 +58,39 @@ func provide_modifiers(_snapshot: PlanetSnapshot, _tick: int, registry: Modifier
 	if _applied or _archetype == null:
 		return
 	_applied = true
-	var source := StringName("personality:%s" % _archetype.id)
+	_register_modifiers(registry)
+	emit_event(&"planet_personality", {"archetype": String(_archetype.id), "description": _archetype.description})
+
+
+func save_state() -> Dictionary:
+	return {"format": STATE_FORMAT, "archetype": String(archetype_id()), "applied": _applied}
+
+
+func load_state(data: Dictionary) -> SimResult:
+	if data.get("format") != STATE_FORMAT:
+		return SimResult.failure("personality: format must be '%s'" % STATE_FORMAT)
+	if data.get("archetype") != String(archetype_id()):
+		return SimResult.failure("personality: saved for archetype '%s', this planet is '%s'"
+				% [data.get("archetype"), archetype_id()])
+	if typeof(data.get("applied")) != TYPE_BOOL:
+		return SimResult.failure("personality: 'applied' must be true or false")
+	_applied = data["applied"]
+	return SimResult.success(self)
+
+
+## A restored planet gets its character back without announcing it again.
+func restore_modifiers(registry: ModifierRegistry) -> void:
+	if _applied and _archetype != null:
+		registry.remove_source(_source())
+		_register_modifiers(registry)
+
+
+func _register_modifiers(registry: ModifierRegistry) -> void:
 	for entry in _archetype.modifiers:
-		var modifier := Modifier.new(StringName(entry["target"]), StringName(entry["operation"]), entry["value"], source)
+		var modifier := Modifier.new(StringName(entry["target"]), StringName(entry["operation"]), entry["value"], _source())
 		if registry.has_target(modifier.system_id()):
 			registry.add(modifier)
-	emit_event(&"planet_personality", {"archetype": String(_archetype.id), "description": _archetype.description})
+
+
+func _source() -> StringName:
+	return StringName("personality:%s" % _archetype.id)

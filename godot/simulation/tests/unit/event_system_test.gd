@@ -119,7 +119,8 @@ func test_save_and_load_continue_identically() -> void:
 		var saved: Dictionary = JSON.parse_string(JSON.stringify(first.save_state()))
 		_registry = E.registry()
 		var restored := EventSystem.new(E.catalog([def]))
-		assert_bool(restored.load_state(saved, _registry).is_ok()).is_true()
+		assert_bool(restored.load_state(saved).is_ok()).is_true()
+		restored.restore_modifiers(_registry)
 		var after := _summaries(_feed(restored, values.slice(split), split + 1))
 		assert_array(before + after).override_failure_message("split at %d" % split).is_equal(expected)
 		assert_array(_sources()).is_equal(expected_modifiers)
@@ -130,16 +131,17 @@ func test_load_restores_modifiers_of_active_events() -> void:
 	_feed(first, [15.0])
 	_registry = E.registry()
 	var restored := EventSystem.new(E.catalog([E.def("dry")]))
-	restored.load_state(first.save_state(), _registry)
-	restored.load_state(first.save_state(), _registry)
+	restored.load_state(first.save_state())
+	restored.restore_modifiers(_registry)
+	restored.restore_modifiers(_registry)
 	assert_array(_sources()).is_equal([&"event:dry"])
 
 
 func test_load_rejects_state_of_another_planet() -> void:
 	var catalog := E.catalog([E.def("dry"), E.def("healing", {"personality": ["guardian"]})])
 	var guardian := EventSystem.new(catalog, &"guardian").save_state()
-	assert_bool(EventSystem.new(catalog, &"chaotic").load_state(guardian, _registry).is_ok()).is_false()
-	assert_bool(EventSystem.new(catalog).load_state({"format": "x"}, _registry).is_ok()).is_false()
+	assert_bool(EventSystem.new(catalog, &"chaotic").load_state(guardian).is_ok()).is_false()
+	assert_bool(EventSystem.new(catalog).load_state({"format": "x"}).is_ok()).is_false()
 
 
 func test_never_returns_deltas() -> void:

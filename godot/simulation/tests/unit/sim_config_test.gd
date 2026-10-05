@@ -130,3 +130,25 @@ func test_rejects_missing_or_empty_personality() -> void:
 	assert_str(_errors(data)).contains("personality")
 	data.erase("personality")
 	assert_str(_errors(data)).contains("personality")
+
+
+func test_save_settings_have_defaults() -> void:
+	var config: SimConfig = SimConfig.from_data(_data()).value
+	assert_str(config.save_directory()).is_equal("../saves")
+	assert_int(config.autosave_every()).is_equal(1000)
+	var data := _data()
+	data["save"] = {"directory": "user://saves", "autosave_every": 0}
+	config = SimConfig.from_data(data).value
+	assert_str(config.save_directory()).is_equal("user://saves")
+	assert_int(config.autosave_every()).is_equal(0)
+	assert_int(config.with_seed(7).autosave_every()).is_equal(0)
+
+
+func test_rejects_bad_save_settings() -> void:
+	var data := _data()
+	data["save"] = {"directory": "", "autosave_every": -5}
+	var errors := _errors(data)
+	assert_str(errors).contains("save.directory")
+	assert_str(errors).contains("save.autosave_every")
+	data["save"] = "../saves"
+	assert_str(_errors(data)).contains("save")

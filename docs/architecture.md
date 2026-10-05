@@ -75,6 +75,7 @@ Never invert this dependency chain.
 ║                                                              ║
 ║  ORCHESTRATION                                               ║
 ║    SimulationManager ─► TickScheduler ─► TickPipeline        ║
+║    SaveSystem (between ticks)                                ║
 ║                                                              ║
 ║  DOMAIN SYSTEMS (never reference each other)                 ║
 ║    ClimateSystem  AtmosphereSystem  BiosphereSystem          ║
@@ -84,7 +85,7 @@ Never invert this dependency chain.
 ║                                                              ║
 ║  CORE (no upward dependencies)                               ║
 ║    PlanetState  StateWriter  EventBus  SeededRng             ║
-║    CommandQueue  SimulationLog  SaveSystem                   ║
+║    CommandQueue  SimulationLog  RunObserver  ExactCodec      ║
 ╚═════════════════════════════▲════════════════════════════════╝
                               │
 ┌─────────────────────────────┴────────────────────────────────┐
@@ -545,17 +546,33 @@ Domain systems are registered in `run_simulation.gd` as they are built.
 
 ## SaveSystem
 
-Saves and restores:
+Saves and restores, between ticks:
 
-- PlanetState
+- PlanetState (PlanetStateCodec, exact bytes, state hash)
 - current tick
-- RNG stream states
-- species populations
-- active events
-- active modifiers
+- every system's internal state under its system_id
+  (`SimulationSystem.save_state()` / `load_state()`): RNG streams, climate
+  drift, species populations and emergence flags, event phases and history,
+  whether the personality was applied
 
-The state format is designed for it from the beginning.
-Implementation comes later (see system priority in CLAUDE.md).
+Active modifiers are not saved. After loading, SaveSystem calls
+`ModifierProvider.restore_modifiers(registry)` and providers register what
+their restored state implies (one source of truth, as for events).
+
+Implementation (`simulation/scheduling/save_system.gd`):
+
+- lives in scheduling, not core: it orchestrates SimulationManager, and
+  core has no upward dependencies
+- never names a concrete system: a new system only implements
+  save_state/load_state (default: no state)
+- `StateWriter.restore()` is the only state write without deltas
+  (a save is a past result, not a new change); only before the first tick
+- validation reports all errors at once: format, version, seed,
+  personality, system set, damaged values (state hash)
+- data file fingerprints (SHA-256) differ: warning, the run continues
+- `lineage`: placeholder for branching runs, carried but not used yet
+- `save_version` + `MIGRATIONS` (empty) for future format changes
+- file format and console options: `docs/simulation.md`
 
 ---
 
@@ -623,7 +640,7 @@ Deltas for temperature, humidity, cloud_cover and precipitation,
 one per named cause (radiative_balance, season, ice_albedo, greenhouse,
 evaporation, rainfall, ...)
 
-Internal state: climate drift (to be saved by SaveSystem)
+Internal state: climate drift and RNG stream (save_state)
 
 Events (planned, emitted through the event queue once EventSystem exists):
 
@@ -835,8 +852,8 @@ Status: implemented (`simulation/events/`, data in
   id is passed in by the runner, no dependency on PersonalitySystem
 - events `world_event_started` / `world_event_ended` with measured causes
   and a readable `summary`
-- `save_state()` / `load_state()` (history + lifecycles; active modifiers
-  are rebuilt from phases); wired into saves by SaveSystem (step 8)
+- `save_state()` / `load_state()` (history + lifecycles); active modifiers
+  are rebuilt from phases by `restore_modifiers()` after loading
 
 Example:
 
@@ -889,8 +906,8 @@ res://  (godot/)
   simulation/
     core/           PlanetState, StateWriter, Delta, SimulationSystem, CoefficientLoader,
                     EventBus, SimEvent, RunObserver, SimulationLog, log sinks,
-                    SeededRng, SimMath, CommandQueue, SaveSystem
-    scheduling/     SimulationManager, TickScheduler, TickPipeline, SimConfig
+                    SeededRng, SimMath, ExactCodec, CommandQueue
+    scheduling/     SimulationManager, TickScheduler, TickPipeline, SimConfig, SaveSystem
     planet/         ParameterDefs, snapshot
     climate/        ClimateSystem
     atmosphere/     AtmosphereSystem, AtmosphereConfig
@@ -902,7 +919,7 @@ res://  (godot/)
     tests/          unit, integration, simulation, architecture,
                     support (test-only helpers), golden, tools
   resources/        data assets (planet/, simulation/, chronicle/, ...)
-  tools/            console runner (outside simulation/: file and process work)
+  tools/            console runner, RunSaver (outside simulation/: file and process work)
 ```
 
 ---

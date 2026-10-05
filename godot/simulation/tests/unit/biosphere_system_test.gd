@@ -232,3 +232,38 @@ func test_exposes_and_uses_effective_coefficients() -> void:
 	system.apply_coefficients(S.calm({"growth_scale": 0.0}))
 	_step(system)
 	assert_float(system.population(&"moss")).is_less_equal(10.0)
+
+
+func test_save_and_load_continue_identically() -> void:
+	var first := _system([S.species("bacteria"), S.species("algae")], S.config())
+	for i in 20:
+		_step(first)
+	var saved: Dictionary = JSON.parse_string(JSON.stringify(first.save_state()))
+	var restored := _system([S.species("bacteria"), S.species("algae")], S.config(), 7)
+	assert_array(Array(restored.load_state(saved).errors)).is_empty()
+	for i in 20:
+		assert_dict(_step(restored)).is_equal(_step(first))
+	assert_dict(restored.save_state()).is_equal(first.save_state())
+
+
+func test_load_keeps_a_declining_species_established() -> void:
+	# Below the emergence threshold but alive: deriving the flag from the
+	# population would announce the species a second time.
+	var first := _system([S.species("moss")])
+	first.set_population(&"moss", 50.0)
+	var saved := first.save_state()
+	saved["populations_exact"] = ExactCodec.floats_to_text(PackedFloat64Array([0.001]))
+	var restored := _system([S.species("moss")])
+	assert_bool(restored.load_state(saved).is_ok()).is_true()
+	assert_array(restored.save_state()["established"]).is_equal([true])
+
+
+func test_load_rejects_state_of_another_catalog_or_damaged_values() -> void:
+	var saved := _system([S.species("moss")]).save_state()
+	assert_bool(_system([S.species("algae")]).load_state(saved).is_ok()).is_false()
+	var out_of_range := saved.duplicate()
+	out_of_range["populations_exact"] = ExactCodec.floats_to_text(PackedFloat64Array([101.0]))
+	assert_bool(_system([S.species("moss")]).load_state(out_of_range).is_ok()).is_false()
+	var bad_flags := saved.duplicate()
+	bad_flags["established"] = [1]
+	assert_bool(_system([S.species("moss")]).load_state(bad_flags).is_ok()).is_false()

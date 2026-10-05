@@ -162,3 +162,28 @@ func test_uses_effective_coefficients() -> void:
 	var system := ClimateSystem.new(C.config({"drift_noise": 0.0}), 1)
 	system.apply_coefficients(C.config({"drift_noise": 0.0, "season_amplitude": 0.0}))
 	assert_bool(C.by_cause(system.compute(C.snapshot(NEUTRAL, 0))).has("temperature:season")).is_false()
+
+
+func test_save_and_load_continue_the_same_drift_and_noise() -> void:
+	var first := ClimateSystem.new(C.config(), 42)
+	for tick in 5:
+		first.compute(C.snapshot(NEUTRAL, tick))
+	var saved: Dictionary = JSON.parse_string(JSON.stringify(first.save_state()))
+	var restored := ClimateSystem.new(C.config(), 7)
+	assert_array(Array(restored.load_state(saved).errors)).is_empty()
+	for tick in range(5, 10):
+		var expected := C.by_cause(first.compute(C.snapshot(NEUTRAL, tick)))
+		assert_dict(C.by_cause(restored.compute(C.snapshot(NEUTRAL, tick)))).is_equal(expected)
+	assert_bool(restored.drift() == first.drift()).is_true()
+
+
+func test_load_rejects_damaged_state() -> void:
+	var saved := ClimateSystem.new(C.config(), 42).save_state()
+	var system := ClimateSystem.new(C.config(), 42)
+	assert_bool(system.load_state({}).is_ok()).is_false()
+	var bad_rng := saved.duplicate()
+	bad_rng["rng_state"] = 12.5
+	assert_bool(system.load_state(bad_rng).is_ok()).is_false()
+	var bad_drift := saved.duplicate()
+	bad_drift["drift_exact"] = ExactCodec.floats_to_text(PackedFloat64Array([1.0, 2.0]))
+	assert_bool(system.load_state(bad_drift).is_ok()).is_false()

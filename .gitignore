@@ -6,6 +6,9 @@
 logs/simulation_runs/*
 !logs/simulation_runs/.gitkeep
 
+# Saves and autosaves (generated, may be large).
+saves/
+
 # --------------------------------------------------
 # Godot 4 (project lives in godot/)
 # --------------------------------------------------

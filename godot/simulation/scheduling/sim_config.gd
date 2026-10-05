@@ -1,6 +1,6 @@
 class_name SimConfig
 extends RefCounted
-## Validated simulation settings: seed, tick rate, speeds, logging.
+## Validated simulation settings: seed, tick rate, speeds, logging, saves.
 ##
 ## Loaded from JSON. Immutable; with_seed() returns a modified copy
 ## for command-line overrides.
@@ -9,6 +9,8 @@ const DEFAULT_PATH := "res://resources/simulation/sim_config.json"
 ## Largest integer a JSON number (double) holds exactly.
 const MAX_EXACT_INT := 9007199254740992.0
 const LOG_FLAGS: Array[String] = ["text", "jsonl", "deltas"]
+const DEFAULT_SAVE_DIRECTORY := "../saves"
+const DEFAULT_AUTOSAVE_EVERY := 1000
 
 var _seed: int
 var _base_ticks_per_second: float
@@ -16,6 +18,9 @@ var _speed_multipliers: Array[int] = []
 var _max_catch_up_ticks: int
 var _log_flags: Dictionary[String, bool] = {}
 var _log_directory: String
+var _save_directory := DEFAULT_SAVE_DIRECTORY
+## Ticks between autosaves; 0 = off.
+var _autosave_every := DEFAULT_AUTOSAVE_EVERY
 ## Archetype id, "random" (drawn from the seed) or "none".
 var _personality: StringName
 
@@ -58,6 +63,7 @@ static func from_data(data: Dictionary) -> SimResult:
 		config._max_catch_up_ticks = int(data["max_catch_up_ticks"])
 
 	_read_log(data.get("log"), config, result)
+	_read_save(data.get("save", {}), config, result)
 
 	if typeof(data.get("personality")) != TYPE_STRING or (data["personality"] as String).is_empty():
 		result.add_error("personality must be an archetype id, \"random\" or \"none\"")
@@ -105,6 +111,24 @@ static func _read_log(raw: Variant, config: SimConfig, result: SimResult) -> voi
 		config._log_directory = log_data["directory"]
 
 
+## Optional, so older configs keep working.
+static func _read_save(raw: Variant, config: SimConfig, result: SimResult) -> void:
+	if typeof(raw) != TYPE_DICTIONARY:
+		result.add_error("save must be an object with directory, autosave_every")
+		return
+	var save_data := raw as Dictionary
+	var directory: Variant = save_data.get("directory", DEFAULT_SAVE_DIRECTORY)
+	if typeof(directory) != TYPE_STRING or (directory as String).is_empty():
+		result.add_error("save.directory must be a non-empty path")
+	else:
+		config._save_directory = directory
+	var every: Variant = save_data.get("autosave_every", DEFAULT_AUTOSAVE_EVERY)
+	if not _is_whole(every) or float(every) < 0.0:
+		result.add_error("save.autosave_every must be an integer >= 0 (0 = off)")
+	else:
+		config._autosave_every = int(every)
+
+
 static func _is_number(value: Variant) -> bool:
 	return typeof(value) == TYPE_FLOAT or typeof(value) == TYPE_INT
 
@@ -121,6 +145,8 @@ func with_seed(seed_value: int) -> SimConfig:
 	copy._max_catch_up_ticks = _max_catch_up_ticks
 	copy._log_flags = _log_flags.duplicate()
 	copy._log_directory = _log_directory
+	copy._save_directory = _save_directory
+	copy._autosave_every = _autosave_every
 	copy._personality = _personality
 	return copy
 
@@ -170,3 +196,12 @@ func log_chronicle() -> bool:
 ## Relative paths are resolved against the Godot project directory.
 func log_directory() -> String:
 	return _log_directory
+
+
+## Relative paths are resolved against the Godot project directory.
+func save_directory() -> String:
+	return _save_directory
+
+
+func autosave_every() -> int:
+	return _autosave_every

@@ -90,3 +90,35 @@ func test_modifiers_for_absent_systems_are_skipped() -> void:
 
 func test_returns_no_deltas() -> void:
 	assert_array(_create(&"chaotic").compute(C.snapshot({}))).is_empty()
+
+
+func test_restored_planet_gets_its_modifiers_back_silently() -> void:
+	var first := _create(&"chaotic")
+	_provide(first)
+	var expected := _registry.modifiers().size()
+	_registry = ModifierRegistry.new()
+	for id: StringName in Q.specs():
+		_registry.register_target(id, Q.specs()[id])
+	var restored := _create(&"chaotic")
+	assert_bool(restored.load_state(first.save_state()).is_ok()).is_true()
+	restored.restore_modifiers(_registry)
+	restored.restore_modifiers(_registry)
+	_provide(restored, 2)
+	assert_int(_registry.modifiers().size()).is_equal(expected)
+	assert_array(restored.take_events(2)).is_empty()
+
+
+func test_save_before_the_first_tick_restores_nothing_yet() -> void:
+	var restored := _create(&"guardian")
+	restored.load_state(_create(&"guardian").save_state())
+	restored.restore_modifiers(_registry)
+	assert_int(_registry.modifiers().size()).is_equal(0)
+	_provide(restored)
+	assert_int(_registry.modifiers().size()).is_greater(0)
+
+
+func test_load_rejects_another_archetype() -> void:
+	var saved := _create(&"guardian").save_state()
+	assert_bool(_create(&"chaotic").load_state(saved).is_ok()).is_false()
+	assert_bool(_create(PersonalityCatalog.NONE).load_state(saved).is_ok()).is_false()
+	assert_bool(_create(&"guardian").load_state({"format": "personality_state", "archetype": "guardian"}).is_ok()).is_false()

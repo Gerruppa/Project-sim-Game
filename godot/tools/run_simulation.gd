@@ -2,9 +2,10 @@ extends SceneTree
 ## Console entry point of the simulation.
 ##   godot --headless --path godot -s res://tools/run_simulation.gd -- [options]
 ## See SimulationRunner.USAGE for options. Exit code 0 = finished, 1 = halted
-## by a rejected batch, 2 = invalid options or data.
+## by a rejected batch, 2 = invalid options or data (or a failed --save).
 
 var _manager: SimulationManager
+var _saver: RunSaver
 var _options: Dictionary
 var _log_id: String
 var _elapsed := 0.0
@@ -19,9 +20,8 @@ func _init() -> void:
 	_options = parsed.value
 
 	var config_result := SimConfig.load_json(SimConfig.DEFAULT_PATH)
-	var schema_result := ParameterSchema.load_json(ParameterSchema.DEFAULT_PATH)
-	if not config_result.is_ok() or not schema_result.is_ok():
-		_fail(config_result.errors + schema_result.errors, false)
+	if not config_result.is_ok():
+		_fail(config_result.errors, false)
 		return
 	var config: SimConfig = config_result.value
 	if _options.has("seed"):
@@ -29,50 +29,36 @@ func _init() -> void:
 	if _options.has("personality"):
 		config = config.with_personality(StringName(_options["personality"]))
 
-	var manager_result := SimulationManager.create(config, schema_result.value)
-	if not manager_result.is_ok():
-		_fail(manager_result.errors, false)
-		return
-	_manager = manager_result.value
+	# A save decides seed and personality, so it is read before the planet is built.
+	var save_data := {}
+	var lineage := []
+	if _options.has("load"):
+		var load_path := SimulationRunner.resolve_save_path(_options["load"], config)
+		var read := SaveSystem.read(load_path)
+		var header := SaveSystem.read_header(read.value) if read.is_ok() else read
+		if not header.is_ok():
+			_fail(header.errors, false)
+			return
+		save_data = read.value
+		config = config.with_seed(header.value["seed"]).with_personality(header.value["personality"])
+		lineage = (header.value["lineage"] as Array).duplicate()
+		lineage.append({"save": load_path.get_file(), "tick": header.value["tick"]})
 
-	# Domain systems, registered as they are built (CLAUDE.md SYSTEM PRIORITY).
-	var climate_result := ClimateConfig.load_json(_options["climate"])
-	if not climate_result.is_ok():
-		_fail(climate_result.errors, false)
+	var planet := SimulationRunner.build_planet(config, _options)
+	if not planet.is_ok():
+		_fail(planet.errors, false)
 		return
-	_manager.register_system(ClimateSystem.new(climate_result.value, config.seed()))
-	var atmosphere_result := AtmosphereConfig.load_json(_options["atmosphere"])
-	if not atmosphere_result.is_ok():
-		_fail(atmosphere_result.errors, false)
-		return
-	_manager.register_system(AtmosphereSystem.new(atmosphere_result.value))
-	var catalog_result := SpeciesCatalog.load_json(_options["species"])
-	var biosphere_result := BiosphereConfig.load_json(_options["biosphere"])
-	if not catalog_result.is_ok() or not biosphere_result.is_ok():
-		_fail(catalog_result.errors + biosphere_result.errors, false)
-		return
-	_manager.register_system(BiosphereSystem.new(biosphere_result.value, catalog_result.value, config.seed()))
-
-	# Personality last: it only adds modifiers, which reach every system before compute.
-	var specs := {&"climate": ClimateConfig.SPEC, &"atmosphere": AtmosphereConfig.SPEC, &"biosphere": BiosphereConfig.SPEC}
-	var personality_catalog := PersonalityCatalog.load_json(PersonalityCatalog.DEFAULT_PATH, specs)
-	if not personality_catalog.is_ok():
-		_fail(personality_catalog.errors, false)
-		return
-	var personality := PersonalitySystem.create(personality_catalog.value, config.personality(), config.seed())
-	if not personality.is_ok():
-		_fail(personality.errors, false)
-		return
-	_manager.register_system(personality.value)
-
-	# Events after every system whose coefficients they modify; the archetype
-	# selects the planet's reactions.
-	var event_catalog := EventCatalog.load_json(_options["events"], schema_result.value, specs,
-			personality_catalog.value.ids())
-	if not event_catalog.is_ok():
-		_fail(event_catalog.errors, false)
-		return
-	_manager.register_system(EventSystem.new(event_catalog.value, personality.value.archetype_id()))
+	_manager = planet.value["manager"]
+	var run := {"personality": planet.value["personality"], "data_fingerprints": planet.value["fingerprints"],
+			"lineage": lineage}
+	if _options.has("load"):
+		var restored := SaveSystem.restore(_manager, save_data, run)
+		for warning in restored.warnings:
+			printerr("WARNING: " + warning)
+		if not restored.is_ok():
+			_fail(restored.errors, false)
+			return
+		print("Loaded %s at tick %d" % [_options["load"], _manager.tick()])
 
 	_log_id = SimulationRunner.run_id(config.seed())
 	var echo_log: bool = not _options["quiet"] and not _options["story"]
@@ -88,6 +74,10 @@ func _init() -> void:
 	if chronicle_result.value != null:
 		_manager.attach_log(chronicle_result.value)
 
+	var every: int = _options.get("autosave", config.autosave_every())
+	var autosave_path := SimulationRunner.resolve_save_path(_log_id + ".autosave.json", config)
+	_saver = RunSaver.new(_manager, run, autosave_path, every)
+
 	if _options["realtime"]:
 		if not _manager.scheduler().set_speed(_options["speed"]):
 			_fail(PackedStringArray(["--speed must be one of %s" % [config.speed_multipliers()]]), false)
@@ -95,7 +85,10 @@ func _init() -> void:
 		_realtime = true
 		_manager.start()
 	else:
-		_manager.run_ticks(_options["ticks"])
+		for i: int in _options["ticks"]:
+			if not _manager.step():
+				break
+			_autosave()
 		_finish()
 
 
@@ -103,11 +96,19 @@ func _process(delta: float) -> bool:
 	if not _realtime:
 		return false
 	_manager.advance(delta)
+	_autosave()
 	_elapsed += delta
 	if _elapsed >= float(_options["seconds"]) or _manager.is_halted():
 		_realtime = false
 		_finish()
 	return false
+
+
+## A failed autosave does not stop the run; it is reported.
+func _autosave() -> void:
+	var saved := _saver.after_ticks()
+	for error in saved.errors:
+		printerr("autosave failed: " + error)
 
 
 func _finish() -> void:
@@ -116,8 +117,16 @@ func _finish() -> void:
 	print("Simulation finished at tick %d | halted: %s | state hash: %s"
 			% [_manager.tick(), "yes" if _manager.is_halted() else "no", _manager.state_hash()])
 	print("Logs: %s" % directory.path_join(_log_id + ".{log,jsonl,chronicle.txt}"))
+	if FileAccess.file_exists(_saver.autosave_path()):
+		print("Autosave: %s" % _saver.autosave_path())
 	for error in _manager.errors():
 		printerr(error)
+	if _options.has("save"):
+		var saved := _saver.save_to(SimulationRunner.resolve_save_path(_options["save"], _manager.config()))
+		if not saved.is_ok():
+			_fail(saved.errors, false)
+			return
+		print("Saved: %s" % saved.value)
 	quit(1 if _manager.is_halted() else 0)
 
 

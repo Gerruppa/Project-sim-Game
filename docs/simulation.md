@@ -162,8 +162,51 @@ To hipoteza, którą weryfikuje złoty ślad na macOS ARM.
 - przy starcie sprawdzana jest kolejność bajtów (little-endian)
 
 Pomiar w Godot 4.7.2: `JSON.stringify(full_precision = true)` odtwarza
-wartości dziesiętne bit w bit (także 5e-324). `values_exact` zostaje
-jako zabezpieczenie, bo dokumentacja tego nie gwarantuje.
+większość wartości bit w bit (także 5e-324), ale nie wszystkie: w kroku 8
+biomasa 9.14385050163826… wróciła z różnicą jednego ulp. Dlatego źródłem
+prawdy jest `values_exact`, a ostrzeżenie o niezgodnej wartości czytelnej
+porównuje w przybliżeniu (wyłapuje ręczną edycję, nie szum parsowania).
+
+## Plik zapisu (SaveSystem)
+
+`SaveSystem` (`simulation/scheduling/save_system.gd`) zapisuje przebieg
+między tickami i wznawia go tak, jakby nigdy nie był przerwany.
+
+```json
+{
+  "format": "genesis_save", "save_version": 1,
+  "engine": "4.7.2-stable (official)",
+  "seed": "42", "tick": 2500, "personality": "guardian",
+  "data_fingerprints": {"climate": "<sha256>", "species": "<sha256>", "...": "..."},
+  "lineage": [{"save": "smoke.json", "tick": 2500}],
+  "planet": {"...PlanetStateCodec...": "...", "state_hash": "<sha256>"},
+  "systems": {"climate": {}, "atmosphere": {}, "biosphere": {}, "personality": {}, "events": {}}
+}
+```
+
+- `systems`: stan wewnętrzny każdego systemu pod jego `system_id`
+  (`save_state()` / `load_state()`): dryf klimatu, populacje i flagi
+  gatunków, fazy zdarzeń i historia parametrów, strumienie RNG
+- modyfikatory nie są zapisywane: po wczytaniu dostawcy
+  (`restore_modifiers`) rejestrują je ze swojego stanu
+- liczby zmiennoprzecinkowe systemów jako Base64 (`ExactCodec`),
+  stany RNG i seed jako tekst
+- `data_fingerprints`: SHA-256 plików danych (parametry, klimat,
+  atmosfera, gatunki, biosfera, osobowości, zdarzenia). Inny odcisk przy
+  wczytaniu to ostrzeżenie, nie błąd: przebieg trwa dalej, ale już nie
+  tak, jak trwałby oryginał (strojenie balansu, „co jeśli”)
+- `lineage`: zapisy, z których ten przebieg wyrósł. Na razie tylko
+  zapisywane; przygotowanie pod rozgałęzianie przebiegów
+- `save_version`: nowszej wersji nie czytamy; starsze przechodzą przez
+  `SaveSystem.MIGRATIONS` (pusta, dopóki format się nie zmieni)
+
+Wczytanie odrzuca (wszystkie błędy naraz): inny seed lub osobowość, brak
+albo nadmiar systemu, uszkodzony stan systemu, wartości planety niezgodne
+z `state_hash`, menedżer, który już ruszył.
+
+Zapis idzie przez plik `.tmp` i zmianę nazwy, więc przerwany zapis nie
+zostawia połowy pliku. Zapisy leżą w `saves/` (poza gitem),
+`save.directory` i `save.autosave_every` w `sim_config.json`.
 
 ## Złoty ślad
 
@@ -278,13 +321,23 @@ GODOT_BIN=... ./godot/run_simulation.sh --seed 7 --ticks 10000 --quiet
 GODOT_BIN=... ./godot/run_simulation.sh --realtime --speed 10 --seconds 60     # czas rzeczywisty
 GODOT_BIN=... ./godot/run_simulation.sh --personality chaotic                   # wymuszony archetyp planety
 GODOT_BIN=... ./godot/run_simulation.sh --story                                 # w konsoli kronika zamiast pełnego logu
+GODOT_BIN=... ./godot/run_simulation.sh --ticks 2500 --save epoka.json          # zapis na końcu przebiegu
+GODOT_BIN=... ./godot/run_simulation.sh --load epoka.json --ticks 1000          # dalsze 1000 ticków
+GODOT_BIN=... ./godot/run_simulation.sh --autosave 500                          # autozapis co 500 ticków (0 = wyłączony)
 ```
 
 Osobowość planety: `"personality"` w `sim_config.json` (`random` = losowana
 z seeda, `none` = brak, albo id archetypu) lub opcja `--personality`.
 
+Zapisy: sama nazwa pliku trafia do katalogu zapisów (`saves/`), inne
+ścieżki względne liczone są od projektu Godot (`godot/`). Autozapis
+nadpisuje jeden plik na przebieg: `saves/<run id>.autosave.json`.
+`--load` bierze seed i osobowość z zapisu, więc nie łączy się z `--seed`
+ani `--personality`. Log i kronika wznowionego przebiegu zaczynają się
+od ticku zapisu (`[Tick 2500] initial ...`, „wznowiona od ticku 2500”).
+
 Kod wyjścia: 0 = zakończono, 1 = zatrzymano przez odrzuconą paczkę delt,
-2 = błędne opcje lub dane.
+2 = błędne opcje lub dane (także nieudany `--save`).
 
 ## Metryki obserwowalności
 
@@ -314,12 +367,21 @@ Martwa trajektoria (brak zmian) i wybuchowa trajektoria
 - x1, x10 i x100 dają identyczny wynik po tej samej liczbie ticków
 - pauza i wznowienie nie zmieniają wyniku
 - zapis w ticku N, wczytanie i M kolejnych ticków
-  daje ten sam stan co ciągły bieg N+M
+  daje ten sam stan co ciągły bieg N+M, dla pełnej planety
+  i każdego archetypu, także w trakcie aktywnego zdarzenia
+  (`full_planet_save_test`)
+- po wczytaniu te same zdarzenia w tych samych tickach: żaden gatunek
+  nie pojawia się drugi raz, osobowość nie budzi się ponownie
 
 # Przypadki testowe
 
 - unit: TickScheduler (pauza, wznowienie, prędkości, interwały)
 - unit: SeededRng (niezależność strumieni, odtwarzanie stanu)
+- unit: zapis i wczytanie każdego systemu (`climate_system_test`,
+  `biosphere_system_test`, `personality_system_test`, `event_system_test`),
+  `exact_codec_test`
+- integration: walidacja zapisu, pliki, autozapis, opcje konsoli
+  (`save_system_test`, `simulation_runner_test`)
 - integration: pełny tick z trzema systemami, kolejność faz
 - simulation: wiele seedów, długie przebiegi, brak NaN i zamarcia
 

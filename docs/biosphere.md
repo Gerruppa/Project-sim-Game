@@ -34,7 +34,8 @@ Nowy gatunek to nowy wpis w `species.json`, bez zmian w kodzie.
 
 Każdy gatunek to jedna liczba P w skali 0..100: jaką część dostępnego
 środowiska zajmuje. Populacje są stanem wewnętrznym BiosphereSystem
-(decyzja: nie są parametrami planety), zapisywanym przez SaveSystem (krok 8).
+(decyzja: nie są parametrami planety), zapisywanym przez SaveSystem (`save_state`: populacje, flagi
+pojawienia się gatunków i stan RNG).
 Planeta widzi biomasę: ważoną sumę populacji (BiosphereSystem jest jej właścicielem).
 
 | Siła | Mechanizm | Efekt emergentny |
@@ -183,7 +184,8 @@ Historia strojenia (prototyp w Pythonie przed implementacją):
 
 # Ograniczenia
 
-- populacje i stan RNG nie przetrwają zapisu gry do czasu SaveSystem (krok 8)
+- flagi pojawienia się są zapisywane, nie wyliczane: gatunek poniżej progu,
+  ale żywy, nadal jest „pojawiony”, więc po wczytaniu nie pojawia się drugi raz
 - złoty ślad nadal używa testowej dynamiki; determinizm biosfery sprawdzają testy
   "ten sam seed → te same populacje"
 - testy biosfery są najdłuższe w zestawie (~40 s); tick całej planety ~0,4 ms

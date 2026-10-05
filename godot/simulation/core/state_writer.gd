@@ -51,6 +51,15 @@ func apply(deltas: Array[Delta]) -> ApplyReport:
 	return report
 
 
+## Replaces every value with a saved state of the same schema. The only
+## write without deltas: a save is a past result, not a new change.
+func restore(saved: PlanetState) -> SimResult:
+	if saved.schema().ids() != _state.schema().ids():
+		return SimResult.failure("restore: saved parameters %s differ from %s" % [saved.schema().ids(), _state.schema().ids()])
+	_state._commit(saved.values_copy())
+	return SimResult.success(_state)
+
+
 func _validate(deltas: Array[Delta], schema: ParameterSchema, report: ApplyReport) -> void:
 	for delta in deltas:
 		if schema.index_of(delta.parameter) == -1:

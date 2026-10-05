@@ -25,7 +25,8 @@ func attach(bus: EventBus) -> void:
 
 func begin_run(seed_value: int, initial: PlanetSnapshot) -> void:
 	_schema = initial.schema()
-	_write("# Kronika planety | seed %d" % seed_value)
+	var resumed := "" if initial.tick() == 0 else " | wznowiona od ticku %d" % initial.tick()
+	_write("# Kronika planety | seed %d%s" % [seed_value, resumed])
 
 
 func close() -> void:

@@ -18,5 +18,11 @@ func detect(_snapshot: PlanetSnapshot, _tick: int, _registry: ModifierRegistry) 
 	pass
 
 
+## After load_state: registers the modifiers the restored state implies.
+## The registry is never saved; providers are its only source of truth.
+func restore_modifiers(_registry: ModifierRegistry) -> void:
+	pass
+
+
 func compute(_snapshot: PlanetSnapshot) -> Array[Delta]:
 	return []

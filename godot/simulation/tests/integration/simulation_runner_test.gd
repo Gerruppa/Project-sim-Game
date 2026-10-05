@@ -183,3 +183,65 @@ func test_full_batch_run_writes_every_tick() -> void:
 	manager.stop()
 	var jsonl := FileAccess.get_file_as_string(ProjectSettings.globalize_path(TEST_DIR).path_join("full_run.jsonl"))
 	assert_int(jsonl.split("\n", false).size()).is_equal(26)
+
+
+func test_parses_save_options() -> void:
+	var options := _options(["--save", "end.json", "--autosave", "0"])
+	assert_str(options["save"]).is_equal("end.json")
+	assert_int(options["autosave"]).is_equal(0)
+	assert_str(_options(["--load", "end.json"])["load"]).is_equal("end.json")
+	assert_bool(SimulationRunner.parse_args(PackedStringArray(["--autosave", "-1"])).is_ok()).is_false()
+	assert_bool(SimulationRunner.parse_args(PackedStringArray(["--save"])).is_ok()).is_false()
+
+
+func test_load_takes_seed_and_personality_from_the_save() -> void:
+	var result := SimulationRunner.parse_args(PackedStringArray(["--load", "a.json", "--seed", "3"]))
+	assert_str("\n".join(result.errors)).contains("--load")
+	assert_bool(SimulationRunner.parse_args(PackedStringArray(["--load", "a.json", "--personality", "chaotic"])).is_ok()).is_false()
+
+
+func test_bare_save_names_live_in_the_save_directory() -> void:
+	var config := _config()
+	assert_str(SimulationRunner.resolve_save_path("run.json", config)) \
+			.is_equal(SimulationRunner.resolve_directory(config.save_directory()).path_join("run.json"))
+	assert_str(SimulationRunner.resolve_save_path("user://x/run.json", config)).is_equal(ProjectSettings.globalize_path("user://x/run.json"))
+
+
+func test_build_planet_registers_every_system_in_order() -> void:
+	var built := SimulationRunner.build_planet(_config(), _options([]))
+	assert_array(Array(built.errors)).is_empty()
+	var ids: Array[StringName] = []
+	for system in (built.value["manager"] as SimulationManager).systems():
+		ids.append(system.system_id())
+	assert_array(ids).is_equal([&"climate", &"atmosphere", &"biosphere", &"personality", &"events"])
+	assert_str(built.value["personality"]).is_equal("none")
+	assert_int((built.value["fingerprints"]["climate"] as String).length()).is_equal(64)
+
+
+func test_build_planet_reports_bad_data() -> void:
+	var options := _options(["--climate", "res://missing.json"])
+	assert_bool(SimulationRunner.build_planet(_config(), options).is_ok()).is_false()
+
+
+func test_autosave_writes_once_per_crossed_boundary() -> void:
+	var manager: SimulationManager = SimulationRunner.build_planet(_config(), _options([])).value["manager"]
+	var path := ProjectSettings.globalize_path(TEST_DIR).path_join("auto.autosave.json")
+	DirAccess.remove_absolute(path)
+	var saver := RunSaver.new(manager, {"personality": &"none"}, path, 10)
+	manager.run_ticks(9)
+	assert_object(saver.after_ticks().value).is_null()
+	manager.run_ticks(16)
+	assert_str(saver.after_ticks().value).is_equal(path)
+	assert_int(int(SaveSystem.read(path).value["tick"])).is_equal(25)
+	manager.run_ticks(4)
+	assert_object(saver.after_ticks().value).is_null()
+	manager.run_ticks(1)
+	assert_str(saver.after_ticks().value).is_equal(path)
+
+
+func test_autosave_zero_never_saves() -> void:
+	var manager: SimulationManager = SimulationRunner.build_planet(_config(), _options([])).value["manager"]
+	var saver := RunSaver.new(manager, {}, ProjectSettings.globalize_path(TEST_DIR).path_join("never.json"), 0)
+	manager.run_ticks(5)
+	assert_object(saver.after_ticks().value).is_null()
+	assert_bool(FileAccess.file_exists(saver.autosave_path())).is_false()

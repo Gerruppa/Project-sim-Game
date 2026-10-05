@@ -50,6 +50,27 @@ func start() -> void:
 		log.begin_run(_config.seed(), _state.snapshot(_tick))
 
 
+## Continues a saved run: tick counter and planet state. Only before the
+## first tick; SaveSystem restores the systems' own state.
+func restore(tick_value: int, saved: PlanetState) -> SimResult:
+	if _started:
+		return SimResult.failure("restore: the run has already started")
+	if tick_value < 0:
+		return SimResult.failure("restore: tick must be >= 0")
+	var restored := _pipeline.restore_state(saved)
+	if restored.is_ok():
+		_tick = tick_value
+	return restored
+
+
+func systems() -> Array[SimulationSystem]:
+	return _pipeline.systems()
+
+
+func is_started() -> bool:
+	return _started
+
+
 ## Runs one tick. Returns false if the simulation is halted.
 func step() -> bool:
 	if _halted:
@@ -96,6 +117,11 @@ func errors() -> PackedStringArray:
 
 func snapshot() -> PlanetSnapshot:
 	return _state.snapshot(_tick)
+
+
+## The live state, for SaveSystem. Everything else reads snapshot().
+func current_state() -> PlanetState:
+	return _state
 
 
 func state_hash() -> String:

@@ -7,10 +7,11 @@ extends SimulationSystem
 ## Owns biomass, kept equal to the weighted sum of species populations.
 ## Contributes photosynthesis, respiration, transpiration and wildfire deltas
 ## to oxygen, co2 and humidity (owned by Atmosphere and Climate).
-## Species populations are internal state (saved by SaveSystem, step 8).
+## Species populations are internal state (save_state).
 ## Formulas: docs/biosphere.md. Data: resources/biosphere/*.json.
 
 const ID := &"biosphere"
+const STATE_FORMAT := "biosphere_state"
 ## Biomass drift smaller than this is float noise, not a real mismatch.
 const CENSUS_TOLERANCE := 1e-6
 
@@ -62,6 +63,50 @@ func set_population(species_id: StringName, value: float) -> void:
 	if index != -1:
 		_populations[index] = clampf(value, 0.0, 100.0)
 		_established[index] = _populations[index] >= _k.established_population
+
+
+## Populations, established flags and the RNG stream. Flags are stored, not
+## derived: a species stays established until it dies out, even below the
+## emergence threshold, so deriving them would announce it a second time.
+func save_state() -> Dictionary:
+	var species: Array[String] = []
+	for data in _species:
+		species.append(String(data.id))
+	return {
+		"format": STATE_FORMAT,
+		"species": species,
+		"populations_exact": ExactCodec.floats_to_text(_populations),
+		"established": _established.duplicate(),
+		"rng_state": ExactCodec.int_to_text(_rng.get_state()),
+	}
+
+
+func load_state(data: Dictionary) -> SimResult:
+	if data.get("format") != STATE_FORMAT:
+		return SimResult.failure("biosphere: format must be '%s'" % STATE_FORMAT)
+	var result := SimResult.new()
+	var expected: Array[String] = []
+	for species in _species:
+		expected.append(String(species.id))
+	if typeof(data.get("species")) != TYPE_ARRAY or Array(data["species"]) != Array(expected):
+		result.add_error("biosphere: saved species %s differ from the catalog %s" % [data.get("species"), expected])
+	var populations := ExactCodec.floats_from_text(data.get("populations_exact"), _species.size(), "biosphere: 'populations_exact'")
+	result.errors.append_array(populations.errors)
+	var flags: Variant = data.get("established")
+	if typeof(flags) != TYPE_ARRAY or (flags as Array).size() != _species.size() 			or not (flags as Array).all(func(flag: Variant) -> bool: return typeof(flag) == TYPE_BOOL):
+		result.add_error("biosphere: 'established' must hold %d true/false values" % _species.size())
+	var rng_read := ExactCodec.int_from_text(data.get("rng_state"), "biosphere: 'rng_state'")
+	result.errors.append_array(rng_read.errors)
+	if not result.is_ok():
+		return result
+	for value: float in (populations.value as PackedFloat64Array):
+		if value < 0.0 or value > 100.0:
+			return SimResult.failure("biosphere: population %s outside 0..100" % value)
+	_populations = populations.value
+	for i in _species.size():
+		_established[i] = flags[i]
+	_rng.set_state(rng_read.value)
+	return SimResult.success(self)
 
 
 ## Weighted sum of populations: what planet biomass should be.

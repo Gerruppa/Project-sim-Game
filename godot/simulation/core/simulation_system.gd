@@ -42,6 +42,21 @@ func apply_coefficients(_effective: Object) -> void:
 	pass
 
 
+## Internal state that is not a planet parameter (populations, RNG streams,
+## event phases), as plain JSON values. SaveSystem stores it under
+## system_id(). A system without internal state keeps the empty default.
+func save_state() -> Dictionary:
+	return {}
+
+
+## Restores save_state() output between ticks. On failure the system may be
+## partly restored and must be discarded.
+func load_state(data: Dictionary) -> SimResult:
+	if not data.is_empty():
+		return SimResult.failure("%s: has no state to load, got %s" % [system_id(), data.keys()])
+	return SimResult.success(self)
+
+
 ## Queues a notification for the current tick. Data should be plain values.
 func emit_event(type: StringName, data: Dictionary) -> void:
 	_pending_events.append([type, data])

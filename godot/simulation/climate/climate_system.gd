@@ -8,11 +8,12 @@ extends SimulationSystem
 ## coefficients: docs/climate.md and resources/climate/climate.json.
 
 const ID := &"climate"
+const STATE_FORMAT := "climate_state"
 
 var _k: ClimateConfig
 var _rng: SeededRng
 ## Slow, mean-reverting climate wander that pushes the planet across its
-## tipping points. Internal state: must be saved by SaveSystem (step 8).
+## tipping points. Internal state, saved with the RNG stream (save_state).
 var _drift := 0.0
 
 
@@ -41,6 +42,28 @@ func apply_coefficients(effective: Object) -> void:
 
 func drift() -> float:
 	return _drift
+
+
+func save_state() -> Dictionary:
+	return {
+		"format": STATE_FORMAT,
+		"drift_exact": ExactCodec.floats_to_text(PackedFloat64Array([_drift])),
+		"rng_state": ExactCodec.int_to_text(_rng.get_state()),
+	}
+
+
+func load_state(data: Dictionary) -> SimResult:
+	if data.get("format") != STATE_FORMAT:
+		return SimResult.failure("climate: format must be '%s'" % STATE_FORMAT)
+	var drift_read := ExactCodec.floats_from_text(data.get("drift_exact"), 1, "climate: 'drift_exact'")
+	var rng_read := ExactCodec.int_from_text(data.get("rng_state"), "climate: 'rng_state'")
+	if not drift_read.is_ok() or not rng_read.is_ok():
+		var result := SimResult.new()
+		result.errors = drift_read.errors + rng_read.errors
+		return result
+	_drift = (drift_read.value as PackedFloat64Array)[0]
+	_rng.set_state(rng_read.value)
+	return SimResult.success(self)
 
 
 ## Triangle wave in -1..1 from integer tick arithmetic (no sin: determinism policy).

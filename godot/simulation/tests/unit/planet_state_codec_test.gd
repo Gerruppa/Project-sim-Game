@@ -99,6 +99,12 @@ func test_exact_values_win_over_readable_values() -> void:
 	assert_str("\n".join(result.warnings)).contains("temperature")
 
 
+func test_parsing_noise_in_readable_values_is_not_reported() -> void:
+	var data := PlanetStateCodec.encode(_project_state({"temperature": 40.0}))
+	data["values"]["temperature"] = 40.000000000000007
+	assert_array(Array(PlanetStateCodec.decode(P.project_schema(), data).warnings)).is_empty()
+
+
 func test_readable_values_are_used_when_exact_missing() -> void:
 	var data := PlanetStateCodec.encode(_project_state())
 	data.erase("values_exact")

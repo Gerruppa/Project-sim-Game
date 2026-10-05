@@ -11,5 +11,9 @@
 		"deltas": true,
 		"chronicle": true,
 		"directory": "../logs/simulation_runs"
+	},
+	"save": {
+		"directory": "../saves",
+		"autosave_every": 1000
 	}
 }

@@ -36,7 +36,7 @@ Nie dotyka tlenu (AtmosphereSystem) ani biomasy (BiosphereSystem).
 |---|---|
 | Wejścia | snapshot: temperatura T, wilgotność H, zachmurzenie C, opady P, biomasa B; tick (sezon); `climate.json`; strumień `SeededRng("climate")` |
 | Wyjścia | delty dla T, H, C, P, każda z przyczyną |
-| Stan wewnętrzny | `drift` (dryf klimatu); trafi do SaveSystem razem ze stanem RNG |
+| Stan wewnętrzny | `drift` (dryf klimatu); zapisywany razem ze stanem RNG (`save_state`) |
 
 ## Zależności
 
@@ -186,7 +186,6 @@ co rozwiązała miękka podłoga (`cold_floor`).
 
 ## Ograniczenia
 
-- dryf i stan RNG nie przetrwają zapisu gry do czasu SaveSystem (krok 8)
 - transpiracja należy do BiosphereSystem (tabela właścicieli w architekturze)
 - złoty ślad nadal używa testowej dynamiki, nie ClimateSystem;
   determinizm klimatu sprawdza `climate_balance_test` (ten sam seed → ten sam hash)
