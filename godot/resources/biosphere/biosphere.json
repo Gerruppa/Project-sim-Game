@@ -15,5 +15,6 @@
 	"fire_co2": 1.0,
 	"photorespiration_low": 25.0,
 	"photorespiration_high": 60.0,
-	"loss_memory": 0.99
+	"loss_memory": 0.99,
+	"recolonization": 0.01
 }

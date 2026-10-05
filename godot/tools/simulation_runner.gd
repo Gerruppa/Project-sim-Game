@@ -224,7 +224,7 @@ static func decision_report(manager: SimulationManager, watcher: DecisionWatcher
 	if biosphere != null:
 		var species := PackedStringArray()
 		for data in biosphere.species_ids():
-			species.append("%s %.1f" % [data, biosphere.population(data)])
+			species.append("%s %.1f%s" % [data, biosphere.population(data), " (wymarłe)" if biosphere.is_lost(data) else ""])
 		lines.append("Gatunki (populacja 0-100): " + ", ".join(species))
 	lines.append("Dalej: ./godot/run_simulation.sh --load %s --act <interwencja> --until decision --story" % save_path.get_file())
 	return lines

@@ -122,6 +122,29 @@ BiosphereSystem zgłasza fakty przez `emit_event` (kontrakt `SimulationSystem`):
 
 W logu: `[Tick 7214] EVENT species_emerged from biosphere {"population":1.0004,"species":"tree"}`.
 
+## Trwałe wymieranie (decyzja B)
+
+Gatunek, który wymarł, jest oznaczony jako utracony (`lost`, zapisywany).
+Jego naturalny zasiew mnoży `recolonization` z `biosphere.json`
+(0 = wraca tylko przez zasiew gracza, 1 = tak łatwo jak za pierwszym
+razem). Powrót zgłasza zdarzenie `species_returned` („Wracają krzewy.”),
+a nie ponowne `species_emerged`.
+
+Pomiar bez gracza (2 archetypy × 4 seedy × 15 000 ticków):
+
+| recolonization | planety harmonijne | planety chaotyczne |
+|---|---|---|
+| 0 | 2 z 4 tracą lasy na zawsze, seed 2 nigdy się nie natlenia | żadna się nie natlenia, biomasa 9-20 |
+| 0,01 (wybrane) | lasy wracają, ale rzadko: 1-11% czasu w seedach z wymieraniami | natlenienie 10-15 tys. ticków, bez drzew |
+| 0,05 | lasy 11-17% czasu zamiast 22-29% | natlenienie opóźnione do 10-15 tys. ticków |
+| 1 (dawniej) | odniesienie | odniesienie |
+
+Czas powrotu przy 0,01 (kroniki seedów 7, 13 i 3): mchy ~1300 ticków
+(dawniej ~190), krzewy 660-3000 (dawniej 800-1100), a na seedzie 13 nie
+wróciły przez ponad 10 000 ticków; drzewa ~3600 (dawniej ~3700). Mniejszy zasiew opóźnia tylko pierwszy zalążek, resztę
+robi wzrost logistyczny, więc powrót jest kilka razy wolniejszy, a nie
+1/recolonization razy.
+
 ## Przyczyny wymierania (krok 9a)
 
 Gatunek ginie zwykle przez setki ticków, więc przyczyną jest **największa

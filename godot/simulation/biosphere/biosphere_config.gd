@@ -24,6 +24,7 @@ const SPEC := {
 	"photorespiration_low": [0.0, 100.0, false],
 	"photorespiration_high": [0.0, 100.0, false],
 	"loss_memory": [0.0, 1.0, false],
+	"recolonization": [0.0, 1.0, false],
 }
 const ORDERED_PAIRS := [
 	["fire_o2_low", "fire_o2_high"],
@@ -54,6 +55,10 @@ var photorespiration_high: float
 ## Per-tick decay of remembered population losses (extinction causes):
 ## 0.99 remembers roughly the last 100 ticks.
 var loss_memory: float
+## Natural seeding of a species that died out, as a share of its normal
+## seeding: 0 = gone for good unless the player seeds it, 1 = it returns as
+## easily as it first appeared. Makes the player's choices leave a mark.
+var recolonization: float
 
 
 static func load_json(path: String) -> SimResult:

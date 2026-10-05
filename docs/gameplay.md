@@ -239,7 +239,17 @@ uratowały gatunek), a w kryzysie innego typu (wymarcie krzewów) szkodzą
 Gracz musi rozpoznać kryzys, żeby dobrać narzędzie.
 
 Otwarte: lustra i pył są w kryzysie prawie zawsze szkodliwe (młot zamiast
-skalpela, opcja C), wymieranie nadal nie jest trwałe (opcja B).
+skalpela, opcja C).
+
+# Trwałe wymieranie (decyzja B, 2026-10-05)
+
+Wymarły gatunek wraca sam tylko z ułamkiem dawnego zasiewu
+(`recolonization` 0,01, `docs/biosphere.md`), a gracz może go przywrócić
+zasiewem („Wracają krzewy.”). Raport punktu decyzji oznacza gatunki
+„(wymarłe)”. Przy 0 planeta bez gracza często utyka we wczesnym życiu na
+zawsze; przy 0,05 powroty były tylko 1,3-6 razy wolniejsze. Wybrano 0,01:
+ślad decyzji trwa tysiące ticków (krzewy na seedzie 13 nie wróciły przez
+ponad 10 000), a planeta dalej się natlenia i rozwija.
 
 # Kryteria akceptacji
 

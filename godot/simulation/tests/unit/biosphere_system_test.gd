@@ -352,3 +352,61 @@ func test_culled_species_dies_out_by_the_players_hand() -> void:
 		_step(system)
 	var extinct := system.take_events(1).filter(func(event: SimEvent) -> bool: return event.type == &"species_extinct")
 	assert_str(extinct[0].data["cause"]).is_equal("culled")
+
+
+## A species that dies out under hostile conditions, then gets good ones back.
+func _died_out(config: BiosphereConfig) -> BiosphereSystem:
+	var system := _system([S.species("bacteria", {"layer": 0, "seed": 0.01, "stress_mortality": 0.9})], config)
+	system.set_population(&"bacteria", 5.0)
+	for i in 300:
+		_step(system, {"temperature": 0.0})
+	assert_bool(system.is_lost(&"bacteria")).is_true()
+	system.take_events(1)
+	return system
+
+
+func test_died_out_species_stays_gone_without_recolonization() -> void:
+	var system := _died_out(S.calm({"recolonization": 0.0}))
+	for i in 500:
+		_step(system)
+	assert_float(system.population(&"bacteria")).is_equal(0.0)
+
+
+func test_died_out_species_returns_slowly_and_is_announced_as_returning() -> void:
+	var slow := _died_out(S.calm({"recolonization": 0.05}))
+	var fast := _died_out(S.calm({"recolonization": 1.0}))
+	var slow_back := -1
+	var fast_back := -1
+	for i in 3000:
+		_step(slow)
+		_step(fast)
+		if slow_back == -1 and not slow.is_lost(&"bacteria"):
+			slow_back = i
+		if fast_back == -1 and not fast.is_lost(&"bacteria"):
+			fast_back = i
+	# Less seeding delays the first nucleus; logistic growth does the rest,
+	# so the delay is a few times longer, not 1 / recolonization times.
+	assert_int(fast_back).is_greater(0)
+	assert_int(slow_back).is_greater(fast_back * 2)
+	var types := fast.take_events(1).map(func(event: SimEvent) -> String: return String(event.type))
+	assert_array(types).contains(["species_returned"])
+	assert_array(types).not_contains(["species_emerged"])
+
+
+func test_player_can_bring_back_a_lost_species() -> void:
+	var system := _died_out(S.calm({"recolonization": 0.0}))
+	system.apply_command(_command("add_population", {"species": "bacteria", "amount": 5.0}))
+	_step(system)
+	assert_bool(system.is_lost(&"bacteria")).is_false()
+	assert_str(String(system.take_events(1)[0].type)).is_equal("species_returned")
+
+
+func test_lost_species_survive_a_save() -> void:
+	var first := _died_out(S.calm({"recolonization": 0.0}))
+	var restored := _system([S.species("bacteria", {"layer": 0, "seed": 0.01, "stress_mortality": 0.9})], S.calm({"recolonization": 0.0}))
+	assert_bool(restored.load_state(JSON.parse_string(JSON.stringify(first.save_state()))).is_ok()).is_true()
+	assert_bool(restored.is_lost(&"bacteria")).is_true()
+	var old_save := first.save_state()
+	old_save.erase("lost")
+	assert_bool(restored.load_state(old_save).is_ok()).is_true()
+	assert_bool(restored.is_lost(&"bacteria")).is_false()

@@ -31,6 +31,9 @@ var _rng: SeededRng
 ## Population 0..100 per species, in catalog order.
 var _populations := PackedFloat64Array()
 var _established: Array[bool] = []
+## Species that died out and have not been re-established since. Their
+## natural seeding is scaled by recolonization.
+var _lost: Array[bool] = []
 ## Recent population loss per species and cause (species-major, LOSS_CAUSES
 ## order), decaying by loss_memory every tick. Observation only: it never
 ## changes populations.
@@ -44,6 +47,8 @@ func _init(config: BiosphereConfig, catalog: SpeciesCatalog, global_seed: int) -
 	_populations.resize(_species.size())
 	_established.resize(_species.size())
 	_established.fill(false)
+	_lost.resize(_species.size())
+	_lost.fill(false)
 	_losses.resize(_species.size() * LOSS_CAUSES.size())
 
 
@@ -63,6 +68,12 @@ func coefficient_spec() -> Dictionary:
 
 func apply_coefficients(effective: Object) -> void:
 	_k = effective
+
+
+## True for a species that died out and has not come back.
+func is_lost(species_id: StringName) -> bool:
+	var index := _index_of(species_id)
+	return index != -1 and _lost[index]
 
 
 ## Species ids in catalog order.
@@ -100,6 +111,7 @@ func save_state() -> Dictionary:
 		"species": species,
 		"populations_exact": ExactCodec.floats_to_text(_populations),
 		"established": _established.duplicate(),
+		"lost": _lost.duplicate(),
 		"losses_exact": ExactCodec.floats_to_text(_losses),
 		"rng_state": ExactCodec.int_to_text(_rng.get_state()),
 	}
@@ -122,6 +134,11 @@ func load_state(data: Dictionary) -> SimResult:
 		result.add_error("biosphere: 'established' must hold %d true/false values" % _species.size())
 	var rng_read := ExactCodec.int_from_text(data.get("rng_state"), "biosphere: 'rng_state'")
 	result.errors.append_array(rng_read.errors)
+	# Optional: saves from before permanent extinction have no lost species.
+	var lost: Variant = data.get("lost", [])
+	if typeof(lost) != TYPE_ARRAY or not ((lost as Array).size() in [0, _species.size()]) \
+			or not (lost as Array).all(func(flag: Variant) -> bool: return typeof(flag) == TYPE_BOOL):
+		result.add_error("biosphere: 'lost' must hold %d true/false values" % _species.size())
 	# Optional: saves from before extinction causes start with no memory.
 	var losses := SimResult.success(PackedFloat64Array())
 	if data.has("losses_exact"):
@@ -138,6 +155,7 @@ func load_state(data: Dictionary) -> SimResult:
 		_losses = losses.value
 	for i in _species.size():
 		_established[i] = flags[i]
+		_lost[i] = (lost as Array)[i] if not (lost as Array).is_empty() else false
 	_rng.set_state(rng_read.value)
 	return SimResult.success(self)
 
@@ -233,7 +251,7 @@ func _population_change(index: int, species: SpeciesData, p: float, suit: float,
 	var burned := fire * species.flammable * p
 	var death := (species.base_mortality + species.stress_mortality * _k.stress_scale * (1.0 - suit)
 			+ fire * species.flammable) * p
-	var seeding := species.seed * suit * _precursor_share(species)
+	var seeding := species.seed * suit * _precursor_share(species) * (_k.recolonization if _lost[index] else 1.0)
 	var next_population := clampf(p + growth - death + seeding, 0.0, 100.0)
 	if next_population < _k.extinction_threshold and next_population < p:
 		next_population = 0.0
@@ -291,9 +309,13 @@ func _add_effects(deltas: Array[Delta], species: SpeciesData, p: float, suit: fl
 func _report_milestones(index: int, species: SpeciesData, population_now: float) -> void:
 	if not _established[index] and population_now >= _k.established_population:
 		_established[index] = true
-		emit_event(&"species_emerged", {"species": String(species.id), "population": population_now})
+		var returned := _lost[index]
+		_lost[index] = false
+		emit_event(&"species_returned" if returned else &"species_emerged",
+				{"species": String(species.id), "population": population_now})
 	elif _established[index] and population_now == 0.0:
 		_established[index] = false
+		_lost[index] = true
 		emit_event(&"species_extinct", {"species": String(species.id), "cause": String(extinction_cause(species.id))})
 
 
