@@ -76,6 +76,16 @@ func is_lost(species_id: StringName) -> bool:
 	return index != -1 and _lost[index]
 
 
+## Species data in catalog order (read-only), for advice and reports.
+func species_list() -> Array[SpeciesData]:
+	return _species.duplicate()
+
+
+## Population at which a species counts as present (emergence threshold).
+func established_population() -> float:
+	return _k.established_population
+
+
 ## Species ids in catalog order.
 func species_ids() -> Array[StringName]:
 	var ids: Array[StringName] = []

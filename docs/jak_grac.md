@@ -7,7 +7,7 @@ zrozumienie, dlaczego planeta zachowuje się tak, a nie inaczej.
 
 Na tym etapie gra działa w konsoli. Planeta toczy się sama i zatrzymuje się
 w **punktach decyzji** (np. „wymarły mchy”). Wtedy czytasz, co się stało,
-wybierasz akcję i puszczasz planetę dalej.
+dostajesz podpowiedź, wybierasz akcję z menu i puszczasz planetę dalej.
 
 ---
 
@@ -26,8 +26,10 @@ Otwórz Git Bash i wpisz:
 ```bash
 cd /d/PythonProject_game
 export GODOT_BIN="C:/Users/jkapk/AppData/Local/Microsoft/WinGet/Packages/GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe/Godot_v4.7.2-stable_win64_console.exe"
-./godot/run_simulation.sh --until decision --story
+./godot/play.sh
 ```
+
+To wszystko: gra pokaże wstęp, a potem będzie pytać, co robisz.
 
 `export GODOT_BIN=...` trzeba wpisać w każdym nowym oknie Git Bash. Żeby
 nie powtarzać tego za każdym razem, dopisz tę linię raz do pliku `~/.bashrc`:
@@ -38,8 +40,58 @@ echo 'export GODOT_BIN="C:/Users/jkapk/AppData/Local/Microsoft/WinGet/Packages/G
 
 ---
 
-## 2. Pętla gry
+## 2. Gra z menu (zalecane)
 
+```bash
+./godot/play.sh                      # nowa planeta (charakter losowy)
+./godot/play.sh --seed 13            # konkretna planeta (każdy numer to inna)
+./godot/play.sh --load decision.json # wróć do zapisanej gry
+./godot/play.sh --no-hints           # bez podpowiedzi (w grze przełączasz je klawiszem h)
+```
+
+W każdym punkcie decyzji gra pokazuje:
+
+```text
+=== Punkt decyzji: tick 333 (rok 1) ===
+Co się stało:  Pojawiają się glony.
+Planeta:       Temperatura 31.0 · Wilgotność 30.8 · Tlen 0.5 · Biomasa 1.3 · ...
+Życie:         bakterie 24 · glony 1 · mchy – · krzewy – · drzewa –
+
+Podpowiedź:
+ • Następny etap życia: mchy. Brakuje: tlenu (0.5, potrzeba ok. 2), gleby, czyli biomasy (1.3, potrzeba 3).
+
+Co robisz?
+ 1) Zasiew gatunku             gotowe
+ 2) Przerzedzenie gatunku      gotowe
+ 3) Lustra orbitalne           gotowe
+ 4) Pył orbitalny              gotowe
+ 5) Zasiew chmur               gotowe
+ 6) Wody podziemne             gotowe
+ 7) Przebudzenie wulkanów      gotowe
+ 0) Czekaj, nic nie rób (albo Enter)
+ ?) Wyjaśnij akcje   h) Ukryj podpowiedzi   q) Zapisz i wyjdź
+>
+```
+
+- wpisz **numer akcji** i Enter; gra dopyta o gatunek (z informacją, czego
+  mu brakuje) albo o siłę (Enter = domyślna)
+- możesz zrobić **kilka akcji** w jednym punkcie decyzji; **Enter** albo
+  **0** puszcza planetę dalej
+- **?** wyjaśnia każdą akcję jednym zdaniem, **h** ukrywa i pokazuje
+  podpowiedzi, **q** zapisuje i kończy
+- gra **zapisuje się sama** w każdym punkcie decyzji (`saves/decision.json`),
+  więc możesz przerwać w dowolnej chwili (także zamykając okno)
+- gdy przez 5000 ticków nic się nie dzieje, gra i tak się zatrzyma
+
+**Podpowiedzi** mówią trzy rzeczy: dlaczego coś się stało (przyczyna
+wymarcia), co może pomóc (na podstawie pomiarów na wielu planetach, np.
+„w suszy pomagają wody podziemne”) i czego brakuje następnemu etapowi życia
+(np. „mchom brakuje tlenu: 0.5, potrzeba ok. 2”). Podpowiedź to wskazówka,
+nie przepis: planeta potrafi zaskoczyć.
+
+## 3. Gra komendami (dla zaawansowanych)
+
+Ta sama gra bez menu, wygodna do eksperymentów i skryptów.
 Cała gra to powtarzanie dwóch komend:
 
 ```bash
@@ -101,7 +153,7 @@ kiedyś zasiać ponownie, gdy tlenu będzie więcej.
 
 ---
 
-## 3. Jak czytać punkt decyzji
+## 4. Jak czytać punkt decyzji (tryb komend)
 
 ```text
 === Punkt decyzji: tick 528 ===
@@ -127,9 +179,9 @@ skutki.
 
 ---
 
-## 4. Akcje gracza
+## 5. Akcje gracza
 
-Akcję dodajesz opcją `--act`. Można podać kilka naraz:
+W grze z menu wybierasz akcje numerem. W trybie komend dodajesz je opcją `--act`. Można podać kilka naraz:
 `--act seed_species:algae --act aquifer_release`.
 
 | Komenda | Nazwa | Co robi | Trwa | Odnowienie |
@@ -168,7 +220,7 @@ Czasy podane są w tickach.
 
 ---
 
-## 5. Mechaniki planety
+## 6. Mechaniki planety
 
 ### Parametry (skala 0-100)
 
@@ -246,7 +298,7 @@ Każda planeta losuje charakter z numeru seed (albo ustawiasz go opcją
 
 ---
 
-## 6. Wszystkie opcje
+## 7. Wszystkie opcje (tryb komend)
 
 | Opcja | Znaczenie |
 |---|---|
@@ -280,7 +332,7 @@ deterministyczna), więc różnice wynikają wyłącznie z Twojej decyzji.
 
 ---
 
-## 7. Pliki
+## 8. Pliki
 
 | Gdzie | Co |
 |---|---|
@@ -292,11 +344,12 @@ deterministyczna), więc różnice wynikają wyłącznie z Twojej decyzji.
 
 ---
 
-## 8. Gdy coś nie działa
+## 9. Gdy coś nie działa
 
 | Objaw | Rozwiązanie |
 |---|---|
 | `GODOT_BIN is not set` | wpisz `export GODOT_BIN=...` (rozdział 1) |
+| gra z menu nie reaguje na wpisany numer | naciśnij Enter po numerze; wpisz `q`, żeby wyjść z zapisem |
 | `save file not found` | najpierw zagraj bez `--load` albo sprawdź nazwę w `saves/` |
 | `... is not ready: available from tick N` | akcja się odnawia, wybierz inną albo poczekaj |
 | `--load takes seed and personality from the save` | usuń `--seed` / `--personality` przy `--load` |
@@ -305,7 +358,7 @@ deterministyczna), więc różnice wynikają wyłącznie z Twojej decyzji.
 
 ---
 
-## 9. Ograniczenia prototypu
+## 10. Ograniczenia prototypu
 
 - brak grafiki: planetę poznajesz z kroniki i liczb
 - akcja zawsze zaczyna działać w następnym ticku po punkcie decyzji

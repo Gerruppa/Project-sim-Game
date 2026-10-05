@@ -6,7 +6,7 @@ extends RefCounted
 ## load error, not an intervention that silently does nothing.
 
 const DEFAULT_PATH := "res://resources/interventions/interventions.json"
-const KEYS := ["id", "name", "args", "cooldown", "cooldown_group", "duration", "story", "modifiers", "commands", "levels"]
+const KEYS := ["id", "name", "args", "cooldown", "cooldown_group", "duration", "story", "modifiers", "commands", "levels", "help"]
 ## Argument kinds the player can pass.
 const ARG_KINDS: Array[String] = ["species"]
 
@@ -76,6 +76,10 @@ static func _parse(raw: Variant, index: int, specs: Dictionary, command_specs: D
 		result.add_error("%s: 'name' must be a non-empty string" % label)
 	else:
 		def.name = data["name"]
+	if typeof(data.get("help", "")) != TYPE_STRING:
+		result.add_error("%s: 'help' must be a string" % label)
+	else:
+		def.help = data.get("help", "")
 	var args: Variant = data.get("args", [])
 	if typeof(args) != TYPE_ARRAY or not (args as Array).all(func(a: Variant) -> bool: return typeof(a) == TYPE_STRING and ARG_KINDS.has(a)):
 		result.add_error("%s: 'args' must list argument kinds from %s" % [label, ARG_KINDS])

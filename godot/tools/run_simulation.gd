@@ -20,45 +20,16 @@ func _init() -> void:
 		return
 	_options = parsed.value
 
-	var config_result := SimConfig.load_json(SimConfig.DEFAULT_PATH)
-	if not config_result.is_ok():
-		_fail(config_result.errors, false)
+	var opened := SimulationRunner.open_run(_options)
+	if not opened.is_ok():
+		_fail(opened.errors, false)
 		return
-	var config: SimConfig = config_result.value
-	if _options.has("seed"):
-		config = config.with_seed(_options["seed"])
-	if _options.has("personality"):
-		config = config.with_personality(StringName(_options["personality"]))
-
-	# A save decides seed and personality, so it is read before the planet is built.
-	var save_data := {}
-	var lineage := []
-	if _options.has("load"):
-		var load_path := SimulationRunner.resolve_save_path(_options["load"], config)
-		var read := SaveSystem.read(load_path)
-		var header := SaveSystem.read_header(read.value) if read.is_ok() else read
-		if not header.is_ok():
-			_fail(header.errors, false)
-			return
-		save_data = read.value
-		config = config.with_seed(header.value["seed"]).with_personality(header.value["personality"])
-		lineage = (header.value["lineage"] as Array).duplicate()
-		lineage.append({"save": load_path.get_file(), "tick": header.value["tick"]})
-
-	var planet := SimulationRunner.build_planet(config, _options)
-	if not planet.is_ok():
-		_fail(planet.errors, false)
-		return
-	_manager = planet.value["manager"]
-	var run := {"personality": planet.value["personality"], "data_fingerprints": planet.value["fingerprints"],
-			"lineage": lineage}
-	if _options.has("load"):
-		var restored := SaveSystem.restore(_manager, save_data, run)
-		for warning in restored.warnings:
-			printerr("WARNING: " + warning)
-		if not restored.is_ok():
-			_fail(restored.errors, false)
-			return
+	_manager = opened.value["manager"]
+	var config: SimConfig = opened.value["config"]
+	var run: Dictionary = opened.value["run"]
+	for warning: String in opened.value["warnings"]:
+		printerr("WARNING: " + warning)
+	if opened.value["loaded"]:
 		print("Loaded %s at tick %d" % [_options["load"], _manager.tick()])
 	var acted := SimulationRunner.submit_acts(_manager, _options["act"])
 	if not acted.is_ok():

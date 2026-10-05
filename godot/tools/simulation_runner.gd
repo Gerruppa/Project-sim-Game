@@ -118,6 +118,49 @@ static func resolve_directory(directory: String) -> String:
 	return ProjectSettings.globalize_path("res://").path_join(directory).simplify_path()
 
 
+## Opens a run as the options ask: a new planet, or a saved one continued.
+## Value: {"manager", "config", "run" (for SaveSystem.capture), "warnings",
+## "loaded" (bool)}. A save decides seed and personality, so it is read
+## before the planet is built.
+static func open_run(options: Dictionary) -> SimResult:
+	var config_result := SimConfig.load_json(SimConfig.DEFAULT_PATH)
+	if not config_result.is_ok():
+		return config_result
+	var config: SimConfig = config_result.value
+	if options.has("seed"):
+		config = config.with_seed(options["seed"])
+	if options.has("personality"):
+		config = config.with_personality(StringName(options["personality"]))
+
+	var save_data := {}
+	var lineage := []
+	if options.has("load"):
+		var load_path := resolve_save_path(options["load"], config)
+		var read := SaveSystem.read(load_path)
+		var header := SaveSystem.read_header(read.value) if read.is_ok() else read
+		if not header.is_ok():
+			return header
+		save_data = read.value
+		config = config.with_seed(header.value["seed"]).with_personality(header.value["personality"])
+		lineage = (header.value["lineage"] as Array).duplicate()
+		lineage.append({"save": load_path.get_file(), "tick": header.value["tick"]})
+
+	var planet := build_planet(config, options)
+	if not planet.is_ok():
+		return planet
+	var manager: SimulationManager = planet.value["manager"]
+	var run := {"personality": planet.value["personality"], "data_fingerprints": planet.value["fingerprints"],
+			"lineage": lineage}
+	var warnings := PackedStringArray()
+	if options.has("load"):
+		var restored := SaveSystem.restore(manager, save_data, run)
+		if not restored.is_ok():
+			return restored
+		warnings = restored.warnings
+	return SimResult.success({"manager": manager, "config": config, "run": run, "warnings": warnings,
+			"loaded": options.has("load")})
+
+
 ## A bare file name lives in the save directory; other paths go through
 ## resolve_directory.
 static func resolve_save_path(path: String, config: SimConfig) -> String:

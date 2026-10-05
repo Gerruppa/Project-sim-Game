@@ -8,6 +8,7 @@
 		{
 			"id": "seed_species",
 			"name": "Zasiew gatunku",
+			"help": "Dodaje 5 punktów populacji wybranego gatunku. Przywraca gatunki wymarłe; bez dobrych warunków zasiany gatunek znów zginie.",
 			"args": ["species"],
 			"cooldown": 300,
 			"story": {"applied": "Gracz zasiewa {species}."},
@@ -18,6 +19,7 @@
 		{
 			"id": "cull_species",
 			"name": "Przerzedzenie gatunku",
+			"help": "Zostawia 10% populacji gatunku. Odsłania światło niższym roślinom i ogranicza paliwo dla pożarów.",
 			"args": ["species"],
 			"cooldown": 300,
 			"story": {"applied": "Gracz przerzedza {species}: zostaje jedna dziesiąta."},
@@ -28,6 +30,7 @@
 		{
 			"id": "mirrors_warm",
 			"name": "Lustra orbitalne",
+			"help": "Na 500 ticków podnosi temperaturę, do której dąży klimat (+2, +4 lub +8). Lekko często pomaga, mocno to ryzyko.",
 			"cooldown": 1500,
 			"cooldown_group": "mirrors",
 			"duration": 500,
@@ -48,6 +51,7 @@
 		{
 			"id": "mirrors_cool",
 			"name": "Pył orbitalny",
+			"help": "Na 500 ticków obniża temperaturę, do której dąży klimat (−2, −4 lub −8). Mocne ochłodzenie potrafi wywołać epokę lodową.",
 			"cooldown": 1500,
 			"cooldown_group": "mirrors",
 			"duration": 500,
@@ -68,6 +72,7 @@
 		{
 			"id": "cloud_seeding",
 			"name": "Zasiew chmur",
+			"help": "Na 300 ticków deszcz pada nawet z rzadkich chmur. Dobre dla krzewów i drzew, ale wysusza powietrze, z którego żyją mchy i glony.",
 			"cooldown": 900,
 			"duration": 300,
 			"story": {
@@ -82,6 +87,7 @@
 		{
 			"id": "aquifer_release",
 			"name": "Wody podziemne",
+			"help": "Na 300 ticków ląd paruje 2,5 raza mocniej: rośnie wilgotność i opady. Dobra odpowiedź na suszę.",
 			"cooldown": 900,
 			"duration": 300,
 			"story": {
@@ -93,6 +99,7 @@
 		{
 			"id": "volcanic_awakening",
 			"name": "Przebudzenie wulkanów",
+			"help": "Na 400 ticków wulkany wydzielają 3 razy więcej CO₂: pokarm dla roślin i długotrwałe ocieplenie.",
 			"cooldown": 2000,
 			"duration": 400,
 			"story": {

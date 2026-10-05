@@ -8,6 +8,8 @@ extends RefCounted
 
 var id: StringName
 var name: String
+## One sentence for the player: what it does and what it costs.
+var help := ""
 ## Argument names in command-line order; "species" takes a species id.
 var args: Array[String] = []
 var cooldown := 0

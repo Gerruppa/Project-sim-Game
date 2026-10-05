@@ -1,0 +1,108 @@
+{
+	"hints_version": 1,
+	"intro": [
+		"Witaj w Genesis Error.",
+		"",
+		"Jesteś katalizatorem młodej planety. Nie budujesz niczego: obserwujesz,",
+		"jak planeta żyje, i od czasu do czasu w nią ingerujesz.",
+		"",
+		"Planeta toczy się sama. Gdy wydarzy się coś ważnego (pojawi się gatunek,",
+		"gatunek wymrze, zacznie się susza), gra się zatrzyma i zapyta, co robisz.",
+		"Możesz też nic nie robić: planeta poradzi sobie po swojemu.",
+		"",
+		"Wszystkie wartości planety są w skali 0-100. Jeden tick to jeden krok",
+		"symulacji, rok ma 360 ticków. Wymarłe gatunki prawie nie wracają same.",
+		"",
+		"Cel? Zrozumieć planetę. Zadawaj sobie pytanie: co się stanie, jeśli...?"
+	],
+	"quiet": "Planeta radzi sobie sama. Możesz poczekać (0) albo spróbować czegoś nowego.",
+	"acts_line": "Możesz spróbować: {acts}.",
+	"causes": {
+		"heat": {
+			"text": "{species} wymarły z gorąca. Ochłodzenie pomoże, ale zbyt mocne może wywołać epokę lodową.",
+			"acts": [
+				"mirrors_cool:weak"
+			]
+		},
+		"cold": {
+			"text": "{species} wymarły z zimna. Lekkie ocieplenie może pomóc im wrócić.",
+			"acts": [
+				"mirrors_warm:weak",
+				"volcanic_awakening"
+			]
+		},
+		"drought": {
+			"text": "{species} wymarły z braku wody. Wody podziemne podnoszą wilgotność powietrza; zasiew chmur daje deszcz (dobry dla krzewów i drzew, zły dla mchów i glonów).",
+			"acts": [
+				"aquifer_release",
+				"cloud_seeding"
+			]
+		},
+		"co2_starvation": {
+			"text": "{species} wymarły, bo zabrakło CO₂. Wulkany go dostarczą, ale też ocieplą planetę na długo.",
+			"acts": [
+				"volcanic_awakening"
+			]
+		},
+		"oxygen_lack": {
+			"text": "{species} wymarły, bo zabrakło tlenu. Tlen wytwarzają glony i rośliny: poczekaj, aż go przybędzie, i dopiero wtedy zasiej je ponownie.",
+			"acts": []
+		},
+		"poor_soil": {
+			"text": "{species} wymarły, bo było za mało gleby. Glebę tworzy biomasa niższych roślin: daj im czas.",
+			"acts": []
+		},
+		"fire": {
+			"text": "{species} spłonęły w pożarach. Pożary rosną przy dużej ilości tlenu i suchym powietrzu; wilgoć je gasi.",
+			"acts": [
+				"aquifer_release"
+			]
+		},
+		"shade": {
+			"text": "{species} wymarły w cieniu wyższych roślin. Przerzedzenie krzewów lub drzew odsłoni im światło.",
+			"acts": [
+				"cull_species"
+			]
+		},
+		"oxygen_excess": {
+			"text": "{species} cofają się, gdy tlenu przybywa. To naturalna kolej rzeczy: zostaną w niszach bez tlenu.",
+			"acts": []
+		},
+		"old_age": {
+			"text": "{species} obumierały szybciej, niż się odnawiały: warunki są na granicy ich możliwości.",
+			"acts": []
+		},
+		"culled": {
+			"text": "{species} wymarły po Twoim przerzedzeniu. Jeśli chcesz je z powrotem, zasiej je.",
+			"acts": [
+				"seed_species"
+			]
+		}
+	},
+	"events": {
+		"drought": {
+			"text": "Susza osłabia rośliny i podsyca pożary. Wody podziemne pomagały w większości susz; zasiew chmur w suszy wysusza powietrze.",
+			"acts": [
+				"aquifer_release"
+			]
+		},
+		"guardian_healing": {
+			"text": "Planeta-Strażnik sama leczy rany: życie odrasta szybciej. Często najlepiej poczekać.",
+			"acts": []
+		}
+	},
+	"succession": {
+		"next": "Następny etap życia: {species}. Brakuje: {missing}.",
+		"ready": "{species}: warunki są dobre, pojawią się same albo możesz je zasiać.",
+		"lost_ready": "{species} wymarły, ale warunki znów są dobre: zasiew może je przywrócić."
+	},
+	"needs": {
+		"warmth": "ciepła (temperatura {value}, potrzeba co najmniej {need})",
+		"cooling": "chłodu (temperatura {value}, najwyżej {need})",
+		"humidity": "wilgoci w powietrzu (wilgotność {value}, potrzeba {need})",
+		"precipitation": "deszczu (opady {value}, potrzeba {need})",
+		"co2": "CO₂ ({value}, potrzeba {need})",
+		"oxygen": "tlenu ({value}, potrzeba ok. {need})",
+		"soil": "gleby, czyli biomasy ({value}, potrzeba {need})"
+	}
+}
