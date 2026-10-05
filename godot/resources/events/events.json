@@ -24,7 +24,9 @@
 			"max_duration": 400,
 			"cooldown": 300,
 			"modifiers": [
-				{"target": "climate.water_availability", "operation": "multiply", "value": 0.85}
+				{"target": "climate.water_availability", "operation": "multiply", "value": 0.6},
+				{"target": "biosphere.growth_scale", "operation": "multiply", "value": 0.6},
+				{"target": "biosphere.fire_rate", "operation": "multiply", "value": 2.0}
 			]
 		},
 		{

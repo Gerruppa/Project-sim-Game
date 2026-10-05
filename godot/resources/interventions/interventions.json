@@ -64,6 +64,17 @@
 			]
 		},
 		{
+			"id": "aquifer_release",
+			"name": "Wody podziemne",
+			"cooldown": 900,
+			"duration": 300,
+			"story": {
+				"applied": "Gracz uwalnia wody podziemne: ląd znów paruje.",
+				"ended": "Wody podziemne wysychają."
+			},
+			"modifiers": [{"target": "climate.evaporation_rate", "operation": "multiply", "value": 2.5}]
+		},
+		{
 			"id": "volcanic_awakening",
 			"name": "Przebudzenie wulkanów",
 			"cooldown": 2000,

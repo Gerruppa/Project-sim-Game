@@ -211,7 +211,13 @@ Stan zmienia się przez zwykłe systemy.
 Przykład:
 
 Susza nie ustawia wilgotności.
-Susza obniża dostępność wody (`climate.water_availability` ×0,85).
+Susza obniża dostępność wody (`climate.water_availability` ×0,6),
+spowalnia wzrost roślin (`biosphere.growth_scale` ×0,6) i podwaja pożary
+(`biosphere.fire_rate` ×2). Sam mnożnik wody był kosmetyczny: obieg wody
+kompensuje się (mniej parowania, ale i mniej deszczu), więc wilgotność
+spadała o 0,85 i życie tego nie czuło (`event_impact.gd`). Skutki
+w biosferze robią z suszy kryzysem: biomasa −12%, mchy −22% w trakcie
+suszy, ślad jeszcze 300 ticków po niej.
 ClimateSystem sam wytwarza spadek.
 
 Dzięki temu zdarzenia pozostają emergentne i nie stają się skryptami.
@@ -230,7 +236,11 @@ Dzięki temu zdarzenia pozostają emergentne i nie stają się skryptami.
   "min_duration": 60,
   "max_duration": 400,
   "cooldown": 300,
-  "modifiers": [{"target": "climate.water_availability", "operation": "multiply", "value": 0.85}]
+  "modifiers": [
+    {"target": "climate.water_availability", "operation": "multiply", "value": 0.6},
+    {"target": "biosphere.growth_scale", "operation": "multiply", "value": 0.6},
+    {"target": "biosphere.fire_rate", "operation": "multiply", "value": 2.0}
+  ]
 }
 ```
 

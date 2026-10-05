@@ -2,7 +2,9 @@ extends SceneTree
 ## Balance report for the planet as the game runs it (climate + atmosphere + biosphere).
 ##   godot --headless --path godot -s res://simulation/tests/tools/planet_report.gd -- \
 ##       [--seeds N] [--ticks N] [--climate path] [--atmosphere path] [--species path] \
-##       [--biosphere path] [--personality name] [--climate-only] [--lifeless]
+##       [--biosphere path] [--personality name] [--climate-only] [--lifeless] [--limits]
+## --limits adds a line per seed with every parameter's range and the share
+## of time it spends at the edges of the scale (below EDGE, above 100 - EDGE).
 ## --personality defaults to "none" so runs compare like with like.
 ## Prints per-seed statistics after warm-up; use it before and after changing data.
 
@@ -14,6 +16,7 @@ const WARM_ABOVE := 28.0
 const ALIVE_ABOVE := 5.0
 const FOREST_ABOVE := 10.0
 const OXYGENATED_ABOVE := 15.0
+const EDGE := 2.0
 
 
 class Options:
@@ -26,6 +29,7 @@ class Options:
 	var atmosphere := true
 	var life := true
 	var personality := PersonalityCatalog.NONE
+	var limits := false
 
 
 func _init() -> void:
@@ -62,6 +66,7 @@ func _parse(args: PackedStringArray) -> Options:
 			"--climate-only": options.atmosphere = false; options.life = false
 			"--lifeless": options.life = false
 			"--personality": i += 1; options.personality = StringName(args[i])
+			"--limits": options.limits = true
 		i += 1
 	return options
 
@@ -100,6 +105,14 @@ func _report(seed_value: int, options: Options, climate: ClimateConfig, atmosphe
 	var forest_ticks := 0
 	var alive_total := 0
 	var alive := Vector2i(99, 0)
+	var schema := manager.snapshot().schema()
+	var lows := PackedFloat64Array()
+	var highs := PackedFloat64Array()
+	var low_ticks := PackedInt32Array()
+	var high_ticks := PackedInt32Array()
+	for array: Variant in [lows, highs, low_ticks, high_ticks]:
+		array.resize(schema.size())
+	lows.fill(100.0)
 	for tick in options.ticks:
 		if not manager.step():
 			return "%d | halted: %s" % [seed_value, manager.errors()]
@@ -110,6 +123,12 @@ func _report(seed_value: int, options: Options, climate: ClimateConfig, atmosphe
 			trees_at = tick + 1
 		if tick < WARM_UP:
 			continue
+		for i in schema.size():
+			var value := snapshot.get_value_at(i)
+			lows[i] = minf(lows[i], value)
+			highs[i] = maxf(highs[i], value)
+			low_ticks[i] += 1 if value < EDGE else 0
+			high_ticks[i] += 1 if value > 100.0 - EDGE else 0
 		var t := snapshot.get_value(Param.TEMPERATURE)
 		total_t += t
 		icy += 1 if t < ICY_BELOW else 0
@@ -131,7 +150,15 @@ func _report(seed_value: int, options: Options, climate: ClimateConfig, atmosphe
 			longest = maxi(longest, tick - ice_start)
 		regime = now
 	var measured := options.ticks - WARM_UP
+	var edges := ""
+	if options.limits:
+		var parts := PackedStringArray()
+		for i in schema.size():
+			parts.append("%s %.0f..%.0f low %.0f%% high %.0f%%" % [schema.def_at(i).id(), lows[i], highs[i],
+					100.0 * low_ticks[i] / measured, 100.0 * high_ticks[i] / measured])
+		edges = "
+    " + " | ".join(parts)
 	return "%d | %.1f | %.0f%% | %d %d | %.0f..%.0f | %.1f..%.1f | %d | %.1f | %d | %.0f%% | %.1f (%d..%d) | %d" % [
 		seed_value, total_t / measured, 100.0 * icy / measured, ice_ages, longest, co2.x, co2.y, o2.x, o2.y,
 		oxygenated_at, biomass_max, trees_at, 100.0 * forest_ticks / measured,
-		float(alive_total) / measured, alive.x, alive.y, extinctions[0]]
+		float(alive_total) / measured, alive.x, alive.y, extinctions[0]] + edges

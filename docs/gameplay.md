@@ -35,6 +35,7 @@ optymalną strategią. Każda akcja musi mieć zmierzony negatywny skutek.
 | Przerzedź gatunek | biosfera: zostaje 10% populacji | ratunek przed dominacją | spadek tlenu, pustka dla innych |
 | Lustra orbitalne / pył | klimat: `base_temperature` ±8 przez 500 ticków | wyjście z lodowca lub upału | próg lód-albedo |
 | Zasiew chmur | klimat: `rain_cloud_low` i `rain_cloud_high` −25 przez 300 ticków | deszcz z rzadszych chmur: krzewy i drzewa (żyją z opadów) | deszcz wyciąga wodę z powietrza: mchy i glony (żyją z wilgotności) cierpią |
+| Wody podziemne | klimat: `evaporation_rate` ×2,5 przez 300 ticków | koniec suszy: wilgotność +4, opady +16 | więcej chmur ochładza planetę |
 | Przebudzenie wulkanów | atmosfera: `volcanic_co2` ×3 przez 400 ticków | CO₂ dla roślin, ciepło | CO₂ zostaje długo |
 
 Limit: cooldown na akcję. Bez waluty i punktów wpływu.
@@ -176,6 +177,69 @@ Przerzedzenie krzewów zmieniło kronikę tylko w 4/9, bo w momencie kryzysu
 krzewów często jeszcze nie ma (raport punktu decyzji pokazuje populacje,
 więc gracz to widzi). Jedyny zysk luster: chaotyczna planeta seed 3,
 chłodna (24°), gdzie ciepło uratowało gatunek.
+
+# Tłumienie: dlaczego decyzje „znikają” (pomiar 2026-10-05)
+
+`planet_report.gd --limits` (3 archetypy × 4 seedy × 15 000 ticków): żaden
+parametr nie spędza czasu przy górnej granicy (0%); CO₂ dotknęło 98 tylko
+chwilowo. Przy dolnej granicy bywają wyłącznie opady (do 26% czasu, epoki
+lodowe). Soft capy nie są potrzebne. Planeta żyje w wąskich pasmach:
+wilgotność 17-40, zachmurzenie 30-51.
+
+`intervention_trace.gd` (akcja w pierwszym kryzysie, 9 przebiegów,
+różnica z przebiegiem bez akcji tick po ticku):
+
+| Akcja | Szczyt ΔT | Szczyt Δ biomasy | Szczyt Δ populacji | Skutek trwa (ticki) |
+|---|---|---|---|---|
+| Pył (−8) | 25,3 po 256 | 19,1 | mchy 61,7, glony 56,1 | 1270-2600 |
+| Lustra (+8) | 19,7 po 301 | 16,2 | mchy 59,9 | 1490-2400 |
+| Wulkany | 16,1 po 1033 | 9,8 | mchy 35,6 | 1560-2580 |
+| Zasiew chmur | 7,5 | 10,6 | mchy 31,6 | 660-2410 |
+| Wody podziemne (×2,5) | 4,6 | 4,0 | mchy 12,8, krzewy 11,0 | 580-2460 |
+| Przerzedzenie mchów | 1,9 | 6,9 | mchy 40,2 | 680-2200 |
+
+Wniosek: planeta **nie tłumi** akcji, tylko **wszystko wybacza**.
+Krótkoterminowo reaguje mocno (lód-albedo wzmacnia −8° do 25°), po
+1000-2500 tickach wraca do stanu sprzed akcji. Dwa mechanizmy powrotu:
+
+- obieg wody: więcej parowania → więcej chmur → więcej deszczu, który
+  zabiera wodę z powietrza (dlatego wody podziemne potrzebują ×2,5)
+- wymarcie nie jest trwałe: poprzednik stale zasiewa gatunek, który wraca
+  sam (mchy po 190-410 tickach, krzewy po 340-2700, drzewa po 1400-3000)
+
+Pomiar „stan po 4000 tickach” mierzył więc zły horyzont. Ocena akcji
+(`intervention_report.gd`) liczy teraz średnie w oknie 2000 ticków po akcji.
+
+# Groźniejsze kryzysy (decyzja A, 2026-10-05)
+
+`event_impact.gd` porównuje przebieg ze zdarzeniami z tym samym bez nich
+(3 archetypy × 3 seedy × 8000 ticków, 37 susz, średnio ~200 ticków):
+
+| Susza | Δ wilgotności | Δ biomasy | Δ mchów | Wymierania (z / bez) |
+|---|---|---|---|---|
+| tylko woda ×0,85 (stara) | ~−0,5 | 0,0 | ~+1 | 12 / 12 |
+| woda ×0,6 | −0,85 | −0,01 | +1,4 | 12 / 12 |
+| woda ×0,6, wzrost ×0,6, pożary ×2 | −0,27 | **−2,09** | **−7,0** | 11 / 12 |
+
+Ocena akcji w pierwszym kryzysie (średnie z 2000 ticków po akcji):
+
+| Akcja | Cena | Zysk | Śr. Δ biomasy |
+|---|---|---|---|
+| Wody podziemne | 1 | 2 | −0,44 |
+| Wulkany | 2 | 2 | −0,50 |
+| Zasiew krzewów | 5 | 2 | +0,52 |
+| Lustra (+8) | 7 | 1 | −4,72 |
+| Pył (−8) | 7 | 0 | −6,24 |
+| Zasiew chmur | 6 | 0 | −2,25 |
+
+Pierwszy dobry ruch zależny od kontekstu: wody podziemne w suszy dają
+zysk albo są neutralne w 6 z 7 susz (na chaotycznej planecie seed 3
+uratowały gatunek), a w kryzysie innego typu (wymarcie krzewów) szkodzą
+(−7 biomasy). Zasiew chmur w suszy szkodzi: deszcz wysusza powietrze.
+Gracz musi rozpoznać kryzys, żeby dobrać narzędzie.
+
+Otwarte: lustra i pył są w kryzysie prawie zawsze szkodliwe (młot zamiast
+skalpela, opcja C), wymieranie nadal nie jest trwałe (opcja B).
 
 # Kryteria akceptacji
 

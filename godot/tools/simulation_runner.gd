@@ -27,7 +27,8 @@ const USAGE := """Usage: run_simulation.sh [options]
   --act NAME[:ARG]   intervene at the first tick of the run (repeatable), e.g.
                      --act seed_species:moss  --act mirrors_cool  --act cloud_seeding
                      known: seed_species, cull_species, mirrors_warm, mirrors_cool,
-                     cloud_seeding, volcanic_awakening (res://resources/interventions/interventions.json)
+                     cloud_seeding, aquifer_release, volcanic_awakening
+                     (res://resources/interventions/interventions.json)
   --until decision  stop at the first decision point (a drought starts, a species
                      appears or dies out), save it to <save directory>/decision.json
                      (or --save PATH) and show what the player can do; --ticks is the limit

@@ -8,10 +8,10 @@ func _errors(def: Dictionary) -> String:
 	return "\n".join(I.parse([def]).errors)
 
 
-func test_project_catalog_has_the_five_planned_interventions() -> void:
+func test_project_catalog_has_the_planned_interventions() -> void:
 	var ids := I.project_catalog().ids()
 	assert_array(ids).contains_exactly([&"seed_species", &"cull_species", &"mirrors_warm", &"mirrors_cool",
-			&"cloud_seeding", &"volcanic_awakening"])
+			&"cloud_seeding", &"aquifer_release", &"volcanic_awakening"])
 	var catalog := I.project_catalog()
 	assert_str(String(catalog.get_def(&"mirrors_warm").cooldown_group)).is_equal("mirrors")
 	assert_str(String(catalog.get_def(&"mirrors_cool").cooldown_group)).is_equal("mirrors")

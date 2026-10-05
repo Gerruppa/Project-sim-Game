@@ -6,17 +6,22 @@ extends SceneTree
 ## once without intervention and once per action, and compare what followed.
 ## The act tick is ACT_TICK, or with --at decision the first crisis after
 ## WARM_UP (a drought starts or a species dies out): the player's real moment.
+## Outcomes are averaged over the watched window, not read at its end: the
+## planet recovers within 1000-2500 ticks (intervention_trace.gd), so the
+## end state hides what the player saw happen.
 
 const ACT_TICK := 2500
 ## How long consequences are watched after the act.
-const WATCH := 4000
+const WATCH := 2000
 const WARM_UP := 1500
 const CRISES: Array[StringName] = [&"world_event_started", &"species_extinct"]
 const ARCHETYPES := ["harmonious", "chaotic", "guardian"]
 const ACTIONS := ["seed_species:shrub", "seed_species:tree", "cull_species:moss", "cull_species:shrub", "mirrors_warm",
-		"mirrors_cool", "cloud_seeding", "volcanic_awakening"]
-## Population above which a species counts as alive at the end.
+		"mirrors_cool", "cloud_seeding", "aquifer_release", "volcanic_awakening"]
+## Population above which a species counts as alive.
 const ALIVE_ABOVE := 1.0
+## Difference in mean living species that counts as a gain or a loss.
+const ALIVE_MARGIN := 0.25
 ## Relative biomass change that counts as a gain or a loss.
 const BIOMASS_MARGIN := 0.05
 
@@ -54,7 +59,7 @@ class Outcome:
 	var extinctions := 0
 	var biomass := 0.0
 	var mean_temperature := 0.0
-	var alive := 0
+	var alive := 0.0
 
 
 func _init() -> void:
@@ -82,16 +87,16 @@ func _init() -> void:
 				var outcome := _continue(archetype, seed_value, save, action, act_tick)
 				var row: Array = totals[action]
 				var changed := outcome.lines != base.lines
-				var priced := outcome.extinctions > base.extinctions or outcome.alive < base.alive \
+				var priced := outcome.extinctions > base.extinctions or outcome.alive < base.alive - ALIVE_MARGIN \
 						or outcome.biomass < base.biomass * (1.0 - BIOMASS_MARGIN)
-				var gained := outcome.alive > base.alive or outcome.extinctions < base.extinctions \
+				var gained := outcome.alive > base.alive + ALIVE_MARGIN or outcome.extinctions < base.extinctions \
 						or outcome.biomass > base.biomass * (1.0 + BIOMASS_MARGIN)
 				row[0] += 1 if changed else 0
 				row[1] += 1 if priced else 0
 				row[2] += 1 if gained else 0
 				row[3] += outcome.biomass - base.biomass
 				row[4] += outcome.mean_temperature - base.mean_temperature
-				print("%-10s seed %d @%-5d %-20s changed %-5s price %-5s gain %-5s | biomass %6.2f vs %6.2f | T %5.2f vs %5.2f | alive %d vs %d | extinctions %d vs %d"
+				print("%-10s seed %d @%-5d %-20s changed %-5s price %-5s gain %-5s | mean biomass %6.2f vs %6.2f | T %5.2f vs %5.2f | alive %.2f vs %.2f | extinctions %d vs %d"
 						% [archetype, seed_value, act_tick, action, changed, priced, gained, outcome.biomass, base.biomass,
 						outcome.mean_temperature, base.mean_temperature, outcome.alive, base.alive,
 						outcome.extinctions, base.extinctions])
@@ -143,17 +148,15 @@ func _continue(archetype: String, seed_value: int, save: Dictionary, action: Str
 		var submitted := SimulationRunner.submit_acts(manager, [action])
 		if not submitted.is_ok():
 			printerr(submitted.errors)
-	var temperature_sum := 0.0
-	for tick in range(act_tick, act_tick + WATCH + 1):
-		manager.step()
-		temperature_sum += manager.snapshot().get_value(Param.TEMPERATURE)
+	var biosphere := manager.system(BiosphereSystem.ID) as BiosphereSystem
 	var outcome := Outcome.new()
+	for tick in WATCH:
+		manager.step()
+		var snapshot := manager.snapshot()
+		outcome.mean_temperature += snapshot.get_value(Param.TEMPERATURE) / WATCH
+		outcome.biomass += snapshot.get_value(Param.BIOMASS) / WATCH
+		for id: StringName in biosphere.species_ids():
+			outcome.alive += (1.0 if biosphere.population(id) > ALIVE_ABOVE else 0.0) / WATCH
 	outcome.lines = recorder.lines
 	outcome.extinctions = recorder.extinctions
-	outcome.biomass = manager.snapshot().get_value(Param.BIOMASS)
-	outcome.mean_temperature = temperature_sum / float(WATCH + 1)
-	var biosphere := manager.system(BiosphereSystem.ID) as BiosphereSystem
-	for id: String in ["bacteria", "algae", "moss", "shrub", "tree"]:
-		if biosphere.population(StringName(id)) > ALIVE_ABOVE:
-			outcome.alive += 1
 	return outcome
