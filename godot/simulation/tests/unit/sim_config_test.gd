@@ -95,6 +95,15 @@ func test_rejects_non_boolean_log_flag() -> void:
 	assert_str(_errors(data)).contains("jsonl")
 
 
+func test_chronicle_is_on_unless_disabled() -> void:
+	assert_bool((SimConfig.from_data(_data()).value as SimConfig).log_chronicle()).is_true()
+	var data := _data()
+	data["log"]["chronicle"] = false
+	assert_bool((SimConfig.from_data(data).value as SimConfig).log_chronicle()).is_false()
+	data["log"]["chronicle"] = "yes"
+	assert_str(_errors(data)).contains("chronicle")
+
+
 func test_reports_all_errors_at_once() -> void:
 	var data := _data()
 	data["seed"] = "x"

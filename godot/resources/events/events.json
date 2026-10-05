@@ -4,6 +4,11 @@
 		{
 			"id": "drought",
 			"name": "Susza",
+			"story": {
+				"start": "Susza: ciepłe powietrze wysycha szybciej, niż oddaje mu wodę ląd.",
+				"end": "Susza mija, powietrze znów jest wilgotne.",
+				"end_time_limit": "Susza wygasa, choć powietrze wciąż jest suche."
+			},
 			"trigger": {
 				"condition": {"all": [
 					{"measure": "value", "param": "temperature", "op": ">", "value": 22},
@@ -25,6 +30,11 @@
 		{
 			"id": "guardian_healing",
 			"name": "Planeta leczy się",
+			"story": {
+				"start": "Planeta leczy się: życie zostało zranione, a Strażnik przyspiesza jego odrost.",
+				"end": "Planeta się wyleczyła: życie wróciło blisko dawnego szczytu.",
+				"end_time_limit": "Leczenie nie wystarczyło: życie wciąż jest daleko od dawnego szczytu."
+			},
 			"personality": ["guardian"],
 			"trigger": {
 				"condition": {"all": [

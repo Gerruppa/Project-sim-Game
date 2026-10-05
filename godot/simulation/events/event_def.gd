@@ -24,6 +24,9 @@ var max_duration := 1
 var cooldown := 0
 ## Each entry: {"target", "operation", "value"}.
 var modifiers: Array[Dictionary] = []
+## Sentences for the planet chronicle: "start", "end" (end conditions met)
+## and "end_time_limit" (max_duration reached).
+var story: Dictionary[String, String] = {}
 
 
 func applies_to(archetype: StringName) -> bool:

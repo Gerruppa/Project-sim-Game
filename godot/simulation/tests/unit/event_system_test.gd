@@ -53,6 +53,14 @@ func test_publishes_start_and_end_with_their_causes() -> void:
 	assert_str(events[1].data["summary"]).contains("ended after 2 ticks (end conditions)")
 
 
+func test_tells_the_story_matching_how_the_event_ended() -> void:
+	var by_conditions := _feed(EventSystem.new(E.catalog([E.def("dry")])), [15.0, 35.0])
+	assert_str(by_conditions[0].data["story"]).is_equal("dry begins.")
+	assert_str(by_conditions[1].data["story"]).is_equal("dry is over.")
+	var by_time := _feed(EventSystem.new(E.catalog([E.def("dry", {"max_duration": 2})])), [15.0, 15.0, 15.0])
+	assert_str(by_time[1].data["story"]).is_equal("dry fades out.")
+
+
 func test_time_limit_is_named_in_the_summary() -> void:
 	var system := EventSystem.new(E.catalog([E.def("dry", {"max_duration": 2})]))
 	var events := _feed(system, [15.0, 15.0, 15.0])

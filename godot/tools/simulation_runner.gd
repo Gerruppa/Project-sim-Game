@@ -14,7 +14,8 @@ const USAGE := """Usage: run_simulation.sh [options]
   --realtime      run in real time instead of batch mode
   --speed S       real-time speed multiplier (1, 10, 100)
   --seconds S     real-time duration in seconds (default 60)
-  --quiet         do not echo the text log to the console
+  --quiet         do not echo anything to the console
+  --story         echo the planet chronicle instead of the full text log
   --climate PATH     climate coefficients file (default res://resources/climate/climate.json)
   --atmosphere PATH  atmosphere coefficients file (default res://resources/atmosphere/atmosphere.json)
   --species PATH     species catalog (default res://resources/biosphere/species.json)
@@ -27,7 +28,7 @@ const USAGE := """Usage: run_simulation.sh [options]
 static func parse_args(args: PackedStringArray) -> SimResult:
 	var result := SimResult.new()
 	var options := {"realtime": false, "ticks": DEFAULT_TICKS, "speed": 1, "seconds": DEFAULT_SECONDS,
-			"quiet": false, "climate": ClimateConfig.DEFAULT_PATH, "atmosphere": AtmosphereConfig.DEFAULT_PATH,
+			"quiet": false, "story": false, "climate": ClimateConfig.DEFAULT_PATH, "atmosphere": AtmosphereConfig.DEFAULT_PATH,
 			"species": SpeciesCatalog.DEFAULT_PATH, "biosphere": BiosphereConfig.DEFAULT_PATH,
 			"events": EventCatalog.DEFAULT_PATH}
 	var i := 0
@@ -38,6 +39,8 @@ static func parse_args(args: PackedStringArray) -> SimResult:
 				options["realtime"] = true
 			"--quiet":
 				options["quiet"] = true
+			"--story":
+				options["story"] = true
 			"--climate", "--atmosphere", "--species", "--biosphere", "--events", "--personality":
 				if i + 1 >= args.size() or args[i + 1].begins_with("--"):
 					result.add_error("%s needs a value" % arg)
@@ -112,6 +115,30 @@ static func create_log(config: SimConfig, id: String, echo: bool) -> SimResult:
 			sink.close()
 		return result
 	result.value = SimulationLog.new(text_sinks, jsonl_sinks, config.log_deltas())
+	return result
+
+
+## Opens <run_id>.chronicle.txt if the config asks for it; `echo` prints the
+## chronicle to the console. Value is null when the chronicle goes nowhere.
+static func create_chronicle(config: SimConfig, id: String, echo: bool, texts_path: String = ChronicleTexts.DEFAULT_PATH) -> SimResult:
+	var texts := ChronicleTexts.load_json(texts_path)
+	if not texts.is_ok():
+		return texts
+	var result := SimResult.new()
+	var sinks: Array[LogSink] = []
+	if config.log_chronicle():
+		var directory := resolve_directory(config.log_directory())
+		var error := DirAccess.make_dir_recursive_absolute(directory)
+		if error != OK:
+			return SimResult.failure("cannot create log directory %s: %s" % [directory, error_string(error)])
+		_open_into(directory.path_join(id + ".chronicle.txt"), sinks, result)
+	if echo:
+		sinks.append(PrintLogSink.new())
+	if not result.is_ok():
+		for sink in sinks:
+			sink.close()
+		return result
+	result.value = PlanetChronicle.new(sinks, texts.value) if not sinks.is_empty() else null
 	return result
 
 

@@ -75,11 +75,18 @@ func _init() -> void:
 	_manager.register_system(EventSystem.new(event_catalog.value, personality.value.archetype_id()))
 
 	_log_id = SimulationRunner.run_id(config.seed())
-	var log_result := SimulationRunner.create_log(config, _log_id, not _options["quiet"])
+	var echo_log: bool = not _options["quiet"] and not _options["story"]
+	var log_result := SimulationRunner.create_log(config, _log_id, echo_log)
 	if not log_result.is_ok():
 		_fail(log_result.errors, false)
 		return
 	_manager.attach_log(log_result.value)
+	var chronicle_result := SimulationRunner.create_chronicle(config, _log_id, not _options["quiet"] and _options["story"])
+	if not chronicle_result.is_ok():
+		_fail(chronicle_result.errors, false)
+		return
+	if chronicle_result.value != null:
+		_manager.attach_log(chronicle_result.value)
 
 	if _options["realtime"]:
 		if not _manager.scheduler().set_speed(_options["speed"]):
@@ -108,7 +115,7 @@ func _finish() -> void:
 	var directory := SimulationRunner.resolve_directory(_manager.config().log_directory())
 	print("Simulation finished at tick %d | halted: %s | state hash: %s"
 			% [_manager.tick(), "yes" if _manager.is_halted() else "no", _manager.state_hash()])
-	print("Logs: %s" % directory.path_join(_log_id + ".{log,jsonl}"))
+	print("Logs: %s" % directory.path_join(_log_id + ".{log,jsonl,chronicle.txt}"))
 	for error in _manager.errors():
 		printerr(error)
 	quit(1 if _manager.is_halted() else 0)

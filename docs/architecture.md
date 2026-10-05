@@ -510,6 +510,24 @@ Implementation (`simulation/core/simulation_log.gd`):
 
 ---
 
+## RunObserver and PlanetChronicle
+
+`RunObserver` (`simulation/core/run_observer.gd`) is the base of everything
+that watches a run through EventBus: `attach(bus)`, `begin_run(seed,
+snapshot)`, `close()`. SimulationManager holds observers (bus
+subscriptions do not keep them alive) and calls them in that order.
+
+`PlanetChronicle` (`simulation/narrative/`) is the first narrative
+observer: it writes the run as sentences (`<run id>.chronicle.txt`).
+World events bring their own `story` sentence and measured causes;
+system events use the vocabulary in `resources/chronicle/chronicle.json`
+(`ChronicleTexts`). Everything without a sentence is left out.
+
+Presentation only: no text reaches the simulation, so wording changes
+never touch determinism or the golden trace.
+
+---
+
 ## Console runner
 
 `godot/tools/run_simulation.gd` (SceneTree entry) and
@@ -870,7 +888,7 @@ res://  (godot/)
   addons/gdUnit4/   test framework
   simulation/
     core/           PlanetState, StateWriter, Delta, SimulationSystem, CoefficientLoader,
-                    EventBus, SimEvent, SimulationLog, log sinks,
+                    EventBus, SimEvent, RunObserver, SimulationLog, log sinks,
                     SeededRng, SimMath, CommandQueue, SaveSystem
     scheduling/     SimulationManager, TickScheduler, TickPipeline, SimConfig
     planet/         ParameterDefs, snapshot
@@ -880,9 +898,10 @@ res://  (godot/)
     modifiers/      Modifier, ModifierRegistry, ModifierProvider
     events/         EventSystem, EventDefs
     personality/    PersonalitySystem, PersonalityCatalog, PersonalityArchetype
+    narrative/      PlanetChronicle, ChronicleTexts (observers, presentation only)
     tests/          unit, integration, simulation, architecture,
                     support (test-only helpers), golden, tools
-  resources/        data assets (planet/, simulation/)
+  resources/        data assets (planet/, simulation/, chronicle/, ...)
   tools/            console runner (outside simulation/: file and process work)
 ```
 

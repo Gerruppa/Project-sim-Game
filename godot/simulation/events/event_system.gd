@@ -96,6 +96,7 @@ func _start(def: EventDef, registry: ModifierRegistry) -> void:
 		"name": def.name,
 		"causes": facts,
 		"modifiers": applied,
+		"story": def.story["start"],
 		"summary": "%s started: %s" % [def.name, _facts_text(facts)],
 	})
 
@@ -103,13 +104,15 @@ func _start(def: EventDef, registry: ModifierRegistry) -> void:
 func _end(def: EventDef, lifecycle: EventLifecycle, registry: ModifierRegistry) -> void:
 	registry.remove_source(source_of(def))
 	var facts := def.end.describe(_history)
-	var why := "end conditions" if lifecycle.end_reason == EventLifecycle.END_CONDITIONS else "time limit"
+	var by_conditions := lifecycle.end_reason == EventLifecycle.END_CONDITIONS
+	var why := "end conditions" if by_conditions else "time limit"
 	emit_event(ENDED_EVENT, {
 		"id": String(def.id),
 		"name": def.name,
 		"reason": String(lifecycle.end_reason),
 		"duration": lifecycle.elapsed,
 		"causes": facts,
+		"story": def.story["end"] if by_conditions else def.story["end_time_limit"],
 		"summary": "%s ended after %d ticks (%s): %s" % [def.name, lifecycle.elapsed, why, _facts_text(facts)],
 	})
 

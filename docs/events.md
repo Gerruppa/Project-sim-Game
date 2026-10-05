@@ -287,8 +287,22 @@ Narracja i UI są obserwatorami i tylko je odbierają.
 
 | Notyfikacja | Dane |
 |---|---|
-| `world_event_started` | id, name, causes (każdy liść: zmierzona wartość, próg, czy spełniony), modifiers, summary |
-| `world_event_ended` | id, name, reason (`conditions` / `max_duration`), duration, causes (warunek końca), summary |
+| `world_event_started` | id, name, causes (każdy liść: zmierzona wartość, próg, czy spełniony), modifiers, story, summary |
+| `world_event_ended` | id, name, reason (`conditions` / `max_duration`), duration, causes (warunek końca), story, summary |
+
+`summary` jest dla logu technicznego, `story` dla kroniki planety
+(`docs/simulation.md`, Kronika planety). Każda definicja musi mieć
+`story` z trzema zdaniami: `start`, `end` (spełniony warunek końca)
+i `end_time_limit` (minął `max_duration`), bo te dwa zakończenia
+opowiadają różne historie:
+
+```json
+"story": {
+	"start": "Susza: ciepłe powietrze wysycha szybciej, niż oddaje mu wodę ląd.",
+	"end": "Susza mija, powietrze znów jest wilgotne.",
+	"end_time_limit": "Susza wygasa, choć powietrze wciąż jest suche."
+}
+```
 
 Każde zdarzenie świata musi mieć możliwą do odtworzenia przyczynę
 (stan, który spełnił warunek). To podstawa uczenia się gracza.
@@ -317,8 +331,10 @@ Log tekstowy drukuje `summary`:
 - unit: kolejność operacji modyfikatorów niezależna od rejestracji (`modifier_registry_test`)
 - unit: miary historii, bufor cykliczny, dokładny zapis (`param_history_test`)
 - unit: parsowanie i ocena języka warunków (`event_condition_test`)
-- unit: walidacja definicji (`event_catalog_test`)
+- unit: walidacja definicji, w tym `story` (`event_catalog_test`)
 - unit: histereza, for_ticks, min/max_duration, cooldown (`event_lifecycle_test`)
+- unit: zdanie kroniki zgodne ze sposobem zakończenia (`event_system_test`)
+- unit: słownik i zdania kroniki (`chronicle_texts_test`, `planet_chronicle_test`)
 - unit: modyfikatory i notyfikacje, archetypy, zapis i odczyt w każdym ticku (`event_system_test`)
 - unit: faza Detect widzi nowy stan, modyfikatory działają od następnego ticka (`pipeline_modifiers_test`)
 - integration: spadek wilgotności → susza → modyfikator → niższa wilgotność niż bez zdarzeń → koniec (`event_behavior_test`)

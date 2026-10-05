@@ -202,7 +202,7 @@ Zasady:
 
 ## Formaty
 
-Każdy przebieg tworzy dwa pliki z tych samych zdarzeń:
+Każdy przebieg tworzy dwa pliki logu z tych samych zdarzeń:
 `<run id>.log` (tekst dla ludzi) i `<run id>.jsonl`
 (JSON Lines: jeden obiekt JSON w linii, dla narzędzi i analizy balansu).
 Identyfikator przebiegu to `seed<N>_<data>_<godzina>`. Data trafia tylko
@@ -241,6 +241,35 @@ JSON Lines (rekordy `run_start`, `tick`, `rejected`, `event`):
 Klucze są sortowane, a liczby zapisywane z pełną precyzją.
 Każdy tick ma dokładnie jeden rekord `tick`, także gdy nic się nie zmieniło.
 
+## Kronika planety
+
+Trzeci plik przebiegu, `<run id>.chronicle.txt`, opowiada przebieg
+zdaniami: tylko to, co stało się z planetą, bez liczb z każdego ticka.
+Przebieg 15 000 ticków to kilkadziesiąt linii zamiast ~120 000, więc
+obserwator czyta go bez narzędzi.
+
+```text
+# Kronika planety | seed 42
+[Tick 1] Planeta budzi się. Łagodna i bujna: spokojniejszy klimat, szybszy wzrost, rzadsze pożary. Kryzysy zdarzają się rzadziej.
+[Tick 122] Pojawiają się bakterie.
+[Tick 734] Susza: ciepłe powietrze wysycha szybciej, niż oddaje mu wodę ląd. (Temperatura 24,2; Wilgotność 5,4 poniżej normy z 500 ticków)
+[Tick 1134] Susza wygasa, choć powietrze wciąż jest suche. (Wilgotność 4,4 poniżej normy z 500 ticków)
+```
+
+Źródła zdań:
+
+- zdarzenia świata: pole `story` definicji zdarzenia (`events.json`),
+  a w nawiasie zmierzone przyczyny z warunku startu albo końca,
+- zdarzenia systemów: słownik `resources/chronicle/chronicle.json`
+  (`events`: zdanie z polami `{nazwa}` z danych zdarzenia, `species`:
+  nazwy gatunków, `measures`: fraza dla każdej miary warunku, dla miar
+  ze znakiem osobno `below` i `above`),
+- nazwy parametrów: `display_name` ze schematu parametrów.
+
+Zdarzenie bez zdania jest pomijane celowo. Kronika jest obserwatorem
+(`RunObserver`), jak log, i nie wpływa na przebieg. `log.chronicle`
+w `sim_config.json` (domyślnie `true`) włącza plik.
+
 ## Uruchamianie symulacji
 
 ```bash
@@ -248,6 +277,7 @@ GODOT_BIN=<Godot 4.7.2 console> ./godot/run_simulation.sh                     # 
 GODOT_BIN=... ./godot/run_simulation.sh --seed 7 --ticks 10000 --quiet
 GODOT_BIN=... ./godot/run_simulation.sh --realtime --speed 10 --seconds 60     # czas rzeczywisty
 GODOT_BIN=... ./godot/run_simulation.sh --personality chaotic                   # wymuszony archetyp planety
+GODOT_BIN=... ./godot/run_simulation.sh --story                                 # w konsoli kronika zamiast pełnego logu
 ```
 
 Osobowość planety: `"personality"` w `sim_config.json` (`random` = losowana

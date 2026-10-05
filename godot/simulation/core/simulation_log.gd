@@ -1,5 +1,5 @@
 class_name SimulationLog
-extends RefCounted
+extends RunObserver
 ## Writes every tick as human-readable text and as JSON Lines.
 ##
 ## Text is for reading runs; JSON Lines (one JSON object per line) is for

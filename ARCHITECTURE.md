@@ -93,6 +93,7 @@ logs/simulation_runs/                           run logs (not in git)
 | SimulationManager | wires everything together, runs ticks |
 | EventBus | queued notifications about facts that already happened |
 | SimulationLog | every tick written as text and JSON Lines |
+| PlanetChronicle | the run told in sentences: emerging species, world events and their causes |
 | SimMath, SeededRng | math and randomness that give the same bits on every platform |
 | ClimateSystem | seasons, climate drift, ice-albedo tipping point, water cycle, clouds, rain |
 | AtmosphereSystem | carbon cycle (volcanoes vs weathering), CO2 greenhouse, oxygen sources and sinks |
@@ -112,7 +113,7 @@ logs/simulation_runs/                           run logs (not in git)
 | 4. AtmosphereSystem | done: carbon thermostat, volcanic thaw of ice ages, oxygen sinks |
 | 5. BiosphereSystem | done: succession, oxygenation, forests and fires, anaerobe refuge |
 | 6. PersonalitySystem | done: Harmonious, Chaotic, Guardian via ModifierRegistry |
-| 7. EventSystem | next (includes planet reactions per archetype) |
+| 7. EventSystem | done: drought, guardian healing, planet chronicle |
 | 8–10. Save, Gameplay, Visualization | planned |
 
 ---
@@ -127,4 +128,5 @@ export GODOT_BIN=<Godot 4.7.2 console binary>
 ./godot/run_simulation.sh --personality guardian          # harmonious, chaotic, guardian, random, none
 ```
 
-Each run writes `logs/simulation_runs/<run id>.log` (text) and `.jsonl` (JSON Lines).
+Each run writes `logs/simulation_runs/<run id>.log` (text), `.jsonl` (JSON Lines)
+and `.chronicle.txt` (the planet chronicle; `--story` prints it instead of the full log).

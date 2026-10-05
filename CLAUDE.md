@@ -637,6 +637,8 @@ simulation/events/
 
 simulation/personality/
 
+simulation/narrative/
+
 simulation/tests/
 
 resources/

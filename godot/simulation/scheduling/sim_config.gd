@@ -94,6 +94,11 @@ static func _read_log(raw: Variant, config: SimConfig, result: SimResult) -> voi
 			result.add_error("log.%s must be true or false" % flag)
 		else:
 			config._log_flags[flag] = log_data[flag]
+	# Optional, so older configs keep working: the chronicle is on by default.
+	if log_data.has("chronicle") and typeof(log_data["chronicle"]) != TYPE_BOOL:
+		result.add_error("log.chronicle must be true or false")
+	else:
+		config._log_flags["chronicle"] = log_data.get("chronicle", true)
 	if typeof(log_data.get("directory")) != TYPE_STRING or (log_data["directory"] as String).is_empty():
 		result.add_error("log.directory must be a non-empty path")
 	else:
@@ -156,6 +161,10 @@ func log_jsonl() -> bool:
 
 func log_deltas() -> bool:
 	return _log_flags.get("deltas", false)
+
+
+func log_chronicle() -> bool:
+	return _log_flags.get("chronicle", false)
 
 
 ## Relative paths are resolved against the Godot project directory.

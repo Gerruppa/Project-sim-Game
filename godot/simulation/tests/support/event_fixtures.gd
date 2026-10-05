@@ -12,6 +12,7 @@ static func def(id: String, overrides: Dictionary = {}) -> Dictionary:
 	var data := {
 		"id": id,
 		"name": "Test " + id,
+		"story": {"start": id + " begins.", "end": id + " is over.", "end_time_limit": id + " fades out."},
 		"trigger": {"condition": {"measure": "value", "param": "humidity", "op": "<", "value": 20}, "for_ticks": 1},
 		"end": {"condition": {"measure": "value", "param": "humidity", "op": ">", "value": 30}, "for_ticks": 1},
 		"min_duration": 0,

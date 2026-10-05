@@ -12,7 +12,7 @@ var _state: PlanetState
 var _bus := EventBus.new()
 var _scheduler: TickScheduler
 var _pipeline: TickPipeline
-var _logs: Array[SimulationLog] = []
+var _logs: Array[RunObserver] = []
 var _tick := 0
 var _started := false
 var _halted := false
@@ -35,7 +35,8 @@ func register_system(system: SimulationSystem, interval: int = 1) -> SimResult:
 	return _pipeline.register(system, interval)
 
 
-func attach_log(log: SimulationLog) -> void:
+## Any observer of the run: SimulationLog, PlanetChronicle, ...
+func attach_log(log: RunObserver) -> void:
 	_logs.append(log)
 	log.attach(_bus)
 

@@ -1,0 +1,25 @@
+{
+	"chronicle_version": 1,
+	"species": {
+		"bacteria": "bakterie",
+		"algae": "glony",
+		"moss": "mchy",
+		"shrub": "krzewy",
+		"tree": "drzewa"
+	},
+	"events": {
+		"planet_personality": "Planeta budzi się. {description}",
+		"species_emerged": "Pojawiają się {species}.",
+		"species_extinct": "Wymierają {species}."
+	},
+	"measures": {
+		"value": "{param} {value}",
+		"change": {"below": "{param} spada o {abs} w ciągu {window} ticków", "above": "{param} rośnie o {abs} w ciągu {window} ticków"},
+		"mean": "{param} średnio {value} przez {window} ticków",
+		"min": "{param} najniżej {value} w ciągu {window} ticków",
+		"max": "{param} najwyżej {value} w ciągu {window} ticków",
+		"range": "{param} waha się o {value} w ciągu {window} ticków",
+		"anomaly": {"below": "{param} {abs} poniżej normy z {window} ticków", "above": "{param} {abs} powyżej normy z {window} ticków"},
+		"drop_from_peak": "{param} {percent}% poniżej szczytu z {window} ticków"
+	}
+}

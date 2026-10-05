@@ -7,8 +7,9 @@ extends RefCounted
 ## typo in data is an error at load time, not an event that never fires.
 
 const DEFAULT_PATH := "res://resources/events/events.json"
-const EVENT_KEYS := ["id", "name", "personality", "trigger", "end", "min_duration", "max_duration",
+const EVENT_KEYS := ["id", "name", "story", "personality", "trigger", "end", "min_duration", "max_duration",
 		"cooldown", "modifiers"]
+const STORY_KEYS: Array[String] = ["start", "end", "end_time_limit"]
 
 var _defs: Array[EventDef] = []
 
@@ -58,6 +59,7 @@ static func _parse_event(raw: Dictionary, index: int, schema: ParameterSchema, s
 		result.add_error("%s: 'name' must be a non-empty string" % label)
 	else:
 		def.name = raw["name"]
+	_parse_story(raw.get("story"), label, def, result)
 	_parse_personality(raw.get("personality", []), label, archetype_ids, def, result)
 
 	var trigger := _parse_phase(raw.get("trigger"), label + ".trigger", schema, result)
@@ -85,6 +87,22 @@ static func _parse_event(raw: Dictionary, index: int, schema: ParameterSchema, s
 		def.modifiers.append({"target": modifier["target"], "operation": modifier["operation"],
 				"value": float(modifier["value"])})
 	return def
+
+
+## Every event tells the observer how it began and how it ended.
+static func _parse_story(raw: Variant, label: String, def: EventDef, result: SimResult) -> void:
+	if typeof(raw) != TYPE_DICTIONARY:
+		result.add_error("%s: 'story' must be an object with %s" % [label, STORY_KEYS])
+		return
+	for key: Variant in raw:
+		if not STORY_KEYS.has(key):
+			result.add_error("%s: unknown story key '%s'" % [label, key])
+	for key in STORY_KEYS:
+		var text: Variant = (raw as Dictionary).get(key)
+		if typeof(text) != TYPE_STRING or (text as String).is_empty():
+			result.add_error("%s: story '%s' must be a non-empty string" % [label, key])
+		else:
+			def.story[key] = text
 
 
 static func _parse_personality(raw: Variant, label: String, archetype_ids: Array[StringName], def: EventDef, result: SimResult) -> void:

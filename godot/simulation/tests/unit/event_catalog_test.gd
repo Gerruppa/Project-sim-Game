@@ -45,6 +45,19 @@ func test_rejects_missing_or_bad_fields() -> void:
 	assert_bool(_errors({"severity": 2}).is_empty()).is_false()
 
 
+func test_every_event_tells_its_story() -> void:
+	var def := E.catalog([E.def("x")]).get_def(&"x")
+	assert_str(def.story["start"]).is_equal("x begins.")
+	assert_str(def.story["end_time_limit"]).is_equal("x fades out.")
+	assert_bool(_errors({"story": "It rains."}).is_empty()).is_false()
+	assert_bool(_errors({"story": {"start": "a", "end": "b"}}).is_empty()).is_false()
+	assert_bool(_errors({"story": {"start": "a", "end": "", "end_time_limit": "c"}}).is_empty()).is_false()
+	assert_bool(_errors({"story": {"start": "a", "end": "b", "end_time_limit": "c", "middle": "d"}}).is_empty()).is_false()
+	var data := E.def("x")
+	data.erase("story")
+	assert_bool(E.parse([data]).is_ok()).is_false()
+
+
 func test_event_must_act_through_known_modifiers() -> void:
 	assert_bool(_errors({"modifiers": []}).is_empty()).is_false()
 	assert_bool(_errors({"modifiers": [{"target": "climate.rain", "operation": "multiply", "value": 1}]}).is_empty()).is_false()
