@@ -241,6 +241,57 @@ Gracz musi rozpoznać kryzys, żeby dobrać narzędzie.
 Lustra i pył były w kryzysie prawie zawsze szkodliwe (młot zamiast
 skalpela); rozwiązane poziomami siły (opcja C, niżej).
 
+## Czy zasiew wymarłego gatunku daje zysk? (pomiar 2026-10-05)
+
+`intervention_report.gd --at extinction`: akcja w pierwszym wymarciu po
+ticku 1500, `seed_species:$extinct` zasiewa właśnie ten gatunek.
+3 archetypy × 5 seedów, 14 przebiegów z wymarciem, średnie z 2000 ticków.
+
+| Akcja przy wymarciu | Cena | Zysk | Śr. Δ biomasy |
+|---|---|---|---|
+| Zasiew wymarłego gatunku | 6 | 8 | +1,79 |
+| Lustra lekko | 4 | 6 | +0,21 |
+| Wody podziemne | 2 | 1 | −0,09 |
+
+- mchy: zysk w 7 z 8 przypadków (np. chaotyczna seed 4: średnio 3,0
+  żyjących gatunków zamiast 2,0; harmonijna seed 2, krzewy: biomasa
+  25,6 zamiast 15,9)
+- krzewy i drzewa często giną ponownie: wszystkie 6 „cen” to ponowne
+  wymarcie zasianego gatunku, bo przyczyna (chłód, susza) nadal działa;
+  żyjących gatunków nie ubywa, więc nieudany zasiew jest lekcją, nie stratą
+
+To jest pętla warstwy rozgrywki: gracz czyta przyczynę w kronice
+(„Wymierają krzewy: za zimno.”), ocenia, czy minęła, i dopiero wtedy sieje.
+
+### Ryzyko: odruch „zawsze zasiej, co wymarło”
+
+Zasiew prawie nigdy nie szkodzi, a często pomaga, więc może stać się
+optymalną strategią zamiast decyzji. Dziś ogranicza go tylko cooldown
+(300 ticków) i ryzyko zmarnowania. Sygnał nadużycia: w kronikach graczy
+zasiew pojawia się po prawie każdym wymarciu, niezależnie od przyczyny.
+Możliwe poprawki, od najprostszej:
+
+1. **Dłuższy cooldown** (np. 300 → 800 ticków): jedna linijka w danych;
+   wymusza wybór, który gatunek przywrócić, ale nie uczy niczego nowego.
+2. **Cena w stanie planety**: zasiew zużywa część biomasy innego gatunku
+   (np. poprzednika) albo tlenu; przywrócenie ma koszt, który widać
+   w kronice i który może wywołać kolejny kryzys.
+3. **Słabszy zasiew w złych warunkach**: zasiana populacja zależy od
+   przydatności środowiska (`amount × suitability`), więc siew wbrew
+   przyczynie wymarcia daje prawie nic; nagradza czytanie przyczyny
+   zamiast odruchu.
+4. **Malejące przychody** (wzór G z analizy soft capów):
+   `siła = bazowa / (1 + 0,5 · n)`, n = zasiewy tego gatunku w ostatnich
+   2000 ticków; kronika może to opowiedzieć („mchy słabo się przyjmują”).
+5. **Bank nasion**: ograniczona liczba zasiewów, odnawiana np. przy
+   pojawieniu się nowego gatunku; najsilniejsza zmiana, wprowadza zasób,
+   więc dopiero gdy 1-4 nie wystarczą (DESIGN_PRINCIPLES: brak ekonomii
+   zasobów jako celu).
+
+Rekomendacja: najpierw 3 (najbardziej „ekologiczna”, wzmacnia pętlę
+obserwacji), potem 1 jako regulacja tempa. Wprowadzać dopiero po
+zobaczeniu nadużycia w prawdziwej grze.
+
 # Poziomy siły (decyzja C, 2026-10-05)
 
 Interwencja z modyfikatorami może mieć `levels` w danych:

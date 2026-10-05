@@ -1,7 +1,7 @@
 extends SceneTree
 ## Fun check for interventions (docs/gameplay.md): does every action change
 ## the planet's story, does it have a price, and is any action always best?
-##   godot --headless --path godot -s res://simulation/tests/tools/intervention_report.gd -- [--seeds N] [--at decision] [--actions a,b]
+##   godot --headless --path godot -s res://simulation/tests/tools/intervention_report.gd -- [--seeds N] [--at decision|extinction] [--actions a,b]
 ## For every archetype and seed: run to the act tick, save, then continue
 ## once without intervention and once per action, and compare what followed.
 ## The act tick is ACT_TICK, or with --at decision the first crisis after
@@ -9,6 +9,10 @@ extends SceneTree
 ## Outcomes are averaged over the watched window, not read at its end: the
 ## planet recovers within 1000-2500 ticks (intervention_trace.gd), so the
 ## end state hides what the player saw happen.
+## --at extinction acts at the first species dying out after WARM_UP;
+## "$extinct" in an action is replaced by that species (seed_species:$extinct
+## asks whether bringing a lost species back pays off). Runs without an
+## extinction are skipped.
 
 const ACT_TICK := 2500
 ## How long consequences are watched after the act.
@@ -44,14 +48,24 @@ class Recorder extends RunObserver:
 class CrisisWatch extends RunObserver:
 	var tick := -1
 	var what := ""
+	var species := ""
+	var types: Array[StringName]
+
+	func _init(types_value: Array[StringName]) -> void:
+		types = types_value
 
 	func attach(bus: EventBus) -> void:
 		bus.subscribe_all(_on_event)
 
 	func _on_event(event: SimEvent) -> void:
-		if tick == -1 and event.tick > WARM_UP and CRISES.has(event.type):
+		if tick == -1 and event.tick > WARM_UP and types.has(event.type):
 			tick = event.tick
-			what = "%s %s" % [event.type, event.data.get("id", event.data.get("species", ""))]
+			species = str(event.data.get("species", ""))
+			what = "%s %s" % [event.type, event.data.get("id", species)]
+
+
+## Species that died out at the act tick of the current run (--at extinction).
+var _extinct := ""
 
 
 class Outcome:
@@ -64,14 +78,14 @@ class Outcome:
 
 func _init() -> void:
 	var seeds := 3
-	var at_decision := false
+	var at_mode := ""
 	var actions: Array = ACTIONS
 	var args := OS.get_cmdline_user_args()
 	for i in args.size():
 		if args[i] == "--seeds" and i + 1 < args.size():
 			seeds = args[i + 1].to_int()
 		elif args[i] == "--at" and i + 1 < args.size():
-			at_decision = args[i + 1] == "decision"
+			at_mode = args[i + 1]
 		elif args[i] == "--actions" and i + 1 < args.size():
 			actions = Array(args[i + 1].split(","))
 	var started := Time.get_ticks_msec()
@@ -83,12 +97,16 @@ func _init() -> void:
 	for archetype: String in ARCHETYPES:
 		for seed_value in range(1, seeds + 1):
 			runs += 1
-			var save := _save_before_act(archetype, seed_value, at_decision)
+			var save := _save_before_act(archetype, seed_value, at_mode)
+			if save.is_empty():
+				runs -= 1
+				continue
 			var act_tick := int(save["tick"]) + 1
 			var base := _continue(archetype, seed_value, save, "", act_tick)
-			for action: String in actions:
+			for raw_action: String in actions:
+				var action := raw_action.replace("$extinct", _extinct)
 				var outcome := _continue(archetype, seed_value, save, action, act_tick)
-				var row: Array = totals[action]
+				var row: Array = totals[raw_action]
 				var changed := outcome.lines != base.lines
 				var priced := outcome.extinctions > base.extinctions or outcome.alive < base.alive - ALIVE_MARGIN \
 						or outcome.biomass < base.biomass * (1.0 - BIOMASS_MARGIN)
@@ -105,7 +123,7 @@ func _init() -> void:
 						outcome.extinctions, base.extinctions])
 	print("")
 	print("action               | changed | has a price | gains | avg Δbiomass | avg ΔT   (of %d runs, act %s, watched %d ticks)"
-			% [runs, "at the first crisis after tick %d" % WARM_UP if at_decision else "at tick %d" % ACT_TICK, WATCH])
+			% [runs, "at tick %d" % ACT_TICK if at_mode.is_empty() else "at the first %s after tick %d" % [at_mode, WARM_UP], WATCH])
 	for action: String in actions:
 		var row: Array = totals[action]
 		var verdict := "ALWAYS BEST" if row[2] == runs and row[1] == 0 else ("no effect" if row[0] < 2 else "")
@@ -127,16 +145,23 @@ func _run_info(planet: Dictionary) -> Dictionary:
 
 ## The save the actions branch from: the tick before ACT_TICK, or the end of
 ## the first crisis tick (the player decides after seeing it).
-func _save_before_act(archetype: String, seed_value: int, at_decision: bool) -> Dictionary:
+func _save_before_act(archetype: String, seed_value: int, at_mode: String) -> Dictionary:
 	var planet := _planet(archetype, seed_value)
 	var manager: SimulationManager = planet["manager"]
-	if not at_decision:
+	if at_mode.is_empty():
 		manager.run_ticks(ACT_TICK - 1)
 		return SaveSystem.capture(manager, _run_info(planet))
-	var watch := CrisisWatch.new()
+	var types: Array[StringName] = CRISES
+	if at_mode == "extinction":
+		types = [&"species_extinct"]
+	var watch := CrisisWatch.new(types)
 	manager.attach_log(watch)
 	while watch.tick == -1 and manager.tick() < 20000:
 		manager.step()
+	if watch.tick == -1:
+		print("%-10s seed %d: no %s, skipped" % [archetype, seed_value, at_mode])
+		return {}
+	_extinct = watch.species
 	print("%-10s seed %d crisis at tick %d: %s" % [archetype, seed_value, manager.tick(), watch.what])
 	return SaveSystem.capture(manager, _run_info(planet))
 
