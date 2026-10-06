@@ -31,6 +31,8 @@ var advisor: HintAdvisor
 var texts: ChronicleTexts
 ## The player's units for the planet's numbers and what the actions measured.
 var display: DisplayScale
+## What each species did to the planet since the last decision.
+var impact: SpeciesImpact
 var hints := true
 ## False when the game continues a save.
 var new_game := true
@@ -97,6 +99,11 @@ static func create(options: Dictionary, chronicle_line: Callable) -> SimResult:
 			if result.is_ok() and result.value != null:
 				session.manager.attach_log(result.value)
 	session.manager.attach_log(PlanetChronicle.new([LineSink.new(chronicle_line)], texts_read.value))
+	var species: Array[String] = []
+	for data in session._biosphere().species_list():
+		species.append(String(data.id))
+	session.impact = SpeciesImpact.new(species)
+	session.manager.attach_log(session.impact)
 	session._load_watch()
 	return SimResult.success(session)
 
@@ -195,7 +202,9 @@ func planet_rows() -> Array[Dictionary]:
 	return rows
 
 
-## Each species: {"id", "name", "population", "lost", "shown", "change"}.
+## Each species: {"id", "name", "population", "lost", "shown", "change",
+## "effects"}; effects: what it did to the planet since the last decision,
+## {"id", "name", "change" (player's units), "shown"}, largest first.
 func life_rows() -> Array[Dictionary]:
 	var biosphere := _biosphere()
 	var rows: Array[Dictionary] = []
@@ -208,7 +217,7 @@ func life_rows() -> Array[Dictionary]:
 		var change := ""
 		if lost:
 			shown = "WYMARŁE"
-			change = "wymarły od ostatniej decyzji" if not _last_lost.get(id, true) and _last_tick != -1 else ""
+			change = "wymarły" if not _last_lost.get(id, true) and _last_tick != -1 else ""
 		elif _last_tick != -1:
 			if _last_lost.get(id, false):
 				change = "wróciły"
@@ -217,8 +226,61 @@ func life_rows() -> Array[Dictionary]:
 			elif population >= 0.5 or was >= 0.5:
 				change = trend(population - was, 0)
 		rows.append({"id": id, "name": texts.species.get(id, id), "population": population, "lost": lost,
-				"shown": shown, "change": change})
+				"shown": shown, "change": change,
+				# A species not yet established has done nothing worth showing.
+				"effects": [] if shown == "–" else species_effects(id)})
 	return rows
+
+
+## The rest of the change since the last decision, beside life_rows effects:
+## [{"id": SpeciesImpact.PLANET or PLAYER, "name", "effects"}], only groups
+## that did something worth showing.
+func other_effects() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for pair: Array in [[SpeciesImpact.PLANET, "Reszta planety (skały, oceany, pogoda, zdarzenia)"],
+			[SpeciesImpact.PLAYER, "Twoje akcje"]]:
+		var effects := species_effects(pair[0])
+		if not effects.is_empty():
+			rows.append({"id": pair[0], "name": pair[1], "effects": effects})
+	return rows
+
+
+## What a species (or SpeciesImpact.PLANET / PLAYER) did since the last
+## decision, in the player's units. Every share converts at the same rate
+## (_unit_rate), so the shares of a parameter add up to its change in the
+## planet table. Changes that round to nothing are left out.
+func species_effects(species: String) -> Array[Dictionary]:
+	var snapshot := manager.snapshot()
+	var schema := snapshot.schema()
+	var sums := impact.sums(species)
+	var effects: Array[Dictionary] = []
+	for i in schema.size():
+		var id := String(schema.def_at(i).id())
+		if not sums.has(id):
+			continue
+		var amount := float(sums[id]) * _unit_rate(id, i, snapshot.get_value_at(i))
+		var text := trend(amount, display.decimals(id))
+		if text == "=":
+			continue
+		var unit := display.unit(id)
+		effects.append({"id": id, "name": display.label(id, schema.def_at(i).display_name()), "change": amount,
+				"shown": text.replace("↑ ", "+").replace("↓ ", "−") + ("" if unit.is_empty() else " " + unit)})
+	effects.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return absf(a["change"]) > absf(b["change"]))
+	return effects
+
+
+## Player's units per point of the 0-100 scale over the path the parameter
+## took since the last decision (its average slope); the local slope when it
+## barely moved or before the first decision.
+func _unit_rate(id: String, index: int, now: float) -> float:
+	if index < _last_values.size() and absf(now - _last_values[index]) > 0.01:
+		return display.change(id, _last_values[index], now) / (now - _last_values[index])
+	return display.difference(id, 1.0, now)
+
+
+## "Tlen +0.4 % atmosfery, Dwutlenek węgla −30 ppm" from species_effects.
+static func effects_text(effects: Array) -> String:
+	return ", ".join(PackedStringArray(effects.map(func(e: Dictionary) -> String: return "%s %s" % [e["name"], e["shown"]])))
 
 
 ## Marks the current state as "the previous decision" for the next trends.
@@ -232,6 +294,7 @@ func remember() -> void:
 		_last_populations[String(species.id)] = biosphere.population(species.id)
 		_last_lost[String(species.id)] = biosphere.is_lost(species.id)
 	_last_tick = manager.tick()
+	impact.reset()
 
 
 ## Hints for the current decision point; act_label(act) says how the player

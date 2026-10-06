@@ -183,3 +183,53 @@ func test_a_game_loaded_in_the_middle_of_an_action_still_watches_it() -> void:
 	assert_str(rows[0]["phase"]).is_equal("running")
 	assert_int(rows[0]["remaining"]).is_equal(500 - (loaded.tick() - 131))
 
+
+
+## Played to the n-th decision point; returns the planet values (0-100) of the
+## decision before it, the start of the trends shown at the n-th.
+func _play_to(game: GameSession, decisions: int) -> Dictionary:
+	var before := {}
+	for i in decisions:
+		before.clear()
+		for row in game.planet_rows():
+			before[row["id"]] = row["value"]
+		game.remember()
+		game.begin_round()
+		game.step(20000)
+	return before
+
+
+func test_species_effects_name_who_made_the_oxygen() -> void:
+	var game := _session()
+	_play_to(game, 6)
+	var algae: Dictionary = game.life_rows().filter(func(row: Dictionary) -> bool: return row["id"] == "algae")[0]
+	var oxygen: Array = (algae["effects"] as Array).filter(func(e: Dictionary) -> bool: return e["id"] == "oxygen")
+	assert_array(oxygen).has_size(1)
+	assert_float(oxygen[0]["change"]).is_greater(0.0)
+	assert_str(oxygen[0]["shown"]).starts_with("+").ends_with(" % atmosfery")
+
+
+## The shares of life, the player and the planet add up to the change the
+## planet table shows (nothing saturated on this path).
+func test_shares_add_up_to_the_change_since_the_last_decision() -> void:
+	var game := _session()
+	var before := _play_to(game, 6)
+	var groups: Array = game.life_rows().map(func(row: Dictionary) -> Array: return row["effects"])
+	groups.append_array(game.other_effects().map(func(row: Dictionary) -> Array: return row["effects"]))
+	for param: String in ["oxygen", "co2"]:
+		var total := 0.0
+		for effects: Array in groups:
+			for effect: Dictionary in effects:
+				if effect["id"] == param:
+					total += effect["change"]
+		var now: float = game.planet_rows().filter(func(row: Dictionary) -> bool: return row["id"] == param)[0]["value"]
+		var shown := game.display.change(param, before[param], now)
+		assert_float(total).override_failure_message("%s: shares %f, change %f" % [param, total, shown]) \
+				.is_equal_approx(shown, maxf(0.2, absf(shown) * 0.01))
+
+
+func test_a_species_not_yet_here_shows_no_effect() -> void:
+	var game := _session()
+	_play_to(game, 1)
+	var trees: Dictionary = game.life_rows().filter(func(row: Dictionary) -> bool: return row["id"] == "tree")[0]
+	assert_array(trees["effects"]).is_empty()

@@ -117,7 +117,11 @@ func screen() -> String:
 		lines.append("  %-20s %16s   %s" % [row["name"], row["shown"], row["change"]])
 	lines.append("Życie:")
 	for row in _game.life_rows():
-		lines.append("  %-10s %7s   %s" % [row["name"], row["shown"], row["change"]])
+		var effects := GameSession.effects_text(row["effects"])
+		lines.append(("  %-10s %7s   %-8s %s" % [row["name"], row["shown"], row["change"],
+				"" if effects.is_empty() else "wpływ: " + effects]).strip_edges(false, true))
+	for row in _game.other_effects():
+		lines.append("  %s: %s" % [row["name"], GameSession.effects_text(row["effects"])])
 	lines.append_array(_watch_lines())
 	_game.remember()
 	if _game.hints:

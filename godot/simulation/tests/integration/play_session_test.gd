@@ -109,7 +109,7 @@ func test_second_screen_shows_what_changed_since_the_first() -> void:
 
 func test_species_that_died_since_the_last_decision_is_marked() -> void:
 	_session(["", "0", "1", "3", "", "q"]).play()
-	assert_str(_text()).contains("mchy       WYMARŁE   wymarły od ostatniej decyzji")
+	assert_str(_text()).contains("mchy       WYMARŁE   wymarły")
 
 
 func test_trend_shows_direction_and_hides_noise() -> void:
@@ -143,3 +143,10 @@ func test_goal_progress_is_saved_with_the_game() -> void:
 	_session(["", "3", "1", "", "q"]).play()
 	var saved: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ProjectSettings.globalize_path(SAVE)))
 	assert_int(int(saved["extras"]["goals"]["interventions"])).is_equal(1)
+
+
+func test_screen_shows_what_each_species_and_the_planet_did() -> void:
+	_session(["", "0", "q"]).play()
+	var text := _text()
+	assert_str(text).contains("bakterie        15   ↑ 14     wpływ: ")
+	assert_str(text).contains("Reszta planety (skały, oceany, pogoda, zdarzenia): ")
