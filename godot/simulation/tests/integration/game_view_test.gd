@@ -11,6 +11,8 @@ var _view: GameView
 func _open(args: Array = ["--seed", "13"]) -> GameView:
 	var options: Dictionary = PlaySession.parse_args(PackedStringArray(args + ["--save", SAVE])).value
 	options["file_logs"] = false
+	# These tests cover the decision-point flow; the live mode has its own suite.
+	options["live"] = false
 	_view = GameView.new()
 	_view.options = options
 	add_child(_view)
@@ -82,10 +84,10 @@ func test_speeds_follow_the_buttons() -> void:
 	assert_int(view.session.manager.scheduler().speed()).is_equal(GameView.SPEEDS[-1])
 
 
-## Players used x1000 to skip the game; the window offers 5-100 and starts at 10.
+## Players used x1000 to skip the game; the window offers 5-100 and starts at 25.
 func test_window_offers_watching_speeds_only() -> void:
-	assert_array(GameView.SPEEDS).is_equal([5, 10, 25, 100])
-	assert_int(GameView.DEFAULT_SPEED).is_equal(10)
+	assert_array(GameView.SPEEDS).is_equal([5, 10, 25, 50, 100])
+	assert_int(GameView.DEFAULT_SPEED).is_equal(25)
 	var config: SimConfig = SimConfig.load_json(SimConfig.DEFAULT_PATH).value
 	for speed: int in GameView.SPEEDS:
 		assert_bool(config.speed_multipliers().has(speed)).override_failure_message("x%d not in sim_config" % speed).is_true()

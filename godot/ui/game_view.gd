@@ -15,8 +15,14 @@ extends Control
 
 ## Time speeds offered to the player (ticks per second at base rate 1). No
 ## x1000: players used it to skip the game instead of watching the planet.
-const SPEEDS: Array[int] = [5, 10, 25, 100]
-const DEFAULT_SPEED := 10
+const SPEEDS: Array[int] = [5, 10, 25, 50, 100]
+const DEFAULT_SPEED := 25
+## What the player reads before a live game starts.
+const LIVE_INTRO := "Creator patrzy Ci przez ramię. Ludzkość założyła się, że byle głupiec z boskimi mocami potrafi stworzyć życie. " \
+		+ "Masz 200 lat, żeby ją przekonać. Jesteś Praktykantem: zbieraj Iskry z bąbelków nad globem, kupuj za nie perki i prowadź planetę, " \
+		+ "póki żyje."
+const LIVE_RUNNING_TEXT := "Planeta biegnie sama. Zbieraj Iskry z bąbelków, kupuj perki po prawej i działaj, kiedy chcesz; możesz też wstrzymać grę."
+const RUNNING_TEXT := "Gra sama się zatrzyma, gdy wydarzy się coś ważnego. Możesz też ją zatrzymać i działać."
 ## The layout is built for this size and scales with the window (project
 ## stretch settings); nothing inside may ask for more.
 const BASE_SIZE := Vector2(1366, 800)
@@ -43,6 +49,11 @@ var _at_decision := false
 var _last_sample_tick := -SAMPLE_EVERY
 
 var _info: Label
+var _sparks_label: Label
+var _perks: PerkPanel
+var _bubbles: BubbleLayer
+## How many of session.warnings are in the chronicle already.
+var _warnings_shown := 0
 var _pause_button: Button
 var _speed_buttons: Array[Button] = []
 var _planet: PlanetView
@@ -96,6 +107,8 @@ func _ready() -> void:
 ## Opens a game with play.sh options and shows it (intro for a new game).
 func open_game(game_options: Dictionary) -> void:
 	options = game_options
+	# A game in the window runs live unless the options say otherwise.
+	options["live"] = options.get("live", true)
 	if _new_game_box != null:
 		_new_game_box.queue_free()
 		_new_game_box = null
@@ -111,8 +124,10 @@ func open_game(game_options: Dictionary) -> void:
 		if CHART_PARAMS.has(row["id"]):
 			_chart.add_series(row["id"], row["name"])
 	_build_actions()
+	_bubbles.setup(_planet, session.bubbles)
 	for warning in session.warnings:
 		_on_chronicle_line("UWAGA: " + warning)
+	_warnings_shown = session.warnings.size()
 	if session.new_game:
 		_show_intro()
 	else:
@@ -179,16 +194,25 @@ func start() -> void:
 	_scheduler.resume()
 	_running = true
 	_decision_title.text = "Planeta żyje…"
-	_decision_text.text = "Gra sama się zatrzyma, gdy wydarzy się coś ważnego. Możesz też ją zatrzymać i działać."
+	_decision_text.text = _running_text()
 	_continue_button.visible = false
 	_continue_button.text = "Dalej ▶"
 	_refresh()
 
 
+func _running_text() -> String:
+	return LIVE_RUNNING_TEXT if session.live else RUNNING_TEXT
+
+
 func _process(delta: float) -> void:
-	if session == null or not _running or _at_decision:
+	if session == null:
 		return
-	advance(_scheduler.advance(delta))
+	if _running and not _at_decision:
+		# Bubbles age only while the planet runs: a pause never costs Sparks.
+		session.update_bubbles(delta)
+		advance(_scheduler.advance(delta))
+	# The globe turns even in a pause, and the bubbles ride on it.
+	_bubbles.refresh()
 
 
 ## Runs up to `ticks` ticks of the current round, then updates the view.
@@ -204,6 +228,10 @@ func advance(ticks: int) -> void:
 			break
 	if session.round_over():
 		_enter_decision()
+	# Warnings that came up while playing (an autosave that failed).
+	while _warnings_shown < session.warnings.size():
+		_on_chronicle_line("UWAGA: " + session.warnings[_warnings_shown])
+		_warnings_shown += 1
 	_refresh()
 
 
@@ -243,7 +271,7 @@ func _enter_decision() -> void:
 
 func _show_intro() -> void:
 	_decision_title.text = "Witaj w Genesis Error"
-	_decision_text.text = "\n".join(session.advisor.intro) \
+	_decision_text.text = (LIVE_INTRO if session.live else "\n".join(session.advisor.intro)) \
 			+ "\n\nCo jest do zdobycia: cel główny, gwiazdki i ambicje są pod przyciskiem „Cele” na górze okna."
 	_continue_button.text = "Zacznij ▶"
 	_continue_button.visible = true
@@ -263,7 +291,7 @@ func toggle_pause() -> void:
 	if _running:
 		_scheduler.resume()
 		_decision_title.text = "Planeta żyje…"
-		_decision_text.text = "Gra sama się zatrzyma, gdy wydarzy się coś ważnego. Możesz też ją zatrzymać i działać."
+		_decision_text.text = _running_text()
 	else:
 		_scheduler.pause()
 		_decision_title.text = "PAUZA · tick %d · rok %d" % [session.tick(), session.year()]
@@ -340,6 +368,46 @@ func act(id: String) -> SimResult:
 	return submitted
 
 
+## Picks a bubble (a click on the globe). The Sparks land on the next tick.
+func collect_bubble(id: int) -> SimResult:
+	var collected := session.collect_bubble(id)
+	if not collected.is_ok():
+		_on_chronicle_line("Nie da się: %s" % ", ".join(collected.errors))
+	_refresh()
+	return collected
+
+
+## Buys a perk of the shop; it works from the next tick.
+func buy_perk(id: String) -> SimResult:
+	return _perk_done(session.buy_perk(id))
+
+
+func refund_perk(id: String) -> SimResult:
+	return _perk_done(session.refund_perk(id))
+
+
+func _perk_done(done: SimResult) -> SimResult:
+	if done.is_ok():
+		_on_chronicle_line("Zrobione: %s." % done.value)
+	else:
+		_on_chronicle_line("Nie da się: %s" % ", ".join(done.errors))
+	_refresh()
+	return done
+
+
+## "Iskry: 12", as the top bar shows them.
+func sparks_text() -> String:
+	return _sparks_label.text
+
+
+func bubble_layer() -> BubbleLayer:
+	return _bubbles
+
+
+func perk_panel() -> PerkPanel:
+	return _perks
+
+
 ## The error shown instead of the game (empty when the game runs).
 func error_text() -> String:
 	return _error.text if _error.visible else ""
@@ -359,7 +427,11 @@ func decision_text() -> String:
 
 ## What an action's button says (its name, and the wait while it recharges).
 func action_text(id: String) -> String:
-	return (_action_rows[id]["button"] as Button).text
+	return action_button(id).text
+
+
+func action_button(id: String) -> Button:
+	return _action_rows[id]["button"]
 
 
 ## What the value label of a parameter shows, in the player's units.
@@ -439,16 +511,23 @@ func _refresh() -> void:
 	_others.visible = not _others.text.is_empty()
 	_planet.show_state(values, populations)
 	_goals.text = "\n".join(_goal_lines())
-	var allowed := session.tick() > 0 and (_at_decision or not _running)
+	var allowed := session.tick() > 0 and (session.live or _at_decision or not _running)
 	for action in session.actions():
 		var row: Dictionary = _action_rows.get(action["id"], {})
 		if row.is_empty():
 			continue
 		var button: Button = row["button"]
+		if session.live and not action["unlocked"]:
+			button.disabled = true
+			button.tooltip_text = "%s\nOdblokuje ją perk „%s”." % [action["help"], action["unlock_perk"]]
+			button.text = "%s (wymaga: %s)" % [action["name"], action["unlock_perk"]]
+			continue
 		var wait := time_text(int(action["ready_in"]))
 		button.disabled = not allowed or not action["ready"]
 		button.tooltip_text = action["help"] + ("" if action["ready"] else "\nGotowe za %s%s." % [wait, _speed_note()])
 		button.text = action["name"] + ("" if action["ready"] else " (%s)" % wait)
+	_sparks_label.text = "Iskry: %d" % session.sparks()
+	_perks.refresh(session.perk_rows(), session.sparks())
 	_update_watch()
 
 
@@ -554,7 +633,7 @@ func _show_error(text: String) -> void:
 
 ## Widths of the side columns; the globe and the console take the rest.
 const LEFT_WIDTH := 400.0
-const RIGHT_WIDTH := 250.0
+const RIGHT_WIDTH := 290.0
 const CONSOLE_HEIGHT := 240.0
 const SMALL_FONT := 14
 
@@ -584,6 +663,12 @@ func _build() -> void:
 	_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_info.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	top.add_child(_info)
+	_sparks_label = Label.new()
+	_sparks_label.text = "Iskry: 0"
+	_sparks_label.add_theme_font_size_override("font_size", 18)
+	_sparks_label.add_theme_color_override("font_color", Color("f2c14e"))
+	_sparks_label.tooltip_text = "Iskry zbierasz z bąbelków nad globem; kupujesz za nie perki."
+	top.add_child(_sparks_label)
 
 	var main := HBoxContainer.new()
 	main.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -666,6 +751,10 @@ func _build_center(parent: Control) -> void:
 	_planet = PlanetView.new()
 	_planet.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	center.add_child(_planet)
+	_bubbles = BubbleLayer.new()
+	_bubbles.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_planet.add_child(_bubbles)
+	_bubbles.bubble_pressed.connect(collect_bubble)
 	var console := HBoxContainer.new()
 	console.custom_minimum_size = Vector2(0, CONSOLE_HEIGHT)
 	console.add_theme_constant_override("separation", 8)
@@ -709,6 +798,14 @@ func _build_right(parent: Control) -> void:
 	right.custom_minimum_size = Vector2(RIGHT_WIDTH, 0)
 	right.add_theme_constant_override("separation", 6)
 	parent.add_child(right)
+	var small := Theme.new()
+	small.default_font_size = SMALL_FONT
+	_perks = PerkPanel.new()
+	_perks.theme = small
+	_perks.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_perks.buy_requested.connect(buy_perk)
+	_perks.refund_requested.connect(refund_perk)
+	right.add_child(_perks)
 	right.add_child(_title_label("Akcje"))
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
