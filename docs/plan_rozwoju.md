@@ -32,6 +32,21 @@ na minutę bez podpowiedzi, bot wygrywa 40-60% partii, co najmniej 3 z 5
 testerów zaczyna drugą partię bez zachęty, każda Próba jest zapowiedziana
 i ma przeciwdziałanie.
 
+### Stan po Etapie 1 (2026-10-06)
+
+- Działa: bąbelki Iskier nad globusem (ambient, odkrycie gatunku, rozkwit),
+  konto Iskier z dochodem pasywnym od biomasy, sklep z 10 perkami w oknie,
+  blokada działań perkami i tryb live bez punktów decyzyjnych z autozapisem
+  co 1000 ticków.
+- Uruchomienie: `./godot/play_window.sh` (tryb live). Perki i pomiary:
+  `docs/perks.md`.
+- Pomiar (`perk_economy_test.gd`, doskonały gracz, seedy 13 i 42, 30 000
+  ticków): pierwszy zakup w ticku 123-131, wszystkie 10 perków w ticku
+  11602-18402, 134-143 przyznane Iskry, ok. 3,0 bąbelka na 1000 ticków
+  (4,5-4,6 na minutę przy x25, ok. 9 przy x50). `ambient.every_ticks`
+  skrócono z 600 do 400, by przy x25 trafić w cel 4-6 na minutę.
+- Następny plan: Etap 2, zasięg na kontynentach i wybór lądowania.
+
 Poniższe rozdziały 1-3 to historia i pomiary sprzed zmiany. Etapy A-E
 są zastąpione. Rozdział 4 (zasady i pułapki) nadal obowiązuje.
 
