@@ -124,7 +124,7 @@ func apply_command(command: SimCommand) -> Array[SimCommand]:
 		emit_event(BOUGHT_EVENT, {"id": String(def.id), "name": def.name, "story": def.story["bought"],
 				"cost": def.cost, "sparks": _sparks})
 	else:
-		var refund := _refund_of(def)
+		var refund := refund_of(def)
 		_sparks += float(refund)
 		_owned.erase(def.id)
 		_to_register.erase(def.id)
@@ -163,7 +163,8 @@ func _register(perk_id: StringName, registry: ModifierRegistry) -> void:
 			registry.add(modifier)
 
 
-func _refund_of(def: PerkDef) -> int:
+## What refunding the perk pays back, whole Sparks.
+func refund_of(def: PerkDef) -> int:
 	return int(floorf(float(def.cost) * _catalog.refund_ratio + REFUND_EPSILON))
 
 

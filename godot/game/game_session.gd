@@ -12,6 +12,8 @@ extends RefCounted
 ## Ticks without a decision point before a round ends anyway (quiet planet).
 const ROUND_LIMIT := 5000
 const TICKS_PER_YEAR := 360
+## In live mode the game saves itself whenever the tick crosses a multiple of this.
+const AUTOSAVE_TICKS := 1000
 
 
 ## A log sink that hands every line to a Callable (console print, window text).
@@ -33,6 +35,11 @@ var texts: ChronicleTexts
 var display: DisplayScale
 ## What each species did to the planet since the last decision.
 var impact: SpeciesImpact
+## Collectible bubbles over the globe: where Sparks come from.
+var bubbles: BubbleField
+## Live mode: the window plays without pausing; no round ever ends at a
+## decision point, actions wait for their perk and the game autosaves.
+var live := false
 var hints := true
 ## False when the game continues a save.
 var new_game := true
@@ -78,6 +85,7 @@ static func create(options: Dictionary, chronicle_line: Callable) -> SimResult:
 	session.advisor.scale = session.display
 	session.texts.number_format = session._chronicle_number
 	session.hints = options.get("hints", true)
+	session.live = options.get("live", false)
 	session.new_game = not opened.value["loaded"]
 	session.warnings = opened.value["warnings"]
 	var config: SimConfig = opened.value["config"]
@@ -87,6 +95,17 @@ static func create(options: Dictionary, chronicle_line: Callable) -> SimResult:
 	session.goals = GoalTracker.new(goals_read.value, session.manager, String(session._run["personality"]))
 	session.goals.load_state(session._run.get("extras", {}).get("goals", {}))
 	session.manager.attach_log(session.goals)
+	var biosphere := session._biosphere()
+	var species: Array[String] = []
+	for data in biosphere.species_list():
+		species.append(String(data.id))
+	var bubbles_read := BubbleField.load_json(BubbleField.DEFAULT_PATH, session.manager.config().seed(), species,
+			func(id: String) -> float: return biosphere.population(StringName(id)))
+	if not bubbles_read.is_ok():
+		return bubbles_read
+	session.bubbles = bubbles_read.value
+	session.bubbles.load_state(session._run.get("extras", {}).get("bubbles", {}))
+	session.manager.attach_log(session.bubbles)
 	# On disk: the chronicle of the game; the full technical logs only with
 	# --full-logs (a long game writes hundreds of MB of them). Tests switch
 	# files off with "file_logs": false.
@@ -99,9 +118,6 @@ static func create(options: Dictionary, chronicle_line: Callable) -> SimResult:
 			if result.is_ok() and result.value != null:
 				session.manager.attach_log(result.value)
 	session.manager.attach_log(PlanetChronicle.new([LineSink.new(chronicle_line)], texts_read.value))
-	var species: Array[String] = []
-	for data in session._biosphere().species_list():
-		species.append(String(data.id))
 	session.impact = SpeciesImpact.new(species)
 	session.manager.attach_log(session.impact)
 	session._load_watch()
@@ -127,6 +143,10 @@ static func _load_display(manager: SimulationManager) -> SimResult:
 
 ## Starts watching for the next decision point from the current tick.
 func begin_round() -> void:
+	if live:
+		# The game never stops for a decision: nothing to watch for.
+		_round_start = manager.tick()
+		return
 	var catalog := hand().catalog()
 	_watcher = DecisionWatcher.new(catalog.decision_events, catalog.decision_grace, manager.tick(), texts,
 			manager.snapshot().schema())
@@ -135,26 +155,34 @@ func begin_round() -> void:
 
 
 ## Runs up to max_ticks ticks, stopping when the round is over. Returns how
-## many ran.
+## many ran. In live mode it saves the game each time the tick crosses a
+## multiple of AUTOSAVE_TICKS.
 func step(max_ticks: int) -> int:
 	var executed := 0
 	while executed < max_ticks and not round_over():
+		var before := manager.tick()
 		if not manager.step():
 			break
 		executed += 1
+		if live and floori(float(manager.tick()) / AUTOSAVE_TICKS) > floori(float(before) / AUTOSAVE_TICKS):
+			var saved := save()
+			if not saved.is_ok():
+				warnings.append("Autozapis się nie udał: %s" % "; ".join(saved.errors))
 	return executed
 
 
 ## A decision point was reached, the planet stayed quiet for ROUND_LIMIT
-## ticks, or the simulation halted.
+## ticks, or the simulation halted. Live mode ends only when it halts.
 func round_over() -> bool:
+	if live:
+		return manager.is_halted()
 	return _watcher == null or _watcher.reached() or manager.is_halted() \
 			or manager.tick() - _round_start >= ROUND_LIMIT
 
 
 ## The event that made the decision point, or null (quiet checkpoint).
 func decision_point() -> SimEvent:
-	return null if _watcher == null else _watcher.point()
+	return null if live or _watcher == null else _watcher.point()
 
 
 ## The chronicle sentences of the decision tick, without "[Tick N]".
@@ -164,9 +192,9 @@ func decision_sentences() -> PackedStringArray:
 	return PackedStringArray(Array(_watcher.sentences()).map(func(s: String) -> String: return s.substr(s.find("] ") + 2)))
 
 
-## Saves the game; goals ride along so progress survives a load.
+## Saves the game; goals and bubble milestones ride along so progress survives a load.
 func save() -> SimResult:
-	_run["extras"] = {"goals": goals.save_state()}
+	_run["extras"] = {"goals": goals.save_state(), "bubbles": bubbles.save_state()}
 	return _saver.save_to(save_path)
 
 
@@ -305,7 +333,8 @@ func hint_lines(act_label: Callable) -> PackedStringArray:
 
 ## Every intervention: {"id", "name", "help", "ready", "ready_at", "ready_in"
 ## (ticks until it can be used; 0 when ready), "species" (needs a species),
-## "levels" ([[id, name], ...]), "default_level"}.
+## "levels" ([[id, name], ...]), "default_level", "unlocked" (free or its perk
+## is owned), "unlock_perk" (the perk's name, "" for a free action)}.
 func actions() -> Array[Dictionary]:
 	var catalog := hand().catalog()
 	var list: Array[Dictionary] = []
@@ -315,9 +344,11 @@ func actions() -> Array[Dictionary]:
 		for level: String in def.levels:
 			levels.append([level, def.levels[level]["name"]])
 		var ready_at := hand().ready_at(id)
+		var perk := perks().unlocking_perk(id)
 		list.append({"id": String(id), "name": def.name, "help": def.help, "ready_at": ready_at,
 				"ready": ready_at <= manager.tick() + 1, "ready_in": maxi(0, ready_at - manager.tick() - 1),
-				"species": def.args.has("species"), "levels": levels, "default_level": def.default_level})
+				"species": def.args.has("species"), "levels": levels, "default_level": def.default_level,
+				"unlocked": perks().unlocks(id), "unlock_perk": "" if perk == null else perk.name})
 	return list
 
 
@@ -387,6 +418,8 @@ func submit(id: String, args: Dictionary) -> SimResult:
 	var def := hand().catalog().get_def(StringName(id))
 	if def == null:
 		return SimResult.failure("nie ma akcji %s" % id)
+	if live and not perks().unlocks(def.id):
+		return SimResult.failure("%s wymaga perka „%s”." % [def.name, perks().unlocking_perk(def.id).name])
 	var ready := hand().ready_at(StringName(id))
 	if ready > manager.tick() + 1:
 		return SimResult.failure("%s jeszcze się odnawia: dostępne od ticku %d." % [def.name, ready])
@@ -446,8 +479,68 @@ static func ticks_word(count: int) -> String:
 	return "ticki" if last >= 2 and last <= 4 and (last_two < 12 or last_two > 14) else "ticków"
 
 
+## Whole Sparks the player holds.
+func sparks() -> int:
+	return floori(perks().sparks())
+
+
+## Every perk: {"id", "name", "help", "tree", "cost", "owned", "affordable"
+## (the Sparks cover the cost), "available" (requirements owned), "missing"
+## (names of the requirements not owned), "side_effect", "refund" (Sparks
+## back when refunded)}, in catalog order.
+func perk_rows() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for def in perks().catalog().defs():
+		var missing: Array[String] = []
+		for id in perks().missing_requirements(def.id):
+			missing.append(perks().catalog().get_def(id).name)
+		rows.append({"id": String(def.id), "name": def.name, "help": def.help, "tree": String(def.tree), "cost": def.cost,
+				"owned": perks().owns(def.id), "affordable": perks().sparks() >= float(def.cost), "available": missing.is_empty(),
+				"missing": missing, "side_effect": def.side_effect, "refund": perks().refund_of(def)})
+	return rows
+
+
+## Queues buying a perk for the next tick. Value on success: the perk's name.
+## The balance is checked now, so Sparks granted in the same tick do not count yet.
+func buy_perk(id: String) -> SimResult:
+	return _perk_command(PerkSystem.ACTION_BUY, id)
+
+
+## Queues a refund of a perk (part of its cost comes back). Value: its name.
+func refund_perk(id: String) -> SimResult:
+	return _perk_command(PerkSystem.ACTION_REFUND, id)
+
+
+func _perk_command(action: StringName, id: String) -> SimResult:
+	var submitted := manager.submit(PerkSystem.ID, action, {"perk": id})
+	if not submitted.is_ok():
+		return submitted
+	return SimResult.success(perks().catalog().get_def(StringName(id)).name)
+
+
+## Takes the bubble and queues its Sparks for the next tick. Value: how many.
+## A bubble gone already (a double click, or it expired) pays nothing.
+func collect_bubble(id: int) -> SimResult:
+	var value := bubbles.collect(id)
+	if value == 0:
+		return SimResult.failure("Bąbelek już zniknął.")
+	var granted := manager.submit(PerkSystem.ID, PerkSystem.ACTION_GRANT, {"amount": value, "source": "bubble"})
+	if not granted.is_ok():
+		return granted
+	return SimResult.success(value)
+
+
+## Ages the bubbles by real seconds; the window calls it while the game runs.
+func update_bubbles(seconds: float) -> void:
+	bubbles.update(seconds)
+
+
 func hand() -> InterventionSystem:
 	return manager.system(InterventionSystem.ID) as InterventionSystem
+
+
+func perks() -> PerkSystem:
+	return manager.system(PerkSystem.ID) as PerkSystem
 
 
 func _biosphere() -> BiosphereSystem:
