@@ -1,8 +1,10 @@
 class_name GameView
 extends Control
-## The game in a window: the planet drawn live, its parameters over time,
-## life, the chronicle and goals; the run pauses itself at decision points
-## and the player acts with buttons. A debug-level visualization (CLAUDE.md:
+## The game in a window: the planet as a globe in the middle with the
+## decision and the chronicle under it, the planet's numbers and life (with
+## what each species did) on the left, actions in a column on the right and
+## charts behind a button; the run pauses itself at decision points and the
+## player acts with buttons. A debug-level visualization (CLAUDE.md:
 ## simulation -> logs -> debug visualization -> final visualization).
 ##
 ## The game is a GameSession, the same one the console plays; this node only
@@ -11,9 +13,14 @@ extends Control
 ## Without either (a double-clicked exported game) it starts with a
 ## new-game screen: random or chosen planet, its character, or the last save.
 
-## Time speeds offered to the player (ticks per second at base rate 1).
-const SPEEDS: Array[int] = [10, 100, 1000]
-const DEFAULT_SPEED := 100
+## Time speeds offered to the player (ticks per second at base rate 1). No
+## x1000: players used it to skip the game instead of watching the planet.
+const SPEEDS: Array[int] = [5, 10, 25, 100]
+const DEFAULT_SPEED := 10
+## The layout is built for this size and scales with the window (project
+## stretch settings); nothing inside may ask for more.
+const BASE_SIZE := Vector2(1366, 800)
+const MIN_WINDOW := Vector2i(1024, 600)
 ## Ticks between two chart samples.
 const SAMPLE_EVERY := 10
 const CHART_PARAMS: Array[String] = ["temperature", "humidity", "oxygen", "biomass", "co2"]
@@ -41,12 +48,18 @@ var _speed_buttons: Array[Button] = []
 var _planet: PlanetView
 var _chart: HistoryChart
 var _params: GridContainer
-var _life: GridContainer
+var _life: VBoxContainer
+## One per species, in life_rows order: {"bar", "value", "change", "effects"}.
+var _life_cells: Array[Dictionary] = []
+## The rest of the change: the planet itself and the player's actions.
+var _others: Label
 var _goals: RichTextLabel
 var _chronicle: RichTextLabel
 var _decision_title: Label
 var _decision_text: RichTextLabel
-var _actions: HFlowContainer
+var _actions: VBoxContainer
+## Holds the new-game controls under the decision text.
+var _decision_extra: VBoxContainer
 var _continue_button: Button
 var _action_rows := {}
 var _watch_box: VBoxContainer
@@ -55,13 +68,18 @@ var _watch_rows := {}
 var _param_ids: Array[String] = []
 var _zone_styles := {}
 var _error: Label
-var _new_game_box: HBoxContainer
+var _new_game_box: HFlowContainer
 var _seed_edit: LineEdit
 var _character: OptionButton
+var _goals_button: Button
+var _goals_dialog: AcceptDialog
+var _charts_dialog: AcceptDialog
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	if get_tree().current_scene == self:
+		get_window().min_size = MIN_WINDOW
 	_build()
 	if options.is_empty():
 		if command_line.is_empty():
@@ -88,6 +106,7 @@ func open_game(game_options: Dictionary) -> void:
 	session = created.value
 	_scheduler = session.manager.scheduler()
 	_scheduler.set_speed(DEFAULT_SPEED)
+	_planet.set_planet(session.manager.config().seed())
 	for row in session.planet_rows():
 		if CHART_PARAMS.has(row["id"]):
 			_chart.add_series(row["id"], row["name"])
@@ -104,8 +123,8 @@ func open_game(game_options: Dictionary) -> void:
 func _show_new_game() -> void:
 	_decision_title.text = "Genesis Error · nowa planeta"
 	_decision_text.text = "Każdy numer to inna planeta. Zostaw pole puste, żeby wylosować; ten sam numer daje zawsze tę samą planetę."
-	_new_game_box = HBoxContainer.new()
-	_actions.add_child(_new_game_box)
+	_new_game_box = HFlowContainer.new()
+	_decision_extra.add_child(_new_game_box)
 	var seed_label := Label.new()
 	seed_label.text = "Numer planety:"
 	_new_game_box.add_child(seed_label)
@@ -224,7 +243,8 @@ func _enter_decision() -> void:
 
 func _show_intro() -> void:
 	_decision_title.text = "Witaj w Genesis Error"
-	_decision_text.text = "\n".join(session.advisor.intro)
+	_decision_text.text = "\n".join(session.advisor.intro) \
+			+ "\n\nCo jest do zdobycia: cel główny, gwiazdki i ambicje są pod przyciskiem „Cele” na górze okna."
 	_continue_button.text = "Zacznij ▶"
 	_continue_button.visible = true
 	_at_decision = true
@@ -254,6 +274,50 @@ func toggle_pause() -> void:
 func set_speed(speed: int) -> void:
 	if session != null and _scheduler.set_speed(speed):
 		_refresh()
+
+
+## Everything there is to win, with what is already won (the console's "c").
+## The planet keeps its pace; the list only reads the goals.
+func show_goals() -> void:
+	if session == null:
+		return
+	_goals_dialog.dialog_text = session.goals.goals_text()
+	_goals_dialog.popup_centered(Vector2i(640, 0))
+
+
+## The charts of the planet's values over time (a curiosity next to the globe).
+func show_charts() -> void:
+	_charts_dialog.popup_centered(Vector2i(960, 520))
+
+
+func charts_visible() -> bool:
+	return _charts_dialog.visible
+
+
+## What a species did since the last decision, as its line under the life
+## table shows it ("" when nothing worth showing).
+func life_effects_text(species: String) -> String:
+	var life := session.life_rows()
+	for i in life.size():
+		if life[i]["id"] == species and i < _life_cells.size():
+			var label: Label = _life_cells[i]["effects"]
+			return label.text if label.visible else ""
+	return ""
+
+
+## What the globe shows now (PlanetView.look).
+func planet_look() -> Dictionary:
+	return _planet.current_look()
+
+
+## The planet's and the player's share of the change, as shown under life.
+func others_text() -> String:
+	return _others.text if _others.visible else ""
+
+
+## The text of the goals window (empty while it is closed).
+func goals_window_text() -> String:
+	return _goals_dialog.dialog_text if _goals_dialog.visible else ""
 
 
 ## Presses an action's button: the chosen species and level come from its
@@ -343,6 +407,7 @@ func _refresh() -> void:
 			running_text]
 	_pause_button.text = "Wznów ▶" if not _running and not _at_decision else "Pauza ⏸"
 	_pause_button.disabled = _at_decision
+	_goals_button.disabled = false
 	for button in _speed_buttons:
 		button.button_pressed = int(button.get_meta("speed")) == _scheduler.speed()
 	var values := {}
@@ -353,16 +418,26 @@ func _refresh() -> void:
 			var bar := _params.get_child(i * 4 + 1) as ProgressBar
 			var shown := _params.get_child(i * 4 + 2) as Label
 			bar.value = rows[i]["value"]
-			shown.text = rows[i]["shown"]
-			(_params.get_child(i * 4 + 3) as Label).text = rows[i]["change"]
+			_set_cell(shown, rows[i]["shown"])
+			_set_cell(_params.get_child(i * 4 + 3) as Label, rows[i]["change"])
 			_color_zone(bar, shown, rows[i]["zone"])
-	_planet.show_state(values)
 	var life := session.life_rows()
+	var populations := {}
 	for i in life.size():
-		if i * 4 + 3 < _life.get_child_count():
-			(_life.get_child(i * 4 + 1) as ProgressBar).value = life[i]["population"]
-			(_life.get_child(i * 4 + 2) as Label).text = life[i]["shown"]
-			(_life.get_child(i * 4 + 3) as Label).text = life[i]["change"]
+		populations[life[i]["id"]] = life[i]["population"]
+		if i < _life_cells.size():
+			var cells := _life_cells[i]
+			(cells["bar"] as ProgressBar).value = life[i]["population"]
+			_set_cell(cells["value"], life[i]["shown"])
+			_set_cell(cells["change"], life[i]["change"])
+			var effects := GameSession.effects_text(life[i]["effects"])
+			(cells["effects"] as Label).text = effects.replace(", ", " · ")
+			(cells["effects"] as Label).visible = not effects.is_empty()
+	_others.text = "
+".join(PackedStringArray(session.other_effects().map(func(row: Dictionary) -> String:
+			return "%s: %s" % [row["name"], GameSession.effects_text(row["effects"]).replace(", ", " · ")])))
+	_others.visible = not _others.text.is_empty()
+	_planet.show_state(values, populations)
 	_goals.text = "\n".join(_goal_lines())
 	var allowed := session.tick() > 0 and (_at_decision or not _running)
 	for action in session.actions():
@@ -375,6 +450,13 @@ func _refresh() -> void:
 		button.tooltip_text = action["help"] + ("" if action["ready"] else "\nGotowe za %s%s." % [wait, _speed_note()])
 		button.text = action["name"] + ("" if action["ready"] else " (%s)" % wait)
 	_update_watch()
+
+
+## A table cell has a fixed width so the layout never jumps; a text that does
+## not fit ends with "…" and shows whole under the mouse.
+func _set_cell(cell: Label, text: String) -> void:
+	cell.text = text
+	cell.tooltip_text = text
 
 
 ## The tick rate of the chosen speed in real time, also while paused: what a
@@ -470,6 +552,13 @@ func _show_error(text: String) -> void:
 
 # --- building the window -------------------------------------------------------
 
+## Widths of the side columns; the globe and the console take the rest.
+const LEFT_WIDTH := 400.0
+const RIGHT_WIDTH := 250.0
+const CONSOLE_HEIGHT := 240.0
+const SMALL_FONT := 14
+
+
 func _build() -> void:
 	var background := ColorRect.new()
 	background.color = Color("0d131b")
@@ -493,94 +582,16 @@ func _build() -> void:
 	_info = Label.new()
 	_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_info.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	top.add_child(_info)
-	for speed in SPEEDS:
-		var button := Button.new()
-		button.text = "x%d" % speed
-		button.toggle_mode = true
-		button.set_meta("speed", speed)
-		button.pressed.connect(set_speed.bind(speed))
-		_speed_buttons.append(button)
-		top.add_child(button)
-	_pause_button = Button.new()
-	_pause_button.text = "Pauza ⏸"
-	_pause_button.pressed.connect(toggle_pause)
-	top.add_child(_pause_button)
 
-	var middle := HBoxContainer.new()
-	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	middle.add_theme_constant_override("separation", 10)
-	root.add_child(middle)
-
-	var left := VBoxContainer.new()
-	left.custom_minimum_size = Vector2(280, 0)
-	middle.add_child(left)
-	_planet = PlanetView.new()
-	_planet.custom_minimum_size = Vector2(280, 280)
-	left.add_child(_planet)
-	_goals = RichTextLabel.new()
-	_goals.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_goals.fit_content = true
-	_goals.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	left.add_child(_goals)
-	_watch_box = VBoxContainer.new()
-	_watch_box.visible = false
-	left.add_child(_watch_box)
-	var watch_title := Label.new()
-	watch_title.text = "Działające akcje"
-	_watch_box.add_child(watch_title)
-
-	var center := VBoxContainer.new()
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	middle.add_child(center)
-	_chart = HistoryChart.new()
-	_chart.custom_minimum_size = Vector2(0, 200)
-	_chart.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	center.add_child(_chart)
-	var tables := HBoxContainer.new()
-	tables.add_theme_constant_override("separation", 20)
-	center.add_child(tables)
-	_params = _table(tables, "Planeta (zmiana od ostatniej decyzji)")
-	_life = _table(tables, "Życie (populacja 0-100)")
-
-	var right := VBoxContainer.new()
-	right.custom_minimum_size = Vector2(300, 0)
-	middle.add_child(right)
-	var chronicle_title := Label.new()
-	chronicle_title.text = "Kronika planety"
-	right.add_child(chronicle_title)
-	_chronicle = RichTextLabel.new()
-	_chronicle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_chronicle.scroll_following = true
-	_chronicle.selection_enabled = true
-	_chronicle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	right.add_child(_chronicle)
-
-	var decision := PanelContainer.new()
-	decision.custom_minimum_size = Vector2(0, 190)
-	root.add_child(decision)
-	var box := VBoxContainer.new()
-	decision.add_child(box)
-	var header := HBoxContainer.new()
-	box.add_child(header)
-	_decision_title = Label.new()
-	_decision_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_decision_title.add_theme_font_size_override("font_size", 16)
-	header.add_child(_decision_title)
-	_continue_button = Button.new()
-	_continue_button.text = "Dalej ▶"
-	_continue_button.visible = false
-	_continue_button.pressed.connect(_on_continue)
-	header.add_child(_continue_button)
-	_decision_text = RichTextLabel.new()
-	_decision_text.bbcode_enabled = true
-	_decision_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_decision_text.custom_minimum_size = Vector2(0, 70)
-	_decision_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_decision_text.scroll_active = true
-	box.add_child(_decision_text)
-	_actions = HFlowContainer.new()
-	box.add_child(_actions)
+	var main := HBoxContainer.new()
+	main.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main.add_theme_constant_override("separation", 10)
+	root.add_child(main)
+	_build_left(main)
+	_build_center(main)
+	_build_right(main)
 
 	_error = Label.new()
 	_error.visible = false
@@ -588,72 +599,265 @@ func _build() -> void:
 	_error.autowrap_mode = TextServer.AUTOWRAP_WORD
 	root.add_child(_error)
 
-
-## A titled 4-column table (name, bar, value, change) under `parent`.
-func _table(parent: Control, title_text: String) -> GridContainer:
-	var column := VBoxContainer.new()
-	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	parent.add_child(column)
-	var title := Label.new()
-	title.text = title_text
-	column.add_child(title)
-	var grid := GridContainer.new()
-	grid.columns = 4
-	grid.add_theme_constant_override("h_separation", 8)
-	column.add_child(grid)
-	return grid
+	_goals_dialog = AcceptDialog.new()
+	_goals_dialog.title = "Cele · co jest do zdobycia"
+	_goals_dialog.ok_button_text = "Zamknij"
+	_goals_dialog.dialog_autowrap = true
+	add_child(_goals_dialog)
+	_charts_dialog = AcceptDialog.new()
+	_charts_dialog.title = "Wykresy · planeta w czasie"
+	_charts_dialog.ok_button_text = "Zamknij"
+	add_child(_charts_dialog)
+	_chart = HistoryChart.new()
+	_chart.custom_minimum_size = Vector2(900, 440)
+	_charts_dialog.add_child(_chart)
 
 
-func _fill_table(grid: GridContainer, names: Array) -> void:
+## Left: the planet's numbers, life with what each species did, running
+## actions and goals. Scrolls, so it never makes the window taller.
+func _build_left(parent: Control) -> void:
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(LEFT_WIDTH, 0)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var small := Theme.new()
+	small.default_font_size = SMALL_FONT
+	scroll.theme = small
+	parent.add_child(scroll)
+	var left := VBoxContainer.new()
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.add_theme_constant_override("separation", 6)
+	scroll.add_child(left)
+	_params = GridContainer.new()
+	_params.columns = 4
+	_params.add_theme_constant_override("h_separation", 8)
+	left.add_child(_title_label("Planeta (zmiana od ostatniej decyzji)"))
+	left.add_child(_params)
+	left.add_child(_title_label("Życie (populacja 0-100) i jego wpływ od ostatniej decyzji"))
+	_life = VBoxContainer.new()
+	_life.add_theme_constant_override("separation", 2)
+	left.add_child(_life)
+	_others = Label.new()
+	_others.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_others.add_theme_color_override("font_color", Color("9fb4c8"))
+	_others.add_theme_font_size_override("font_size", 13)
+	left.add_child(_others)
+	_watch_box = VBoxContainer.new()
+	_watch_box.visible = false
+	left.add_child(_watch_box)
+	_watch_box.add_child(_title_label("Działające akcje"))
+	_goals = RichTextLabel.new()
+	_goals.fit_content = true
+	_goals.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	left.add_child(_goals)
+	var charts_button := Button.new()
+	charts_button.text = "Wykresy"
+	charts_button.tooltip_text = "Jak zmieniały się wartości planety w czasie."
+	charts_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	charts_button.pressed.connect(show_charts)
+	left.add_child(charts_button)
+
+
+## Middle: the globe, and under it the decision beside the chronicle.
+func _build_center(parent: Control) -> void:
+	var center := VBoxContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.add_theme_constant_override("separation", 8)
+	parent.add_child(center)
+	_planet = PlanetView.new()
+	_planet.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	center.add_child(_planet)
+	var console := HBoxContainer.new()
+	console.custom_minimum_size = Vector2(0, CONSOLE_HEIGHT)
+	console.add_theme_constant_override("separation", 8)
+	center.add_child(console)
+
+	var decision := PanelContainer.new()
+	decision.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	decision.size_flags_stretch_ratio = 1.3
+	console.add_child(decision)
+	var box := VBoxContainer.new()
+	decision.add_child(box)
+	_decision_title = Label.new()
+	_decision_title.add_theme_font_size_override("font_size", 16)
+	# A long title is cut, never widening the window.
+	_decision_title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	box.add_child(_decision_title)
+	_decision_text = RichTextLabel.new()
+	_decision_text.bbcode_enabled = true
+	_decision_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_decision_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_decision_text.scroll_active = true
+	box.add_child(_decision_text)
+	_decision_extra = VBoxContainer.new()
+	box.add_child(_decision_extra)
+
+	var chronicle := VBoxContainer.new()
+	chronicle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	console.add_child(chronicle)
+	chronicle.add_child(_title_label("Kronika planety"))
+	_chronicle = RichTextLabel.new()
+	_chronicle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_chronicle.scroll_following = true
+	_chronicle.selection_enabled = true
+	_chronicle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	chronicle.add_child(_chronicle)
+
+
+## Right: actions one under another, then time and the way on.
+func _build_right(parent: Control) -> void:
+	var right := VBoxContainer.new()
+	right.custom_minimum_size = Vector2(RIGHT_WIDTH, 0)
+	right.add_theme_constant_override("separation", 6)
+	parent.add_child(right)
+	right.add_child(_title_label("Akcje"))
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	right.add_child(scroll)
+	_actions = VBoxContainer.new()
+	_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_actions.add_theme_constant_override("separation", 6)
+	scroll.add_child(_actions)
+
+	right.add_child(_title_label("Tempo"))
+	var speeds := HBoxContainer.new()
+	right.add_child(speeds)
+	for speed in SPEEDS:
+		var button := Button.new()
+		button.text = "x%d" % speed
+		button.toggle_mode = true
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.set_meta("speed", speed)
+		button.pressed.connect(set_speed.bind(speed))
+		_speed_buttons.append(button)
+		speeds.add_child(button)
+	_pause_button = Button.new()
+	_pause_button.text = "Pauza ⏸"
+	_pause_button.pressed.connect(toggle_pause)
+	right.add_child(_pause_button)
+	_continue_button = Button.new()
+	_continue_button.text = "Dalej ▶"
+	_continue_button.visible = false
+	_continue_button.custom_minimum_size = Vector2(0, 44)
+	_continue_button.add_theme_font_size_override("font_size", 18)
+	_continue_button.pressed.connect(_on_continue)
+	right.add_child(_continue_button)
+	_goals_button = Button.new()
+	_goals_button.text = "Cele ★"
+	_goals_button.tooltip_text = "Cel główny, gwiazdki i ambicje: co jest do zdobycia."
+	_goals_button.disabled = true
+	_goals_button.pressed.connect(show_goals)
+	right.add_child(_goals_button)
+
+
+func _title_label(text: String) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_color_override("font_color", Color("8fa3b8"))
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	return label
+
+
+## A parameter: name, bar, value and change; value and change cells have
+## fixed widths, so new texts never widen the window.
+func _fill_params(names: Array) -> void:
 	for name: String in names:
 		var label := Label.new()
 		label.text = name
-		grid.add_child(label)
-		var bar := ProgressBar.new()
-		bar.max_value = 100.0
-		bar.show_percentage = false
-		bar.custom_minimum_size = Vector2(70, 14)
-		bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		grid.add_child(bar)
-		var value := Label.new()
-		value.custom_minimum_size = Vector2(110, 0)
-		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		grid.add_child(value)
-		var change := Label.new()
-		change.custom_minimum_size = Vector2(52, 0)
-		grid.add_child(change)
+		_params.add_child(label)
+		_params.add_child(_bar())
+		_params.add_child(_cell(118, HORIZONTAL_ALIGNMENT_RIGHT))
+		_params.add_child(_cell(70, HORIZONTAL_ALIGNMENT_LEFT))
+
+
+## A species: name, bar, population and change on one line; under it what
+## it did to the planet since the last decision.
+func _fill_life(names: Array) -> void:
+	_life_cells.clear()
+	for name: String in names:
+		var line := HBoxContainer.new()
+		line.add_theme_constant_override("separation", 8)
+		_life.add_child(line)
+		var label := Label.new()
+		label.text = name
+		label.custom_minimum_size = Vector2(80, 0)
+		line.add_child(label)
+		var bar := _bar()
+		line.add_child(bar)
+		var value := _cell(70, HORIZONTAL_ALIGNMENT_RIGHT)
+		line.add_child(value)
+		var change := _cell(70, HORIZONTAL_ALIGNMENT_LEFT)
+		line.add_child(change)
+		var effects := Label.new()
+		effects.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		effects.add_theme_color_override("font_color", Color("9fb4c8"))
+		effects.add_theme_font_size_override("font_size", 13)
+		effects.visible = false
+		_life.add_child(effects)
+		_life_cells.append({"bar": bar, "value": value, "change": change, "effects": effects})
+
+
+func _bar() -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.max_value = 100.0
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(30, 12)
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return bar
+
+
+func _cell(width: float, alignment: HorizontalAlignment) -> Label:
+	var cell := Label.new()
+	cell.custom_minimum_size = Vector2(width, 0)
+	cell.horizontal_alignment = alignment
+	cell.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	cell.mouse_filter = Control.MOUSE_FILTER_PASS
+	return cell
 
 
 func _build_actions() -> void:
 	_param_ids.clear()
 	for row in session.planet_rows():
 		_param_ids.append(row["id"])
-	_fill_table(_params, session.planet_rows().map(func(r: Dictionary) -> String: return r["name"]))
-	_fill_table(_life, session.life_rows().map(func(r: Dictionary) -> String: return r["name"]))
+	_fill_params(session.planet_rows().map(func(r: Dictionary) -> String: return r["name"]))
+	_fill_life(session.life_rows().map(func(r: Dictionary) -> String: return r["name"]))
 	for action in session.actions():
 		var row := {}
-		var group := HBoxContainer.new()
+		var group := VBoxContainer.new()
+		group.add_theme_constant_override("separation", 2)
 		_actions.add_child(group)
 		var button := Button.new()
 		button.text = action["name"]
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		button.pressed.connect(func() -> void: act(action["id"]))
 		group.add_child(button)
 		row["button"] = button
+		var choices := HBoxContainer.new()
 		if action["species"]:
-			var species := OptionButton.new()
-			for choice in session.species_choices():
-				species.add_item(choice["name"])
-				species.set_item_metadata(species.item_count - 1, choice["id"])
-			group.add_child(species)
-			row["species"] = species
+			choices.add_child(_choice(session.species_choices().map(
+					func(c: Dictionary) -> Array: return [c["id"], c["name"]]), ""))
+			row["species"] = choices.get_child(-1)
 		if not (action["levels"] as Array).is_empty():
-			var level := OptionButton.new()
-			for pair: Array in action["levels"]:
-				level.add_item(str(pair[1]))
-				level.set_item_metadata(level.item_count - 1, pair[0])
-				if pair[0] == action["default_level"]:
-					level.select(level.item_count - 1)
-			group.add_child(level)
-			row["level"] = level
+			choices.add_child(_choice(action["levels"], action["default_level"]))
+			row["level"] = choices.get_child(-1)
+		if choices.get_child_count() > 0:
+			group.add_child(choices)
+		else:
+			choices.free()
 		_action_rows[action["id"]] = row
+
+
+## A list of [id, name] pairs to choose from, `selected` chosen first.
+func _choice(pairs: Array, selected: String) -> OptionButton:
+	var list := OptionButton.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.fit_to_longest_item = false
+	list.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	for pair: Array in pairs:
+		list.add_item(str(pair[1]))
+		list.set_item_metadata(list.item_count - 1, pair[0])
+		if pair[0] == selected:
+			list.select(list.item_count - 1)
+	return list

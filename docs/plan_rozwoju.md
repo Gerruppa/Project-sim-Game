@@ -52,6 +52,25 @@ start 10 °C, epoka lodowa poniżej 0 °C), kolory stref życia z danych
 gatunków. Do sprawdzenia w kolejnych partiach: czy kolory i jednostki
 zmieniają decyzje, czy gracz patrzy na skutek w podanym czasie.
 
+Druga runda uwag z okna (2026-10-06), zrobione: układ okna zbudowany na
+1366×800 i skalowany z oknem (stretch `canvas_items`/`expand`, minimum
+1024×600); komórki tabel o stałej szerokości, długie napisy ucięte
+z podpowiedzią, cele i działające akcje przewijane, więc „Dalej” zawsze
+widać (test mierzy układ przez 8 rund); przycisk „Cele ★” z pełną listą
+celu, gwiazdek i ambicji (gracz nie szukał ambicji, których nie znał);
+tempo x5/x10/x25/x100, domyślnie x10 (x1000 służyło do przewijania gry).
+Do sprawdzenia: czy gracze otwierają „Cele” i celują w ambicje.
+
+Trzecia runda (2026-10-06), zrobione: planeta jest głównym widokiem
+(globus 3D z obrotem i przybliżeniem; kontynenty z numeru planety, reszta
+z globalnego stanu, bez regionów w symulacji); wykresy pod przyciskiem;
+akcje w pionie po prawej, decyzja i kronika pod globusem; pod każdym
+gatunkiem jego zmierzony wpływ od ostatniej decyzji (`SpeciesImpact`),
+plus „Reszta planety” i „Twoje akcje”, sumujące się do zmiany w tabeli
+(także w konsoli). Renderer Compatibility. Do sprawdzenia: czy globus
+pomaga rozumieć planetę, czy wpływ gatunków prowadzi do „co jeśli
+zasieję glony?”, czy kontynenty nie obiecują regionów, których nie ma.
+
 - Zagrać 2-3 partie: `./godot/play.sh`, w tym
   `./godot/play.sh --personality chaotic`.
 - Zebrać: czy pojawia się „ciekawe, co jeśli…”, które akcje są używane,
@@ -85,9 +104,9 @@ zmieniają decyzje, czy gracz patrzy na skutek w podanym czasie.
 
 ### Etap D. Krok 10: wizualizacja debugowa (rozpoczęta)
 
-Pierwsza wersja gotowa: `./godot/play_window.sh` (rysunek planety, wykres,
-tabele, kronika, cele, panel decyzji z przyciskami, tempo x10/x100/x1000,
-pauza). Paczka dla testerów zewnętrznych: `./godot/export_game.sh`
+Pierwsza wersja gotowa: `./godot/play_window.sh` (globus 3D, tabele
+z wpływem gatunków, kronika, cele, panel decyzji, akcje w kolumnie, tempo
+x5/x10/x25/x100, pauza, wykresy pod przyciskiem). Paczka dla testerów zewnętrznych: `./godot/export_game.sh`
 (ZIP z `GenesisError.exe` i instrukcją z pytaniami do testera). Dalej:
 dopracowanie po sesjach gry i odpowiedziach testerów, potem wizualizacja
 docelowa.

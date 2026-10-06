@@ -74,10 +74,21 @@ func test_pause_lets_the_player_act_between_decisions() -> void:
 
 func test_speeds_follow_the_buttons() -> void:
 	var view := _open()
-	view.set_speed(1000)
-	assert_int(view.session.manager.scheduler().speed()).is_equal(1000)
+	assert_int(view.session.manager.scheduler().speed()).is_equal(GameView.DEFAULT_SPEED)
+	for speed: int in GameView.SPEEDS:
+		view.set_speed(speed)
+		assert_int(view.session.manager.scheduler().speed()).is_equal(speed)
 	view.set_speed(7)
-	assert_int(view.session.manager.scheduler().speed()).is_equal(1000)
+	assert_int(view.session.manager.scheduler().speed()).is_equal(GameView.SPEEDS[-1])
+
+
+## Players used x1000 to skip the game; the window offers 5-100 and starts at 10.
+func test_window_offers_watching_speeds_only() -> void:
+	assert_array(GameView.SPEEDS).is_equal([5, 10, 25, 100])
+	assert_int(GameView.DEFAULT_SPEED).is_equal(10)
+	var config: SimConfig = SimConfig.load_json(SimConfig.DEFAULT_PATH).value
+	for speed: int in GameView.SPEEDS:
+		assert_bool(config.speed_multipliers().has(speed)).override_failure_message("x%d not in sim_config" % speed).is_true()
 
 
 func test_loaded_game_skips_the_intro() -> void:
@@ -187,3 +198,61 @@ func test_a_running_action_shows_how_long_it_acts_and_when_its_effect_fades() ->
 	var line := view.watch_lines()[0]
 	assert_str(line).starts_with("Wody podziemne: działa jeszcze 3 s")
 	assert_str(line).contains("skutek zwykle widać jeszcze")
+
+
+## The layout never asks for more than the window it is built for: long
+## texts are cut or wrapped, so "Dalej" stays on screen (player feedback).
+func test_layout_fits_the_base_window_through_a_game() -> void:
+	var view := _open(["--seed", "13", "--personality", "harmonious"])
+	var worst := Vector2.ZERO
+	var extinct_seen := false
+	for round: int in 8:
+		view.start()
+		_to_decision(view)
+		await await_idle_frame()
+		worst = worst.max((view.get_child(1) as Control).get_combined_minimum_size())
+		extinct_seen = extinct_seen or view.session.life_rows().any(func(row: Dictionary) -> bool: return row["change"] == "wymarły")
+		view.act("aquifer_release")
+		view.act("mirrors_cool")
+	assert_bool(extinct_seen).override_failure_message("no extinction shown: the widest text was not tried").is_true()
+	assert_float(worst.x).is_less_equal(GameView.BASE_SIZE.x)
+	assert_float(worst.y).is_less_equal(GameView.BASE_SIZE.y)
+
+
+func test_goals_window_lists_everything_to_win() -> void:
+	var view := _open()
+	assert_str(view.decision_text()).contains("„Cele”")
+	assert_str(view.goals_window_text()).is_empty()
+	view.show_goals()
+	var text := view.goals_window_text()
+	assert_str(text).contains("Dojrzała planeta")
+	for ambition: Dictionary in JSON.parse_string(FileAccess.get_file_as_string(GoalTracker.DEFAULT_PATH))["ambitions"]:
+		assert_str(text).contains(ambition["name"])
+
+
+func test_goals_button_waits_for_a_planet() -> void:
+	var view := _open_without_options()
+	view.show_goals()
+	assert_str(view.goals_window_text()).is_empty()
+
+
+func test_life_shows_what_each_species_did_and_the_rest_of_the_planet() -> void:
+	var view := _open()
+	view.start()
+	_to_decision(view)
+	view.start()
+	_to_decision(view)
+	assert_str(view.life_effects_text("bacteria")).contains("Dwutlenek węgla +")
+	assert_str(view.life_effects_text("tree")).is_empty()
+	assert_str(view.others_text()).starts_with("Reszta planety")
+
+
+func test_the_globe_follows_the_planet_and_charts_wait_behind_a_button() -> void:
+	var view := _open()
+	view.start()
+	_to_decision(view)
+	var look := view.planet_look()
+	assert_float(look["bacteria"]).is_greater(0.0)
+	assert_bool(view.charts_visible()).is_false()
+	view.show_charts()
+	assert_bool(view.charts_visible()).is_true()

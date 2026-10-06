@@ -49,14 +49,29 @@ echo 'export GODOT_BIN="C:/Users/jkapk/AppData/Local/Microsoft/WinGet/Packages/G
 ./godot/play_window.sh --load decision.json
 ```
 
-Okno pokazuje planetę na żywo:
+Okno pokazuje planetę na żywo. Na środku globus, pod nim panel decyzji
+i kronika; po lewej liczby planety i życie; po prawej akcje, tempo,
+**Dalej ▶** i **Cele ★**.
 
-- **rysunek planety**: kolor zależy od temperatury, przy zimnie rosną białe
-  czapy lodowe, zielone plamy to życie (biomasa), białe kropki to chmury,
-  niebieska poświata to tlen
-- **wykres** temperatury, wilgotności, tlenu, biomasy i CO₂ w czasie
+- **globus 3D**: przeciągnij myszą, żeby go obrócić, kółko przybliża.
+  Kontynenty są stałe dla numeru planety (każda planeta wygląda inaczej);
+  reszta pokazuje stan całej planety: lód schodzi od biegunów, gdy jest
+  zimno; w suchym klimacie morza się cofają, a lądy płowieją w pustynie;
+  bakterie barwią płycizny, glony zielenią morza, a mchy, krzewy i drzewa
+  zielenią lądy coraz ciemniej; chmury odpowiadają zachmurzeniu, a poświata
+  atmosfery jest pomarańczowa przy małej ilości tlenu i niebieska przy
+  dużej. Symulacja nie ma regionów: globus pokazuje wartości całej
+  planety, nie lokalną pogodę
 - **tabele** parametrów i gatunków z paskami i strzałkami zmian od
   ostatniej decyzji; parametry są w zwykłych jednostkach (rozdział 6)
+- **wpływ życia**: pod każdym gatunkiem, co zmienił na planecie od
+  ostatniej decyzji, np. „Tlen +24.7 % atmosfery · Dwutlenek węgla
+  −6153 ppm” u glonów; pod listą **Reszta planety** (skały, oceany,
+  pogoda, zdarzenia) i **Twoje akcje**. To pomiar z symulacji, nie
+  szacunek: wszystkie udziały sumują się do zmiany w tabeli planety.
+  Tak widać, że glony robią tlen, a skały go pochłaniają
+- **Wykresy** (przycisk pod tabelami): temperatura, wilgotność, tlen,
+  biomasa i CO₂ w czasie
 - **kolory** parametrów: **zielony** to zakres, w którym może żyć któryś
   z obecnych gatunków albo ten, który może pojawić się następny,
   **żółty** to granica (gatunek jeszcze rośnie, ale cierpi), **czerwony**
@@ -68,12 +83,17 @@ Okno pokazuje planetę na żywo:
   decyzji licznik stoi i ma dopisek „przy x100”
 - **Działające akcje** (pod celami): każda akcja z paskiem, jak długo
   jeszcze działa i przez ile mniej więcej sekund widać jej skutek (z
-  pomiarów na wielu planetach). Wtedy warto patrzeć na wykres i kronikę
-- **kronika** planety (prawa kolumna) i **cel** z ambicjami (pod planetą)
-- **panel decyzji** na dole: gra sama się zatrzymuje w punkcie decyzji,
-  pokazuje, co się stało, i podpowiedź; akcje to przyciski (gatunek i siłę
-  wybierasz z listy obok przycisku), **Dalej ▶** puszcza planetę dalej
-- **x10 / x100 / x1000**: tempo (ticków na sekundę), **Pauza**: zatrzymaj
+  pomiarów na wielu planetach). Wtedy warto patrzeć na globus i kronikę
+- **kronika** planety (pod globusem, po prawej) i **cel** z ambicjami
+  (po lewej, pod tabelami)
+- **Cele ★** (po prawej, na dole): pełna lista celu głównego, gwiazdek
+  i ambicji z warunkami i tym, co już zdobyte (jak klawisz **c** w konsoli)
+- **panel decyzji** pod globusem: gra sama się zatrzymuje w punkcie
+  decyzji, pokazuje, co się stało, i podpowiedź; akcje to przyciski
+  w prawej kolumnie (gatunek i siłę wybierasz z listy pod przyciskiem),
+  **Dalej ▶** puszcza planetę dalej
+- **x5 / x10 / x25 / x100**: tempo (ticków na sekundę, domyślnie x10),
+  **Pauza**: zatrzymaj
   w dowolnej chwili i działaj
 
 Gra zapisuje się w każdym punkcie decyzji (`saves/decision.json`), tak samo
@@ -130,7 +150,7 @@ Co robisz?
 
 - **strzałki** pokazują, co się zmieniło od poprzedniego punktu decyzji:
   `↑`/`↓` z wielkością zmiany, `=` gdy nic się nie zmieniło; gatunki mają
-  statusy **nowe**, **wróciły** i **wymarły od ostatniej decyzji**. Tak
+  statusy **nowe**, **wróciły** i **wymarły** (od ostatniej decyzji). Tak
   widać skutki Twojej ostatniej akcji (na pierwszym ekranie strzałek nie ma)
 - **W toku** wymienia Twoje wcześniejsze akcje: ile ticków jeszcze działają
   i przez ile mniej więcej ticków widać ich skutek (z pomiarów). Zasiew
@@ -180,7 +200,8 @@ Bez żadnej akcji zdobędziesz najwyżej dwie gwiazdki (od tego jest
 ambicja „Nie ruszaj”). Trzy gwiazdki to sztuka kilku dobrych, lekkich
 decyzji bez straty gatunku.
 
-**Ambicje** (dodatkowe osiągnięcia, lista pod klawiszem **c**):
+**Ambicje** (dodatkowe osiągnięcia, lista pod klawiszem **c**, w oknie pod
+przyciskiem **Cele ★**):
 
 | Ambicja | Warunek |
 |---|---|
@@ -496,7 +517,8 @@ domyślnie zapisuje tylko kronikę. Stare logi możesz bezpiecznie usuwać.
 
 ## 10. Ograniczenia prototypu
 
-- grafika jest debugowa: planetę poznajesz z kroniki, liczb i wykresu
+- grafika jest debugowa; globus pokazuje wartości całej planety
+  (symulacja nie ma regionów), szczegóły poznajesz z kroniki i liczb
 - zwykłe jednostki są przybliżeniem: symulacja liczy w skali 0-100,
   a gra tylko ją przelicza; czas widocznego skutku akcji to średnia z pomiarów, na
   konkretnej planecie skutek może trwać krócej albo dłużej

@@ -2,7 +2,7 @@
 	"config_version": 1,
 	"seed": 42,
 	"base_ticks_per_second": 1,
-	"speed_multipliers": [1, 10, 100, 1000],
+	"speed_multipliers": [1, 5, 10, 25, 100, 1000],
 	"max_catch_up_ticks": 1000,
 	"personality": "random",
 	"log": {

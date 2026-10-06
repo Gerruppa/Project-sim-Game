@@ -645,7 +645,7 @@ simulation/tests/
 game/ (game layer above the simulation: SimulationRunner,
 PlaySession, GoalTracker, DecisionWatcher, HintAdvisor, saves)
 
-ui/ (the window, step 10: GameView, PlanetView, HistoryChart;
+ui/ (the window, step 10: GameView, PlanetView (3D globe + shaders), HistoryChart;
 Godot nodes and signals only here)
 
 tools/ (console entry points only: run_simulation.gd, play.gd)

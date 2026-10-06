@@ -48,22 +48,26 @@ Charakter planety: Harmonijna (spokojna), Chaotyczna (więcej kryzysów),
 Strażnik (sama się leczy), albo losowy.
 
 Okno:
-  * po lewej: planeta (kolor = temperatura, biel = lód, zieleń = życie,
-    białe kropki = chmury, niebieska poświata = tlen), pod nią cel
-  * na środku: wykres w czasie oraz tabele z paskami;
-    strzałki pokazują, co wzrosło (↑) i zmalało (↓) od ostatniej decyzji
-  * po prawej: kronika planety - co się wydarzyło i DLACZEGO
-  * na dole: panel decyzji i przyciski akcji
+  * na środku: planeta jako globus - przeciągnij myszą, żeby ją obrócić,
+    kółko przybliża (biel = lód, zieleń = życie, poświata = powietrze:
+    pomarańczowa przy małej ilości tlenu, niebieska przy dużej)
+  * pod globusem: panel decyzji i kronika planety - co się wydarzyło
+    i DLACZEGO
+  * po lewej: liczby planety i życie; strzałki pokazują, co wzrosło (↑)
+    i zmalało (↓) od ostatniej decyzji, a pod każdym gatunkiem, co zmienił
+    (np. ile tlenu dały glony); przycisk "Wykresy"
+  * po prawej: przyciski akcji, tempo, "Dalej" i "Cele"
 
 Gra sama się zatrzymuje, gdy dzieje się coś ważnego (PUNKT DECYZJI).
 Przeczytaj, co się stało, i podpowiedź. Potem:
-  * kliknij akcję (gatunek i siłę wybierasz z listy obok przycisku),
+  * kliknij akcję (gatunek i siłę wybierasz z listy pod przyciskiem),
   * albo nic nie rób,
   * i kliknij "Dalej".
 
 Przyciski akcji działają w punkcie decyzji i w pauzie: w każdej chwili
 możesz kliknąć "Pauza" i działać.
-Tempo: x10 (wolno), x100 (domyślnie), x1000 (szybko).
+Tempo: x5 (wolno), x10 (domyślnie), x25, x100 (szybko).
+Co jest do zdobycia: przycisk "Cele" w prawej kolumnie.
 Szare przyciski się odnawiają; najedź myszą, żeby zobaczyć, od kiedy
 będą dostępne.
 
