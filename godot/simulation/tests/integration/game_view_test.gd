@@ -93,6 +93,13 @@ func test_window_offers_watching_speeds_only() -> void:
 		assert_bool(config.speed_multipliers().has(speed)).override_failure_message("x%d not in sim_config" % speed).is_true()
 
 
+## Without live mode the trends still count from the last decision.
+func test_legacy_trend_headers_count_from_the_last_decision() -> void:
+	var view := _open()
+	for title in view.trend_titles():
+		assert_str(title).contains("od ostatniej decyzji")
+
+
 func test_loaded_game_skips_the_intro() -> void:
 	var first := _open()
 	first.start()

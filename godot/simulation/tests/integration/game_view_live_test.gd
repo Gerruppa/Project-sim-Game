@@ -187,6 +187,13 @@ func test_live_intro_names_the_creator() -> void:
 	assert_str(view.decision_text()).contains("„Cele”")
 
 
+## A live game has no decision points, so its trends count from the start.
+func test_live_trend_headers_count_from_the_start_of_the_game() -> void:
+	var view := _open()
+	for title in view.trend_titles():
+		assert_str(title).contains("od początku gry").not_contains("decyzji")
+
+
 func test_running_text_does_not_promise_a_stop() -> void:
 	var view := _open()
 	view.start()

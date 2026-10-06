@@ -22,6 +22,10 @@ const LIVE_INTRO := "Creator patrzy Ci przez ramię. Ludzkość założyła się
 		+ "Masz 200 lat, żeby ją przekonać. Jesteś Praktykantem: zbieraj Iskry z bąbelków nad globem, kupuj za nie perki i prowadź planetę, " \
 		+ "póki żyje."
 const LIVE_RUNNING_TEXT := "Planeta biegnie sama. Zbieraj Iskry z bąbelków, kupuj perki po prawej i działaj, kiedy chcesz; możesz też wstrzymać grę."
+## What the trends of the left column count from: a live game has no decision
+## points (the trends run from its start), the legacy flow from the last one.
+const SINCE_DECISION := "od ostatniej decyzji"
+const SINCE_START := "od początku gry"
 const RUNNING_TEXT := "Gra sama się zatrzyma, gdy wydarzy się coś ważnego. Możesz też ją zatrzymać i działać."
 ## The layout is built for this size and scales with the window (project
 ## stretch settings); nothing inside may ask for more.
@@ -50,6 +54,9 @@ var _last_sample_tick := -SAMPLE_EVERY
 
 var _info: Label
 var _sparks_label: Label
+## Headers of the left column; they say what the trends count from.
+var _params_title: Label
+var _life_title: Label
 var _perks: PerkPanel
 var _bubbles: BubbleLayer
 ## How many of session.warnings are in the chronicle already.
@@ -125,6 +132,9 @@ func open_game(game_options: Dictionary) -> void:
 			_chart.add_series(row["id"], row["name"])
 	_build_actions()
 	_bubbles.setup(_planet, session.bubbles)
+	var since := SINCE_START if session.live else SINCE_DECISION
+	_params_title.text = "Planeta (zmiana %s)" % since
+	_life_title.text = "Życie (populacja 0-100) i jego wpływ %s" % since
 	for warning in session.warnings:
 		_on_chronicle_line("UWAGA: " + warning)
 	_warnings_shown = session.warnings.size()
@@ -398,6 +408,11 @@ func _perk_done(done: SimResult) -> SimResult:
 ## "Iskry: 12", as the top bar shows them.
 func sparks_text() -> String:
 	return _sparks_label.text
+
+
+## The headers over the planet's numbers and over life.
+func trend_titles() -> Array[String]:
+	return [_params_title.text, _life_title.text]
 
 
 func bubble_layer() -> BubbleLayer:
@@ -715,9 +730,11 @@ func _build_left(parent: Control) -> void:
 	_params = GridContainer.new()
 	_params.columns = 4
 	_params.add_theme_constant_override("h_separation", 8)
-	left.add_child(_title_label("Planeta (zmiana od ostatniej decyzji)"))
+	_params_title = _title_label("Planeta (zmiana %s)" % SINCE_DECISION)
+	left.add_child(_params_title)
 	left.add_child(_params)
-	left.add_child(_title_label("Życie (populacja 0-100) i jego wpływ od ostatniej decyzji"))
+	_life_title = _title_label("Życie (populacja 0-100) i jego wpływ %s" % SINCE_DECISION)
+	left.add_child(_life_title)
 	_life = VBoxContainer.new()
 	_life.add_theme_constant_override("separation", 2)
 	left.add_child(_life)
