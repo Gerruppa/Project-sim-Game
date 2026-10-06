@@ -32,17 +32,25 @@ different feature, never a broken rule.
 
 ## Genesis Error now: who is the "player"?
 
-The current stage is console simulation first (CLAUDE.md CURRENT PROJECT
-GOAL). Until the gameplay layer exists, the player is the **observer reading
-the logs**. Judge features by what that observer experiences:
+Genesis Error is a Plague Inc-style game (new core, 2026-10-06; spec
+`docs/superpowers/specs/2026-10-06-nowy-rdzen-gry-design.md`). The player is
+the Creator's **Apprentice**: collects bubbles (Sparks of Life), buys perks,
+reacts to the Creator's Trials, plays 200 years in 15-25 minutes.
 
-- Does the log show a surprise, a story, a cause worth understanding?
-- Would the observer ask "I wonder what happens if..."?
+The question is: **"Does the player want to click once more?"** Judge features
+by what that player experiences:
+
+- Does it give a reason to click (a bubble, a perk, a power, a reaction
+  to a Trial warning)?
+- Does it make a decision clearer or a crisis more readable?
+- Does it carry a price and a side effect (every perk must)?
+- Does it make the next game more interesting?
 - Would they notice if the feature were gone?
 
-Also ask what the feature will enable once player interventions exist
-(phase 9): which decisions and experiments it prepares. A simulation feature
-that will never become a decision or a visible story is a red flag even now.
+Measures: bubble clicks per minute (target 4-6), a second game started
+unprompted (at least 3 of 5 testers), first perk within 30 seconds, about
+20 perks per game. A simulation feature that will never become a decision,
+a visible spread on the map or a Trial is a red flag.
 
 ## Core mission
 
@@ -137,14 +145,15 @@ Watch for **simulation depth > gameplay depth**. This is the most dangerous stat
 ## Steam demo test
 
 Before approving a feature ask: will a player see this within the first
-30 minutes? If no: isolate it and reduce its priority. Many good ideas belong
+game (15-25 minutes)? If no: isolate it and reduce its priority. Many good ideas belong
 after launch, not before the demo.
 
 ## Genesis Error specific rule
 
-The player should say **"I wonder what happens if..."** more often than
-**"I found the optimal strategy."** Every feature should increase curiosity,
-not efficiency.
+The player should say **"One more perk, one more game"** more often than
+**"I found the optimal strategy."** Every perk has a price and a side effect;
+every Trial is announced and has a counter. A feature that breaks either rule
+is flagged.
 
 ## Veto power
 
@@ -168,17 +177,17 @@ Would Removal Hurt The Game?
 Final Verdict: KEEP / SIMPLIFY / POSTPONE / REMOVE
 ```
 
-With SIMPLIFY, say what to cut. With POSTPONE, say which phase it belongs to
-(CLAUDE.md SYSTEM PRIORITY). Then hand back to `genesis-feature-gate` for the
+With SIMPLIFY, say what to cut. With POSTPONE, say which stage it belongs to
+(CLAUDE.md CURRENT PROJECT GOAL, stages 0-6). Then hand back to `genesis-feature-gate` for the
 specification of what survives.
 
 ## Success criteria
 
-The game generates curiosity, experiments, stories, surprises and failures
-worth remembering. If a feature does not contribute to one of those, it is
+The game generates clicks worth making, stories, surprises, Trials averted
+at the last second and games worth replaying. If a feature does not contribute to one of those, it is
 probably unnecessary.
 
 ## Final rule
 
-A boring simulation is still boring. No amount of technical excellence can
+A boring game is still boring. No amount of technical excellence can
 save it. Choose fun. Always.
