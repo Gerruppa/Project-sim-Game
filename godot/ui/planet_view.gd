@@ -21,6 +21,9 @@ const ICE_POINTS: Array[Vector2] = [Vector2(0, 0.25), Vector2(16, 0.72), Vector2
 ## their ground.
 const LIFE_IDS: Array[String] = ["bacteria", "algae", "moss", "shrub", "tree"]
 const FULL_COVER := 60.0
+## A point counts as facing the camera when its surface normal's dot with the
+## direction to the camera is above this (a little margin at the rim).
+const VISIBLE_DOT := 0.05
 
 ## Turned with the mouse and spinning slowly while nobody holds it.
 var auto_spin := true
@@ -189,3 +192,18 @@ func rotation_now() -> Vector2:
 
 func distance() -> float:
 	return _camera.position.z
+
+
+## Where a point of the globe (degrees) falls in this container, or null while
+## it is on the side turned away from the camera. The container stretches its
+## viewport, so the projected pixel is already in its own coordinates.
+func screen_point(lat_deg: float, lon_deg: float) -> Variant:
+	var lat := deg_to_rad(lat_deg)
+	var lon := deg_to_rad(lon_deg)
+	var unit := Vector3(cos(lat) * cos(lon), sin(lat), cos(lat) * sin(lon))
+	var world := _pivot.global_transform * unit
+	var normal := (world - _pivot.global_position).normalized()
+	var to_camera := (_camera.global_position - world).normalized()
+	if normal.dot(to_camera) <= VISIBLE_DOT:
+		return null
+	return _camera.unproject_position(world)
