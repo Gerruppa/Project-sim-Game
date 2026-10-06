@@ -153,7 +153,12 @@ docelowa.
   nawet przy dobrej grze
 
 **Techniczne**
-- sprawdzić CI na GitHubie (Linux, Windows, macOS) po ostatnich zmianach
+- ~~sprawdzić CI na GitHubie (Linux, Windows, macOS) po ostatnich zmianach~~
+  zrobione 2026-10-06: zielone na wszystkich trzech (commit `8c6b46b`).
+  Logi CI: `gh run view <id> --log-failed` (GitHub CLI zalogowany). Test
+  formatujący dokładną połowę (14,25) padał na Linuxie i macOS, bo
+  zaokrąglają ją do parzystej, a Windows w górę: w testach wyświetlania
+  unikać wartości na granicy zaokrąglenia
 - zaktualizować skill `genesis-qa` (pełny zestaw ok. 3 min, nie 1,5)
 - zaktualizować stronę postępu
   (https://claude.ai/artifact/EWh6HSDtebjp1J5JkH8DPz) o grę z menu,
