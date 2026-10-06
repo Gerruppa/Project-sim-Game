@@ -222,7 +222,7 @@ func test_build_planet_registers_every_system_in_order() -> void:
 	var ids: Array[StringName] = []
 	for system in (built.value["manager"] as SimulationManager).systems():
 		ids.append(system.system_id())
-	assert_array(ids).is_equal([&"climate", &"atmosphere", &"biosphere", &"personality", &"events", &"interventions"])
+	assert_array(ids).is_equal([&"climate", &"atmosphere", &"biosphere", &"personality", &"events", &"interventions", &"perks"])
 	assert_str(built.value["personality"]).is_equal("none")
 	assert_int((built.value["fingerprints"]["climate"] as String).length()).is_equal(64)
 

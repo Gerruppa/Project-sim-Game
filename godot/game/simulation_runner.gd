@@ -176,7 +176,7 @@ static func resolve_save_path(path: String, config: SimConfig) -> String:
 	return resolve_directory(path)
 
 
-## The planet as the console runs it: every system in CLAUDE.md order.
+## The planet as the console runs it: every system in build order.
 ## Value: {"manager", "personality" (archetype id), "fingerprints"
 ## (SHA-256 of every data file the dynamics depend on)}.
 static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
@@ -200,7 +200,7 @@ static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
 	if not failed.is_ok():
 		return failed
 
-	# Domain systems, registered as they are built (CLAUDE.md SYSTEM PRIORITY).
+	# Domain systems, registered as they are built (build order: climate, atmosphere, biosphere, then providers).
 	manager.register_system(ClimateSystem.new(climate.value, config.seed()))
 	manager.register_system(AtmosphereSystem.new(atmosphere.value))
 	manager.register_system(BiosphereSystem.new(biosphere.value, catalog.value, config.seed()))
@@ -216,11 +216,16 @@ static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
 		return events
 	var archetype: StringName = personality.value.archetype_id()
 	manager.register_system(EventSystem.new(events.value, archetype))
-	# The player's hand, last: it reaches others only through modifiers and commands.
+	# The player's hand: it reaches others only through modifiers and commands.
 	var interventions := InterventionCatalog.load_json(InterventionCatalog.DEFAULT_PATH, specs, {&"biosphere": BiosphereSystem.COMMANDS})
 	if not interventions.is_ok():
 		return interventions
 	manager.register_system(InterventionSystem.new(interventions.value, (catalog.value as SpeciesCatalog).ids()))
+	# The player's purse after it: Sparks and perks, which act on the planet through modifiers.
+	var perks := PerkCatalog.load_json(PerkCatalog.DEFAULT_PATH, specs, interventions.value.ids())
+	if not perks.is_ok():
+		return perks
+	manager.register_system(PerkSystem.new(perks.value))
 
 	return SimResult.success({
 		"manager": manager,
@@ -230,6 +235,7 @@ static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
 			"atmosphere": options["atmosphere"], "species": options["species"],
 			"biosphere": options["biosphere"], "personality": PersonalityCatalog.DEFAULT_PATH,
 			"events": options["events"], "interventions": InterventionCatalog.DEFAULT_PATH,
+			"perks": PerkCatalog.DEFAULT_PATH,
 		}),
 	})
 
