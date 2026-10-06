@@ -11,7 +11,13 @@ extends RefCounted
 const DEFAULT_PATH := "res://resources/chronicle/hints.json"
 const NEEDS: Array[String] = ["warmth", "cooling", "humidity", "precipitation", "co2", "oxygen", "soil"]
 
+## The parameter each kind of need is measured in.
+const NEED_PARAMS := {"warmth": "temperature", "cooling": "temperature", "humidity": "humidity",
+		"precipitation": "precipitation", "co2": "co2", "oxygen": "oxygen", "soil": "biomass"}
+
 var intro := PackedStringArray()
+## The player's units for the numbers in advice; unset, the plain 0-100 values.
+var scale: DisplayScale
 var _quiet := ""
 var _acts_line := ""
 ## id -> {"text", "acts"}
@@ -154,6 +160,9 @@ func missing_needs(species: SpeciesData, snapshot: PlanetSnapshot) -> PackedStri
 
 
 func _need(key: String, value: float, need: float) -> String:
+	var param: String = NEED_PARAMS[key]
+	if scale != null and scale.has_parameter(param):
+		return _needs[key].format({"value": scale.shown(param, value), "need": scale.shown(param, need)})
 	return _needs[key].format({"value": "%.1f" % value, "need": "%.0f" % need})
 
 

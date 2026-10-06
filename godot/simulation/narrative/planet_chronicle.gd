@@ -73,10 +73,16 @@ func _phrase(fact: Dictionary) -> String:
 	var template: Variant = _texts.measures[fact["measure"]]
 	if typeof(template) == TYPE_DICTIONARY:
 		template = template["below"] if measured < 0.0 else template["above"]
+	var value_text := _number(measured)
+	var abs_text := _number(absf(measured))
+	# A drop from peak is a share, written as a percentage below.
+	if _texts.number_format.is_valid() and fact["measure"] != "drop_from_peak":
+		value_text = _texts.number_format.call(fact["param"], fact["measure"], measured)
+		abs_text = _texts.number_format.call(fact["param"], fact["measure"], absf(measured))
 	return (template as String).format({
 		"param": _param_name(fact["param"]),
-		"value": _number(measured),
-		"abs": _number(absf(measured)),
+		"value": value_text,
+		"abs": abs_text,
 		"percent": str(roundi(measured * 100.0)),
 		"window": str(fact["window"]),
 	})

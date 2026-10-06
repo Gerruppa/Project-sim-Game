@@ -65,3 +65,121 @@ func test_species_choices_say_what_each_species_lacks() -> void:
 	assert_int(choices.size()).is_equal(5)
 	assert_str(choices[2]["name"]).is_equal("mchy")
 	assert_str(choices[2]["needs"]).starts_with("brakuje:")
+
+
+# --- the player's units, zones and action timers ------------------------------
+
+func _at_first_decision() -> GameSession:
+	var game := _session()
+	game.begin_round()
+	game.step(10000)
+	return game
+
+
+func test_planet_rows_speak_the_players_units() -> void:
+	var game := _at_first_decision()
+	var temperature: Dictionary = game.planet_rows()[0]
+	assert_str(temperature["id"]).is_equal("temperature")
+	# The normalized value stays for the bars; the player reads degrees.
+	assert_str(temperature["shown"]).is_equal(game.display.shown("temperature", temperature["value"]))
+	assert_str(temperature["shown"]).ends_with(" °C")
+	game.remember()
+	game.begin_round()
+	game.step(10000)
+	var later: Dictionary = game.planet_rows()[0]
+	# The change is the difference of the two shown temperatures, not of the 0-100 values.
+	assert_str(later["change"]).is_equal(GameSession.trend(
+			game.display.change("temperature", temperature["value"], later["value"]), 1))
+	assert_str(later["name"]).is_equal("Średnia temperatura")
+
+
+func test_rows_carry_the_life_zone() -> void:
+	var game := _at_first_decision()
+	var zones := {}
+	for row in game.planet_rows():
+		zones[row["id"]] = row["zone"]
+	# Bacteria live at 5-70 degrees (the normalized 5-70) and need no CO2.
+	assert_str(zones["temperature"]).is_not_empty()
+	assert_str(zones["cloud_cover"]).is_equal("none")
+	assert_str(zones["crust_oxidation"]).is_equal("none")
+
+
+func test_actions_say_how_many_ticks_until_ready() -> void:
+	var game := _at_first_decision()
+	assert_int(game.actions()[2]["ready_in"]).is_equal(0)
+	game.submit("mirrors_warm", {"level": "weak"})
+	game.begin_round()
+	game.step(1)
+	var warm: Dictionary = game.actions()[2]
+	assert_bool(warm["ready"]).is_false()
+	# Used in tick 131, ready again 1500 ticks later (tick 1631), one tick of slack.
+	assert_int(warm["ready_at"]).is_equal(1631)
+	assert_int(warm["ready_in"]).is_equal(1631 - game.tick() - 1)
+	game.manager.run_ticks(100)
+	assert_int(game.actions()[2]["ready_in"]).is_equal(1631 - game.tick() - 1)
+
+
+func test_seconds_text_rounds_up_and_shows_minutes() -> void:
+	assert_str(GameSession.seconds_text(300, 100.0)).is_equal("3 s")
+	assert_str(GameSession.seconds_text(301, 100.0)).is_equal("4 s")
+	assert_str(GameSession.seconds_text(1, 1000.0)).is_equal("1 s")
+	assert_str(GameSession.seconds_text(0, 10.0)).is_equal("0 s")
+	assert_str(GameSession.seconds_text(2000, 1.0)).is_equal("33 min 20 s")
+	assert_str(GameSession.seconds_text(60, 1.0)).is_equal("1 min 00 s")
+	assert_str(GameSession.seconds_text(10, 0.0)).is_equal("–")
+
+
+func test_a_timed_action_is_watched_while_it_runs_and_while_its_effect_shows() -> void:
+	var game := _at_first_decision()
+	assert_array(game.active_actions()).is_empty()
+	game.submit("mirrors_cool", {"level": "weak"})
+	var queued: Dictionary = game.active_actions()[0]
+	assert_str(queued["phase"]).is_equal("queued")
+	assert_str(queued["name"]).is_equal("Pył orbitalny")
+	assert_str(queued["level_name"]).is_equal("lekko")
+	game.begin_round()
+	game.step(1)
+	var started := game.tick()
+	var running: Dictionary = game.active_actions()[0]
+	assert_str(running["phase"]).is_equal("running")
+	# Dust acts for 500 ticks, its effect usually shows for 1270-2600 ticks after the start.
+	assert_int(running["remaining"]).is_equal(500)
+	assert_int(running["fade_min"]).is_equal(1270)
+	assert_int(running["fade_max"]).is_equal(2600)
+	game.manager.run_ticks(200)
+	var midway: Dictionary = game.active_actions()[0]
+	assert_int(midway["remaining"]).is_equal(500 - (game.tick() - started))
+	assert_int(midway["fade_max"]).is_equal(2600 - (game.tick() - started))
+	assert_float(midway["progress"]).is_greater(0.0).is_less(0.2)
+	game.manager.run_ticks(400)
+	var after: Dictionary = game.active_actions()[0]
+	assert_str(after["phase"]).is_equal("observe")
+	assert_int(after["remaining"]).is_equal(0)
+	assert_int(after["fade_max"]).is_greater(0)
+	game.manager.run_ticks(2600)
+	assert_array(game.active_actions()).is_empty()
+
+
+func test_an_instant_action_without_a_measured_effect_is_not_watched() -> void:
+	var game := _at_first_decision()
+	game.submit("seed_species", {"species": "bacteria"})
+	game.begin_round()
+	game.step(1)
+	assert_array(game.active_actions()).is_empty()
+
+
+func test_a_game_loaded_in_the_middle_of_an_action_still_watches_it() -> void:
+	var game := _at_first_decision()
+	game.submit("mirrors_warm", {})
+	game.begin_round()
+	game.step(300)
+	assert_bool(game.save().is_ok()).is_true()
+	var options: Dictionary = PlaySession.parse_args(PackedStringArray(["--load", SAVE])).value
+	options["file_logs"] = false
+	var loaded: GameSession = GameSession.create(options, func(_line: String) -> void: pass).value
+	var rows := loaded.active_actions()
+	assert_int(rows.size()).is_equal(1)
+	assert_str(rows[0]["id"]).is_equal("mirrors_warm")
+	assert_str(rows[0]["phase"]).is_equal("running")
+	assert_int(rows[0]["remaining"]).is_equal(500 - (loaded.tick() - 131))
+

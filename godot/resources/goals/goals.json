@@ -38,7 +38,7 @@
 		{
 			"id": "oxygenated",
 			"name": "Oddech planety",
-			"text": "tlen powyżej 15 przed rokiem 13",
+			"text": "tlen powyżej 10,9 % atmosfery przed rokiem 13",
 			"kind": "parameter",
 			"param": "oxygen",
 			"op": ">",

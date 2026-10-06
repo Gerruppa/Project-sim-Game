@@ -114,10 +114,11 @@ func screen() -> String:
 		var ago := _game.tick() - _game.last_tick()
 		lines.append("Planeta (zmiana od poprzedniej decyzji, %d %s temu):" % [ago, GameSession.ticks_word(ago)])
 	for row in _game.planet_rows():
-		lines.append("  %-20s %6.1f   %s" % [row["name"], row["value"], row["change"]])
+		lines.append("  %-20s %16s   %s" % [row["name"], row["shown"], row["change"]])
 	lines.append("Życie:")
 	for row in _game.life_rows():
 		lines.append("  %-10s %7s   %s" % [row["name"], row["shown"], row["change"]])
+	lines.append_array(_watch_lines())
 	_game.remember()
 	if _game.hints:
 		lines.append("")
@@ -134,10 +135,43 @@ func menu() -> String:
 	var actions := _game.actions()
 	for i in actions.size():
 		var action: Dictionary = actions[i]
-		lines.append(" %d) %-26s %s" % [i + 1, action["name"], "gotowe" if action["ready"] else "od ticku %d" % action["ready_at"]])
+		lines.append(" %d) %-26s %s" % [i + 1, action["name"], "gotowe" if action["ready"] else _cooldown_text(action)])
 	lines.append(" 0) Czekaj, nic nie rób (albo Enter)")
 	lines.append(" ?) Wyjaśnij akcje   c) Cele   h) %s podpowiedzi   q) Zapisz i wyjdź" % ("Ukryj" if _game.hints else "Pokaż"))
 	return "\n".join(lines)
+
+
+## "za 300 ticków (od ticku 1631)": the console has no real-time clock, so the
+## wait is counted in ticks, like everything else it shows.
+func _cooldown_text(action: Dictionary) -> String:
+	return "za %d %s (od ticku %d)" % [action["ready_in"], GameSession.ticks_word(int(action["ready_in"])), action["ready_at"]]
+
+
+## What the player's earlier actions are doing now, so they know when to watch.
+func _watch_lines() -> PackedStringArray:
+	var lines := PackedStringArray()
+	for action in _game.active_actions():
+		var name: String = action["name"] + (" (%s)" % action["level_name"] if not (action["level_name"] as String).is_empty() else "")
+		var text := ""
+		match action["phase"]:
+			"queued":
+				text = "ruszy w następnym ticku"
+			"running":
+				text = "działa jeszcze %d %s" % [action["remaining"], GameSession.ticks_word(int(action["remaining"]))]
+			_:
+				text = "już nie działa"
+		if action["fade_max"] > 0:
+			text += "; skutek zwykle widać jeszcze %s" % _fade_text(action)
+		lines.append("  %s: %s" % [name, text])
+	if not lines.is_empty():
+		lines.insert(0, "W toku (akcje, których skutek warto obserwować):")
+	return lines
+
+
+func _fade_text(action: Dictionary) -> String:
+	if action["fade_min"] == action["fade_max"]:
+		return "%d %s" % [action["fade_max"], GameSession.ticks_word(int(action["fade_max"]))]
+	return "%d–%d %s" % [action["fade_min"], action["fade_max"], GameSession.ticks_word(int(action["fade_max"]))]
 
 
 ## Reads choices until the player lets the planet run on (true) or quits

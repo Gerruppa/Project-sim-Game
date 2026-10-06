@@ -44,6 +44,14 @@ func ready_at(intervention_id: StringName) -> int:
 	return 0 if def == null else _ready_at.get(def.cooldown_group, 0)
 
 
+## Timed interventions in effect, for display: {"id", "started", "ends", "args"}.
+func active() -> Array[Dictionary]:
+	var copy: Array[Dictionary] = []
+	for entry in _active:
+		copy.append(entry.duplicate(true))
+	return copy
+
+
 func validate_command(command: SimCommand) -> SimResult:
 	var def := _catalog.get_def(command.action)
 	if def == null:

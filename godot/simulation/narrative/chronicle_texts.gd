@@ -20,6 +20,10 @@ var events: Dictionary[String, String] = {}
 var causes: Dictionary[String, String] = {}
 ## measure -> phrase (String) or {"below", "above"} phrases
 var measures: Dictionary[String, Variant] = {}
+## Optional (parameter id, measure, number) -> text: how the player's units
+## write a measured number. Unset, the chronicle writes the plain 0-100 number.
+## Presentation only; set by the game layer, never read by the simulation.
+var number_format := Callable()
 
 
 static func load_json(path: String) -> SimResult:

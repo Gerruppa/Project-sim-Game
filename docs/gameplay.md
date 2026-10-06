@@ -390,6 +390,52 @@ zawsze; przy 0,05 powroty były tylko 1,3-6 razy wolniejsze. Wybrano 0,01:
 ślad decyzji trwa tysiące ticków (krzewy na seedzie 13 nie wróciły przez
 ponad 10 000), a planeta dalej się natlenia i rozwija.
 
+# Czytelność po sesjach gry (etap A, 2026-10-06)
+
+Uwagi z partii użytkownika: „dostępne od ticku 840” nic nie mówi, gracz
+nie wie, jak długo działa akcja i kiedy patrzeć na skutek, skala 0-100 nic
+nie mówi, brakuje kolorów „dobrze / źle”. Fun Detector: wskaźnik działania
+akcji KEEP (domyka pętlę „interweniuj → zobacz skutek”), jednostki KEEP
+(tylko prezentacja), licznik KEEP uproszczony (sekundy tylko w oknie),
+kolory SIMPLIFY (strefy z danych gatunków, żeby zieleń nie była stałym
+celem do optymalizacji).
+
+Wszystko jest w warstwie gry (`game/`, `ui/`); symulacja, zapis i złoty ślad
+bez zmian.
+
+- **Jednostki** (`DisplayScale`, `resources/display/display.json`): każdy
+  parametr przelicza się przez punkty kotwiczące `[[wartość, pokazana], ...]`.
+  Kotwice stoją tam, gdzie gra na coś reaguje, z wartością, przy której to
+  samo dzieje się na Ziemi: temperatura 16 → 0 °C (epoka lodowa), 30 → 10 °C
+  (start), 40 → 24 °C (przegrzanie); tlen 22 → 16 % (pożary); CO₂ 8 → 180 ppm
+  (głód roślin), 16 → 420 ppm; opady 5 → 300 mm/rok (krzewy), 8 → 600 mm/rok
+  (las). Między kotwicami liniowo, rosnąco. Pierwsza wersja (liniowo
+  −30…70 °C) pokazała w konsoli „Przegrzanie” przy 10,5 °C, bo progi gry
+  nie są liniowe względem ziemskich. Kotwica schematu „tlen 50 = poziom
+  ziemski” przeczy mechanice pożarów, więc wygrywa mechanika.
+- Strzałki zmian to różnica dwóch pokazanych wartości (dokładnie); różnice
+  w kronice („spada o…”) przelicza się wokół bieżącej wartości (przybliżenie
+  między kotwicami). Podpowiedzi, kronika gry i tekst ambicji „Oddech
+  planety” mówią tymi samymi jednostkami; test pilnuje, żeby tekst ambicji
+  zgadzał się z `display.json`. Tryb komend i logi zostają w skali 0-100.
+- **Strefy życia** (`LifeZones`): kolor parametru z danych gatunków żyjących
+  albo mogących pojawić się następnie (bez poprzednika albo z żyjącym
+  poprzednikiem). Zielony: w zakresie któregoś z nich; żółty: w marginesie,
+  gdzie gatunek jeszcze rośnie; czerwony: poza wszystkimi; bez koloru, gdy
+  żaden gatunek parametru nie potrzebuje (zachmurzenie, skorupa). Tylko okno.
+- **Odliczanie**: okno pokazuje cooldown w sekundach przy wybranym tempie
+  (zaokrąglone w górę), w pauzie z dopiskiem „przy x100”; konsola „za N
+  ticków (od ticku T)”.
+- **Działające akcje**: `GameSession.active_actions()` podaje fazę
+  (zaplanowana, działa, skutek widoczny), ile ticków jeszcze działa i kiedy
+  skutek zwykle zanika. Czas skutku to pomiar `intervention_trace.gd` (kolumna
+  „Skutek trwa” wyżej) zapisany w `display.json` (`effect_ticks`). Zasiew nie
+  był mierzony, więc nie jest śledzony. Gra wczytana w trakcie akcji
+  odtwarza tylko akcje, których modyfikatory jeszcze działają.
+
+Otwarte: wykres w oknie nadal ma oś 0-100; zmierzyć czas skutku zasiewu;
+czy kolory zmieniają to, co gracze robią (sesje etapu A).
+
 # Kryteria akceptacji
 
 - każde wymieranie w kronice ma przyczynę (9a)

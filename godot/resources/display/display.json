@@ -1,0 +1,29 @@
+{
+	"display_version": 2,
+	"parameters": {
+		"temperature": {"label": "Średnia temperatura", "unit": "°C", "decimals": 1,
+			"points": [[0, -30], [16, 0], [30, 10], [40, 24], [100, 100]]},
+		"humidity": {"unit": "%", "decimals": 0,
+			"points": [[0, 0], [20, 40], [40, 80], [100, 100]]},
+		"oxygen": {"unit": "% atmosfery", "decimals": 1,
+			"points": [[0, 0], [22, 16], [40, 30], [100, 60]]},
+		"biomass": {"unit": "t/ha", "decimals": 0,
+			"points": [[0, 0], [100, 600]]},
+		"cloud_cover": {"unit": "%", "decimals": 0,
+			"points": [[0, 0], [50, 65], [100, 100]]},
+		"precipitation": {"unit": "mm/rok", "decimals": 0,
+			"points": [[0, 0], [5, 300], [8, 600], [50, 1500], [100, 4000]]},
+		"co2": {"unit": "ppm", "decimals": 0,
+			"points": [[0, 0], [8, 180], [16, 420], [40, 10000], [100, 950000]]},
+		"crust_oxidation": {"unit": "%", "decimals": 0,
+			"points": [[0, 0], [100, 100]]}
+	},
+	"actions": {
+		"cull_species": {"effect_ticks": [680, 2200]},
+		"mirrors_warm": {"effect_ticks": [1490, 2400]},
+		"mirrors_cool": {"effect_ticks": [1270, 2600]},
+		"cloud_seeding": {"effect_ticks": [660, 2410]},
+		"aquifer_release": {"effect_ticks": [580, 2460]},
+		"volcanic_awakening": {"effect_ticks": [1560, 2580]}
+	}
+}

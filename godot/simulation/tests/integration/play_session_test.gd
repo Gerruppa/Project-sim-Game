@@ -36,7 +36,7 @@ func test_new_game_shows_the_intro_and_the_first_decision_with_a_menu() -> void:
 	assert_str(text).contains("Witaj w Genesis Error.")
 	assert_str(text).contains("=== Punkt decyzji: tick 130 (rok 1) ===")
 	assert_str(text).contains("Co się stało:  Pojawiają się bakterie.")
-	assert_str(text).contains("Planeta:\n  Temperatura ")
+	assert_str(text).contains("Planeta:\n  Średnia temperatura ")
 	assert_str(text).contains("Życie:\n  bakterie ")
 	assert_str(text).contains("Podpowiedź:")
 	assert_str(text).contains(" 1) Zasiew gatunku")
@@ -102,7 +102,8 @@ func test_second_screen_shows_what_changed_since_the_first() -> void:
 	_session(["", "0", "q"]).play()
 	var text := _text()
 	assert_str(text).contains("Planeta (zmiana od poprzedniej decyzji, 164 ticki temu):")
-	assert_str(text).contains("Temperatura            35.0   ↓ 5.5")
+	# The mean temperature in degrees, and its change since the first screen.
+	assert_str(text).contains("%-20s %16s   %s" % ["Średnia temperatura", "17.0 °C", "↓ 7.7"])
 	assert_str(text).contains("bakterie        15   ↑ 14")
 
 

@@ -320,10 +320,12 @@ static func create_log(config: SimConfig, id: String, echo: bool) -> SimResult:
 
 ## Opens <run_id>.chronicle.txt if the config asks for it; `echo` prints the
 ## chronicle to the console. Value is null when the chronicle goes nowhere.
-static func create_chronicle(config: SimConfig, id: String, echo: bool, texts_path: String = ChronicleTexts.DEFAULT_PATH) -> SimResult:
+static func create_chronicle(config: SimConfig, id: String, echo: bool, texts_path: String = ChronicleTexts.DEFAULT_PATH,
+		number_format: Callable = Callable()) -> SimResult:
 	var texts := ChronicleTexts.load_json(texts_path)
 	if not texts.is_ok():
 		return texts
+	texts.value.number_format = number_format
 	var result := SimResult.new()
 	var sinks: Array[LogSink] = []
 	if config.log_chronicle():

@@ -10,8 +10,9 @@
 		"gatunek wymrze, zacznie się susza), gra się zatrzyma i zapyta, co robisz.",
 		"Możesz też nic nie robić: planeta poradzi sobie po swojemu.",
 		"",
-		"Wszystkie wartości planety są w skali 0-100. Jeden tick to jeden krok",
-		"symulacji, rok ma 360 ticków. Wymarłe gatunki prawie nie wracają same.",
+		"Wartości planety są w zwykłych jednostkach (temperatura w °C, opady w mm).",
+		"Jeden tick to jeden krok symulacji, rok ma 360 ticków. Wymarłe gatunki",
+		"prawie nie wracają same.",
 		"",
 		"Cel? Zrozumieć planetę. Zadawaj sobie pytanie: co się stanie, jeśli...?"
 	],

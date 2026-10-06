@@ -30,7 +30,7 @@
 		{
 			"id": "mirrors_warm",
 			"name": "Lustra orbitalne",
-			"help": "Na 500 ticków podnosi temperaturę, do której dąży klimat (+2, +4 lub +8). Lekko często pomaga, mocno to ryzyko.",
+			"help": "Na 500 ticków podnosi temperaturę, do której dąży klimat (lekko, umiarkowanie albo z pełną mocą). Lekko często pomaga, mocno to ryzyko.",
 			"cooldown": 1500,
 			"cooldown_group": "mirrors",
 			"duration": 500,
@@ -51,7 +51,7 @@
 		{
 			"id": "mirrors_cool",
 			"name": "Pył orbitalny",
-			"help": "Na 500 ticków obniża temperaturę, do której dąży klimat (−2, −4 lub −8). Mocne ochłodzenie potrafi wywołać epokę lodową.",
+			"help": "Na 500 ticków obniża temperaturę, do której dąży klimat (lekko, umiarkowanie albo z pełną mocą). Mocne ochłodzenie potrafi wywołać epokę lodową.",
 			"cooldown": 1500,
 			"cooldown_group": "mirrors",
 			"duration": 500,

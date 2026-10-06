@@ -7,12 +7,13 @@ var _bus: EventBus
 var _sink: MemoryLogSink
 ## The bus does not keep subscribers alive; the test must.
 var _chronicle: PlanetChronicle
+var _texts: ChronicleTexts
 
 
 func before_test() -> void:
 	_bus = EventBus.new()
 	_sink = MemoryLogSink.new()
-	var texts: ChronicleTexts = ChronicleTexts.from_data({
+	_texts = ChronicleTexts.from_data({
 		"species": {"moss": "mchy"},
 		"events": {"species_emerged": "Pojawiają się {species}.", "planet_personality": "Planeta budzi się. {description}",
 				"species_extinct": "Wymierają {species}: {cause}."},
@@ -25,7 +26,7 @@ func before_test() -> void:
 			"drop_from_peak": "{param} {percent}% poniżej szczytu",
 		},
 	}).value
-	_chronicle = PlanetChronicle.new([_sink], texts)
+	_chronicle = PlanetChronicle.new([_sink], _texts)
 	_chronicle.attach(_bus)
 	var state: PlanetState = PlanetState.create(P.schema([P.parameter("humidity", 30.0)])).value
 	_chronicle.begin_run(42, state.snapshot(0))
@@ -61,6 +62,19 @@ func test_signed_phrase_follows_the_sign_of_the_measure() -> void:
 
 
 func test_fractions_read_as_percent() -> void:
+	_publish(&"world_event_started", 1, {"story": "S.", "causes": [_fact("drop_from_peak", 0.314)]})
+	assert_str(_sink.lines[1]).contains("Humidity 31% poniżej szczytu")
+
+
+func test_numbers_follow_the_formatter_of_the_players_units() -> void:
+	_texts.number_format = func(param: String, measure: String, value: float) -> String:
+		return "<%s %s %.1f>" % [param, measure, value]
+	_publish(&"world_event_started", 1, {"story": "S.", "causes": [_fact("value", 24.24), _fact("change", -5.36)]})
+	assert_str(_sink.lines[1]).is_equal("[Tick 1] S. (Humidity <humidity value 24.2>; Humidity spada o <humidity change 5.4> w 500)")
+
+
+func test_a_share_stays_a_percentage_whatever_the_formatter() -> void:
+	_texts.number_format = func(_param: String, _measure: String, _value: float) -> String: return "X"
 	_publish(&"world_event_started", 1, {"story": "S.", "causes": [_fact("drop_from_peak", 0.314)]})
 	assert_str(_sink.lines[1]).contains("Humidity 31% poniżej szczytu")
 

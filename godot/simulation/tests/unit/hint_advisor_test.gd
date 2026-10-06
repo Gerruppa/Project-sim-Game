@@ -101,3 +101,14 @@ func test_rejects_incomplete_hint_data() -> void:
 	var result := HintAdvisor.from_data({"intro": "x", "causes": {"cold": {"text": "x"}}})
 	assert_bool(result.is_ok()).is_false()
 	assert_int(result.errors.size()).is_greater_equal(4)
+
+
+func test_needs_are_written_in_the_players_units_when_a_scale_is_set() -> void:
+	var species: SpeciesData = S.catalog([S.species("moss", {"t_min": 10.0})]).all()[0]
+	var cold := S.snapshot({"temperature": 5.0})
+	assert_str(_advisor.missing_needs(species, cold)[0]).is_equal("ciepła (temperatura 5.0, potrzeba co najmniej 10)")
+	var scale := DisplayScale.from_data({"parameters": {"temperature": {"unit": "°C", "decimals": 1,
+			"points": [[0, -30], [100, 70]]}}}, [&"temperature"], [])
+	assert_array(Array(scale.errors)).is_empty()
+	_advisor.scale = scale.value
+	assert_str(_advisor.missing_needs(species, cold)[0]).is_equal("ciepła (temperatura -25.0 °C, potrzeba co najmniej -20.0 °C)")

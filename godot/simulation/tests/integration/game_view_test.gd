@@ -143,3 +143,47 @@ func test_new_game_screen_draws_a_planet_when_no_number_is_given() -> void:
 	view.new_game()
 	assert_object(view.session).is_not_null()
 	assert_int(view.session.manager.config().seed()).is_between(1, 99999)
+
+
+func test_parameters_show_the_players_units_and_life_zone_colours() -> void:
+	var view := _open()
+	view.start()
+	_to_decision(view)
+	# The starting planet is 30 on the 0-100 scale, which is freezing point in degrees.
+	assert_str(view.parameter_text("temperature")).ends_with(" °C")
+	assert_str(view.parameter_text("oxygen")).ends_with(" % atmosfery")
+	# Bacteria live at 5-70, so the temperature is in their range (green); cloud cover limits nobody.
+	assert_bool(view.parameter_color("temperature") == GameView.ZONE_COLORS["good"]).is_true()
+	assert_bool(view.parameter_color("cloud_cover") == Color.TRANSPARENT).is_true()
+
+
+func test_cooldown_counts_in_seconds_of_the_chosen_speed() -> void:
+	var view := _open()
+	view.start()
+	_to_decision(view)
+	view.set_speed(100)
+	assert_bool(view.act("aquifer_release").is_ok()).is_true()
+	view.start()
+	view.advance(1)
+	# 900 ticks of cooldown at 100 ticks per second: 9 seconds.
+	assert_str(view.action_text("aquifer_release")).is_equal("Wody podziemne (9 s)")
+	view.set_speed(10)
+	assert_str(view.action_text("aquifer_release")).is_equal("Wody podziemne (1 min 30 s)")
+	view.advance(100)
+	assert_str(view.action_text("aquifer_release")).ends_with("s)")
+	assert_str(view.action_text("mirrors_warm")).is_equal("Lustra orbitalne")
+
+
+func test_a_running_action_shows_how_long_it_acts_and_when_its_effect_fades() -> void:
+	var view := _open()
+	view.start()
+	_to_decision(view)
+	view.set_speed(100)
+	view.act("aquifer_release")
+	var queued := view.watch_lines()[0]
+	assert_str(queued).starts_with("Wody podziemne: ruszy w następnym ticku")
+	view.start()
+	view.advance(1)
+	var line := view.watch_lines()[0]
+	assert_str(line).starts_with("Wody podziemne: działa jeszcze 3 s")
+	assert_str(line).contains("skutek zwykle widać jeszcze")

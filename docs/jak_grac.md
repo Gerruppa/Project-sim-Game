@@ -56,7 +56,19 @@ Okno pokazuje planetę na żywo:
   niebieska poświata to tlen
 - **wykres** temperatury, wilgotności, tlenu, biomasy i CO₂ w czasie
 - **tabele** parametrów i gatunków z paskami i strzałkami zmian od
-  ostatniej decyzji
+  ostatniej decyzji; parametry są w zwykłych jednostkach (rozdział 6)
+- **kolory** parametrów: **zielony** to zakres, w którym może żyć któryś
+  z obecnych gatunków albo ten, który może pojawić się następny,
+  **żółty** to granica (gatunek jeszcze rośnie, ale cierpi), **czerwony**
+  to zakres, w którym nie żyje żaden z nich; brak koloru znaczy, że żaden
+  gatunek tego parametru nie potrzebuje. Strefy przesuwają się razem z
+  sukcesją: drzewa chcą cieplej niż bakterie
+- **przyciski akcji** w trakcie odnawiania pokazują odliczanie w sekundach
+  przy wybranym tempie, np. „Wody podziemne (9 s)”; w pauzie i w punkcie
+  decyzji licznik stoi i ma dopisek „przy x100”
+- **Działające akcje** (pod celami): każda akcja z paskiem, jak długo
+  jeszcze działa i przez ile mniej więcej sekund widać jej skutek (z
+  pomiarów na wielu planetach). Wtedy warto patrzeć na wykres i kronikę
 - **kronika** planety (prawa kolumna) i **cel** z ambicjami (pod planetą)
 - **panel decyzji** na dole: gra sama się zatrzymuje w punkcie decyzji,
   pokazuje, co się stało, i podpowiedź; akcje to przyciski (gatunek i siłę
@@ -89,35 +101,28 @@ Zapisy i kroniki wersji samodzielnej trafiają do
 W każdym punkcie decyzji gra pokazuje:
 
 ```text
-=== Punkt decyzji: tick 333 (rok 1) ===
-Co się stało:  Pojawiają się glony.
-Planeta (zmiana od poprzedniej decyzji, 203 ticki temu):
-  Temperatura            31.0   ↓ 9.5
-  Wilgotność             30.8   ↓ 5.4
-  Tlen                    0.5   ↓ 0.6
-  Biomasa                 1.3   ↑ 1.3
-  Zachmurzenie           47.2   ↓ 2.4
-  Opady                   9.6   ↓ 2.4
-  Dwutlenek węgla        37.4   ↓ 2.8
-  Utlenienie skorupy      0.2   ↑ 0.1
+=== Punkt decyzji: tick 285 (rok 1) ===
+Co się stało:  Przegrzanie: gorący klimat wyczerpuje życie. (Temperatura średnio 24,6 °C przez 200 ticków)
+Planeta (zmiana od poprzedniej decyzji, 155 ticków temu):
+  Średnia temperatura           19.3 °C   ↓ 5.3
+  Wilgotność                       68 %   ↓ 5
+  Tlen                  0.5 % atmosfery   ↓ 0.4
+  Biomasa                        4 t/ha   ↑ 4
+  Zachmurzenie                     62 %   ↓ 2
+  Opady                      657 mm/rok   ↓ 29
+  Dwutlenek węgla            119064 ppm   ↑ 106644
+  Utlenienie skorupy                0 %   =
 Życie:
-  bakterie        24   ↑ 23
-  glony            1   nowe
-  mchy             –
-  krzewy           –
-  drzewa           –
-
-Podpowiedź:
- • Następny etap życia: mchy. Brakuje: tlenu (0.5, potrzeba ok. 2), gleby, czyli biomasy (1.3, potrzeba 3).
+  bakterie        14   ↑ 13
+  glony            –
+  ...
+W toku (akcje, których skutek warto obserwować):
+  Przebudzenie wulkanów: działa jeszcze 246 ticków; skutek zwykle widać jeszcze 1406–2426 ticków
 
 Co robisz?
  1) Zasiew gatunku             gotowe
- 2) Przerzedzenie gatunku      gotowe
- 3) Lustra orbitalne           gotowe
- 4) Pył orbitalny              gotowe
- 5) Zasiew chmur               gotowe
- 6) Wody podziemne             gotowe
- 7) Przebudzenie wulkanów      gotowe
+ ...
+ 7) Przebudzenie wulkanów      za 1845 ticków (od ticku 2131)
  0) Czekaj, nic nie rób (albo Enter)
  ?) Wyjaśnij akcje   h) Ukryj podpowiedzi   q) Zapisz i wyjdź
 >
@@ -127,6 +132,10 @@ Co robisz?
   `↑`/`↓` z wielkością zmiany, `=` gdy nic się nie zmieniło; gatunki mają
   statusy **nowe**, **wróciły** i **wymarły od ostatniej decyzji**. Tak
   widać skutki Twojej ostatniej akcji (na pierwszym ekranie strzałek nie ma)
+- **W toku** wymienia Twoje wcześniejsze akcje: ile ticków jeszcze działają
+  i przez ile mniej więcej ticków widać ich skutek (z pomiarów). Zasiew
+  działa od razu i nie był mierzony, więc go tu nie ma
+- akcja, która się odnawia, ma w menu „za N ticków (od ticku T)”
 - wpisz **numer akcji** i Enter; gra dopyta o gatunek (z informacją, czego
   mu brakuje) albo o siłę (Enter = domyślna)
 - możesz zrobić **kilka akcji** w jednym punkcie decyzji; **Enter** albo
@@ -141,7 +150,8 @@ Co robisz?
 **Podpowiedzi** mówią trzy rzeczy: dlaczego coś się stało (przyczyna
 wymarcia), co może pomóc (na podstawie pomiarów na wielu planetach, np.
 „w suszy pomagają wody podziemne”) i czego brakuje następnemu etapowi życia
-(np. „mchom brakuje tlenu: 0.5, potrzeba ok. 2”). Podpowiedź to wskazówka,
+(np. „mchom brakuje tlenu: 0.4 % atmosfery, potrzeba ok. 1.5 % atmosfery”).
+Podpowiedź to wskazówka,
 nie przepis: planeta potrafi zaskoczyć.
 
 ### Cel gry, gwiazdki i ambicje
@@ -174,7 +184,7 @@ decyzji bez straty gatunku.
 
 | Ambicja | Warunek |
 |---|---|
-| Oddech planety | tlen powyżej 15 przed rokiem 13 |
+| Oddech planety | tlen powyżej 10,9 % atmosfery przed rokiem 13 |
 | Pierwszy las | drzewa z populacją powyżej 10 |
 | Przetrwać zimę | epoka lodowa minęła bez wymarcia, przy co najmniej 4 etapach życia |
 | Po pożarze | po sezonie pożarów drzewa mają populację co najmniej 10 |
@@ -242,8 +252,12 @@ Planeta (skala 0-100): Temperatura 42.7, Wilgotność 36.6, Tlen 1.7, Biomasa 7.
 Gatunki (populacja 0-100): bacteria 52.2, algae 47.7, moss 0.0 (wymarłe), shrub 0.0, tree 0.0
 ```
 
-Mchy zginęły, bo w powietrzu jest dopiero 1,7 tlenu, a mchy potrzebują go
-więcej. Lekcja: najpierw glony muszą natlenić planetę. Teraz mchy są
+Tryb komend to narzędzie do eksperymentów, więc pokazuje surowe wartości
+symulacji w skali 0-100 (gra z menu i okno pokazują zwykłe jednostki,
+przeliczenie w rozdziale 6).
+
+Mchy zginęły, bo w powietrzu jest dopiero 1,7 tlenu (1,2 % atmosfery),
+a mchy potrzebują go więcej. Lekcja: najpierw glony muszą natlenić planetę. Teraz mchy są
 **wymarłe** i same prawie nie wrócą, więc jeśli gracz ich chce, musi je
 kiedyś zasiać ponownie, gdy tlenu będzie więcej.
 
@@ -265,7 +279,8 @@ Dalej: ./godot/run_simulation.sh --load decision.json --act <interwencja> --unti
 ```
 
 - **gotowe**: akcję można użyć teraz
-- **od ticku N**: akcja się odnawia (cooldown); komenda z nią zostanie odrzucona
+- **od ticku N**: akcja się odnawia (cooldown); komenda z nią zostanie
+  odrzucona (gra z menu pisze to jako „za N ticków”, okno odlicza sekundy)
 - **(wymarłe)**: gatunek zniknął i sam prawie nie wróci
 
 Punkt decyzji wypada przy: **początku zdarzenia** (susza, epoka lodowa,
@@ -285,13 +300,16 @@ W grze z menu wybierasz akcje numerem. W trybie komend dodajesz je opcją `--act
 |---|---|---|---|---|
 | `seed_species:<gatunek>` | Zasiew gatunku | dodaje 5 punktów populacji gatunku (przywraca wymarłe) | od razu | 300 |
 | `cull_species:<gatunek>` | Przerzedzenie | zostawia 10% populacji; poniżej progu gatunek wymiera | od razu | 300 |
-| `mirrors_warm[:poziom]` | Lustra orbitalne | ogrzewa planetę: +2 / +4 / +8 do temperatury, do której dąży klimat | 500 | 1500 (wspólne z pyłem) |
-| `mirrors_cool[:poziom]` | Pył orbitalny | ochładza: −2 / −4 / −8 | 500 | 1500 (wspólne z lustrami) |
+| `mirrors_warm[:poziom]` | Lustra orbitalne | ogrzewa planetę: +2 / +4 / +8 punktów skali do temperatury, do której dąży klimat | 500 | 1500 (wspólne z pyłem) |
+| `mirrors_cool[:poziom]` | Pył orbitalny | ochładza: −2 / −4 / −8 punktów | 500 | 1500 (wspólne z lustrami) |
 | `cloud_seeding` | Zasiew chmur | deszcz pada nawet z rzadkich chmur | 300 | 900 |
 | `aquifer_release` | Wody podziemne | ląd paruje 2,5 raza mocniej, rośnie wilgotność | 300 | 900 |
 | `volcanic_awakening` | Przebudzenie wulkanów | wulkany wydzielają 3 razy więcej CO₂ | 400 | 2000 |
 
-Czasy podane są w tickach.
+Czasy podane są w tickach. Ile stopni daje punkt skali, zależy od
+temperatury (rozdział 6): przy starcie (10 °C) lustra dają ok. +2,8 /
++5,6 / +11,2 °C, a pył ok. −1,4 / −2,9 / −5,7 °C, bo w ciepłym zakresie
+stopnie rosną szybciej niż w chłodnym.
 
 **Gatunki** (do `seed_species` i `cull_species`): `bacteria` (bakterie),
 `algae` (glony), `moss` (mchy), `shrub` (krzewy), `tree` (drzewa).
@@ -319,18 +337,28 @@ Czasy podane są w tickach.
 
 ## 6. Mechaniki planety
 
-### Parametry (skala 0-100)
+### Parametry
 
-| Parametr | Start | Co znaczy |
-|---|---|---|
-| Temperatura | 30 | 0 zamarznięta, 50 optimum, 100 wrząca |
-| Wilgotność | 15 | woda w powietrzu; z niej żyją bakterie, glony, mchy |
-| Tlen | 2 | wytwarzany przez życie; powyżej ok. 22 zaczynają się pożary |
-| Biomasa | 0 | suma życia na planecie |
-| Zachmurzenie | 10 | chmury ochładzają i dają deszcz |
-| Opady | 0 | deszcz; z niego żyją krzewy i drzewa |
-| Dwutlenek węgla | 40 | efekt cieplarniany i pokarm roślin |
-| Utlenienie skorupy | 0 | dopóki skorupa jest świeża, pochłania tlen |
+Symulacja liczy wszystko w jednej skali 0-100. Gra pokazuje te liczby
+w zwykłych jednostkach, dobranych tak, żeby każdy próg gry wypadał tam,
+gdzie to samo dzieje się na Ziemi: epoka lodowa zaczyna się poniżej 0 °C
+średnio, pożary od 16 % tlenu, rośliny głodują poniżej ok. 180 ppm CO₂,
+las rośnie od 600 mm opadów rocznie. Pomiędzy tymi punktami przeliczenie
+jest liniowe, więc ten sam krok w skali to nie zawsze tyle samo stopni.
+
+| Parametr | Start | Jednostka | Co znaczy |
+|---|---|---|---|
+| Średnia temperatura | 10 °C | °C (średnia całej planety) | poniżej 0 °C epoka lodowa, powyżej 24 °C przegrzanie |
+| Wilgotność | 30 % | % (względna) | woda w powietrzu; z niej żyją bakterie, glony, mchy |
+| Tlen | 1,5 % | % atmosfery | wytwarzany przez życie; od 16 % zaczynają się pożary (Ziemia: 21 %) |
+| Biomasa | 0 t/ha | tony na hektar | suma życia na planecie |
+| Zachmurzenie | 13 % | % nieba | chmury ochładzają i dają deszcz (Ziemia: ok. 65 %) |
+| Opady | 0 mm/rok | mm na rok | deszcz; z niego żyją krzewy (od 300 mm) i drzewa (od 600 mm) |
+| Dwutlenek węgla | 10 000 ppm | ppm | efekt cieplarniany i pokarm roślin (Ziemia: 420 ppm) |
+| Utlenienie skorupy | 0 % | % | dopóki skorupa jest świeża, pochłania tlen |
+
+Przeliczenie jest w `godot/resources/display/display.json` (punkty
+kotwiczące). Tryb komend (rozdział 3) i logi pokazują surową skalę 0-100.
 
 Jeden **tick** to jeden krok symulacji. Rok ma 360 ticków (pory roku).
 
@@ -341,11 +369,11 @@ poprzednika, z którego „wyrasta”.
 
 | Gatunek | Temperatura | Woda | Potrzebuje | Wyrasta z |
 |---|---|---|---|---|
-| bakterie | 5-70 | wilgotność ≥ 5 | nic; giną przy dużej ilości tlenu (zostają w niszach) | samo |
-| glony | 10-45 | wilgotność ≥ 20 | CO₂ | bakterii |
-| mchy | 5-35 | wilgotność ≥ 22 | CO₂, trochę tlenu, trochę gleby (biomasy) | glonów |
-| krzewy | 15-45 | opady ≥ 5 | tlen ≥ 12, gleba ≥ 12 | mchów |
-| drzewa | 20-45 | opady ≥ 8 | tlen ≥ 18, gleba ≥ 20 | krzewów |
+| bakterie | −21…62 °C | wilgotność ≥ 10 % | nic; giną przy dużej ilości tlenu (zostają w niszach) | samo |
+| glony | −11…30 °C | wilgotność ≥ 40 % | CO₂ ≥ 240 ppm | bakterii |
+| mchy | −21…17 °C | wilgotność ≥ 44 % | CO₂, tlen ≥ 1,5 %, gleba (biomasa) ≥ 18 t/ha | glonów |
+| krzewy | −2…30 °C | opady ≥ 300 mm/rok | tlen ≥ 8,7 %, gleba ≥ 72 t/ha | mchów |
+| drzewa | 3…30 °C | opady ≥ 600 mm/rok | tlen ≥ 13,1 %, gleba ≥ 120 t/ha | krzewów |
 
 Wyższe rośliny zacieniają niższe (krzewy i drzewa dławią mchy). Krzewy
 i drzewa łatwo płoną.
@@ -363,14 +391,14 @@ krzewy, a bez krzewów drzewa.
 
 ### Zdarzenia
 
-- **Susza**: gdy jest ciepło (powyżej 22), a wilgotność spada wyraźnie
+- **Susza**: gdy jest ciepło (powyżej 4 °C), a wilgotność spada wyraźnie
   poniżej swojej normy. Mniej wody, rośliny rosną wolniej (×0,6), pożarów
   jest dwa razy więcej. Mija, gdy wilgotność wróci do normy (najpóźniej po
   400 tickach).
-- **Epoka lodowa**: gdy średnia temperatura spadnie poniżej 16. Rośliny
+- **Epoka lodowa**: gdy średnia temperatura spadnie poniżej 0 °C. Rośliny
   rosną wolniej i gorzej znoszą zimno. Lekkie lustra pomagały w większości
   epok, mocne często szkodziły.
-- **Przegrzanie**: gdy średnia temperatura przekroczy 40. Upał spowalnia
+- **Przegrzanie**: gdy średnia temperatura przekroczy 24 °C. Upał spowalnia
   wzrost. Pomagały lekki pył i wody podziemne.
 - **Sezon pożarów**: gdy jest dużo tlenu, sucho i jest co palić. Rośliny
   zapalają się od byle iskry: płoną głównie drzewa, a krzewy zajmują ich
@@ -468,7 +496,10 @@ domyślnie zapisuje tylko kronikę. Stare logi możesz bezpiecznie usuwać.
 
 ## 10. Ograniczenia prototypu
 
-- brak grafiki: planetę poznajesz z kroniki i liczb
+- grafika jest debugowa: planetę poznajesz z kroniki, liczb i wykresu
+- zwykłe jednostki są przybliżeniem: symulacja liczy w skali 0-100,
+  a gra tylko ją przelicza; czas widocznego skutku akcji to średnia z pomiarów, na
+  konkretnej planecie skutek może trwać krócej albo dłużej
 - akcja zawsze zaczyna działać w następnym ticku po punkcie decyzji
 - cele są proste (jeden cel główny, trzy gwiazdki, siedem ambicji); dalej
   najważniejsze jest zrozumienie planety („ciekawe, co się stanie, jeśli…”)

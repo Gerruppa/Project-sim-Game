@@ -17,6 +17,9 @@ const DEFAULT_SPEED := 100
 ## Ticks between two chart samples.
 const SAMPLE_EVERY := 10
 const CHART_PARAMS: Array[String] = ["temperature", "humidity", "oxygen", "biomass", "co2"]
+## Colours of the life zones (LifeZones): a range life can live in, the margin
+## where it only just grows, and a range it cannot.
+const ZONE_COLORS := {"good": Color("3fb950"), "poor": Color("d29922"), "bad": Color("f85149")}
 ## Planet characters on the new-game screen: [personality option, label].
 const CHARACTERS := [["random", "losowy"], ["harmonious", "Harmonijna"], ["chaotic", "Chaotyczna"],
 		["guardian", "Strażnik"]]
@@ -46,6 +49,11 @@ var _decision_text: RichTextLabel
 var _actions: HFlowContainer
 var _continue_button: Button
 var _action_rows := {}
+var _watch_box: VBoxContainer
+## action id -> {"label": Label, "bar": ProgressBar}
+var _watch_rows := {}
+var _param_ids: Array[String] = []
+var _zone_styles := {}
 var _error: Label
 var _new_game_box: HBoxContainer
 var _seed_edit: LineEdit
@@ -285,6 +293,31 @@ func decision_text() -> String:
 	return _decision_title.text + "\n" + _decision_text.get_parsed_text()
 
 
+## What an action's button says (its name, and the wait while it recharges).
+func action_text(id: String) -> String:
+	return (_action_rows[id]["button"] as Button).text
+
+
+## What the value label of a parameter shows, in the player's units.
+func parameter_text(id: String) -> String:
+	return (_params.get_child(_param_ids.find(id) * 4 + 2) as Label).text
+
+
+## The colour of a parameter's value (green, amber or red); Color.TRANSPARENT
+## when no species limits it.
+func parameter_color(id: String) -> Color:
+	var label := _params.get_child(_param_ids.find(id) * 4 + 2) as Label
+	return label.get_theme_color("font_color") if label.has_theme_color_override("font_color") else Color.TRANSPARENT
+
+
+## The lines of the "Działające akcje" panel.
+func watch_lines() -> PackedStringArray:
+	var lines := PackedStringArray()
+	for id: String in _watch_rows:
+		lines.append((_watch_rows[id]["label"] as Label).text)
+	return lines
+
+
 func _on_chronicle_line(line: String) -> void:
 	if _chronicle != null:
 		_chronicle.append_text(line + "\n")
@@ -317,9 +350,12 @@ func _refresh() -> void:
 	for i in rows.size():
 		values[rows[i]["id"]] = rows[i]["value"]
 		if i * 4 + 3 < _params.get_child_count():
-			(_params.get_child(i * 4 + 1) as ProgressBar).value = rows[i]["value"]
-			(_params.get_child(i * 4 + 2) as Label).text = "%.1f" % rows[i]["value"]
+			var bar := _params.get_child(i * 4 + 1) as ProgressBar
+			var shown := _params.get_child(i * 4 + 2) as Label
+			bar.value = rows[i]["value"]
+			shown.text = rows[i]["shown"]
 			(_params.get_child(i * 4 + 3) as Label).text = rows[i]["change"]
+			_color_zone(bar, shown, rows[i]["zone"])
 	_planet.show_state(values)
 	var life := session.life_rows()
 	for i in life.size():
@@ -334,9 +370,87 @@ func _refresh() -> void:
 		if row.is_empty():
 			continue
 		var button: Button = row["button"]
+		var wait := time_text(int(action["ready_in"]))
 		button.disabled = not allowed or not action["ready"]
-		button.tooltip_text = action["help"] + ("" if action["ready"] else "\nDostępne od ticku %d." % action["ready_at"])
-		button.text = action["name"] + ("" if action["ready"] else " (od %d)" % action["ready_at"])
+		button.tooltip_text = action["help"] + ("" if action["ready"] else "\nGotowe za %s%s." % [wait, _speed_note()])
+		button.text = action["name"] + ("" if action["ready"] else " (%s)" % wait)
+	_update_watch()
+
+
+## The tick rate of the chosen speed in real time, also while paused: what a
+## countdown would run at once the planet runs.
+func _ticks_per_second() -> float:
+	return session.manager.config().base_ticks_per_second() * _scheduler.speed()
+
+
+## A number of ticks as the player waits for it: "12 s" at the current speed.
+func time_text(ticks: int) -> String:
+	return GameSession.seconds_text(ticks, _ticks_per_second())
+
+
+## While the planet waits, a countdown only shows what it will take.
+func _speed_note() -> String:
+	return "" if _running else " przy x%d" % _scheduler.speed()
+
+
+## Colours a parameter by its life zone; "none" leaves the default look.
+func _color_zone(bar: ProgressBar, shown: Label, zone: String) -> void:
+	if not ZONE_COLORS.has(zone):
+		bar.remove_theme_stylebox_override("fill")
+		shown.remove_theme_color_override("font_color")
+		return
+	if not _zone_styles.has(zone):
+		var style := StyleBoxFlat.new()
+		style.bg_color = ZONE_COLORS[zone]
+		_zone_styles[zone] = style
+	bar.add_theme_stylebox_override("fill", _zone_styles[zone])
+	shown.add_theme_color_override("font_color", ZONE_COLORS[zone])
+
+
+## One line and bar per action still worth watching: how long it acts and
+## when its effect usually fades, in the player's real seconds.
+func _update_watch() -> void:
+	var seen := {}
+	for action in session.active_actions():
+		var id: String = action["id"]
+		seen[id] = true
+		if not _watch_rows.has(id):
+			var label := Label.new()
+			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			var bar := ProgressBar.new()
+			bar.max_value = 1.0
+			bar.show_percentage = false
+			bar.custom_minimum_size = Vector2(0, 8)
+			_watch_box.add_child(label)
+			_watch_box.add_child(bar)
+			_watch_rows[id] = {"label": label, "bar": bar}
+		var row: Dictionary = _watch_rows[id]
+		(row["label"] as Label).text = watch_text(action)
+		(row["bar"] as ProgressBar).value = action["progress"]
+	for id: String in _watch_rows.keys():
+		if not seen.has(id):
+			(_watch_rows[id]["label"] as Label).queue_free()
+			(_watch_rows[id]["bar"] as ProgressBar).queue_free()
+			_watch_rows.erase(id)
+	_watch_box.visible = not _watch_rows.is_empty()
+
+
+## "Pył orbitalny (lekko): działa jeszcze 8 s · skutek zwykle widać jeszcze 12–40 s".
+func watch_text(action: Dictionary) -> String:
+	var name: String = action["name"] + (" (%s)" % action["level_name"] if not (action["level_name"] as String).is_empty() else "")
+	var text := ""
+	match action["phase"]:
+		"queued":
+			text = "ruszy w następnym ticku"
+		"running":
+			text = "działa jeszcze %s" % time_text(int(action["remaining"]))
+		_:
+			text = "już nie działa"
+	if action["fade_max"] > 0:
+		var lower := time_text(int(action["fade_min"]))
+		var upper := time_text(int(action["fade_max"]))
+		text += " · skutek zwykle widać jeszcze %s" % (upper if lower == upper else "%s–%s" % [lower, upper])
+	return "%s: %s%s" % [name, text, _speed_note()]
 
 
 ## Goal lines without the console's column padding.
@@ -409,6 +523,12 @@ func _build() -> void:
 	_goals.fit_content = true
 	_goals.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	left.add_child(_goals)
+	_watch_box = VBoxContainer.new()
+	_watch_box.visible = false
+	left.add_child(_watch_box)
+	var watch_title := Label.new()
+	watch_title.text = "Działające akcje"
+	_watch_box.add_child(watch_title)
 
 	var center := VBoxContainer.new()
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -497,7 +617,7 @@ func _fill_table(grid: GridContainer, names: Array) -> void:
 		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		grid.add_child(bar)
 		var value := Label.new()
-		value.custom_minimum_size = Vector2(48, 0)
+		value.custom_minimum_size = Vector2(110, 0)
 		value.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		grid.add_child(value)
 		var change := Label.new()
@@ -506,6 +626,9 @@ func _fill_table(grid: GridContainer, names: Array) -> void:
 
 
 func _build_actions() -> void:
+	_param_ids.clear()
+	for row in session.planet_rows():
+		_param_ids.append(row["id"])
 	_fill_table(_params, session.planet_rows().map(func(r: Dictionary) -> String: return r["name"]))
 	_fill_table(_life, session.life_rows().map(func(r: Dictionary) -> String: return r["name"]))
 	for action in session.actions():

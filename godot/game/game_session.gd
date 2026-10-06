@@ -29,6 +29,8 @@ var manager: SimulationManager
 var goals: GoalTracker
 var advisor: HintAdvisor
 var texts: ChronicleTexts
+## The player's units for the planet's numbers and what the actions measured.
+var display: DisplayScale
 var hints := true
 ## False when the game continues a save.
 var new_game := true
@@ -45,6 +47,11 @@ var _last_values := PackedFloat64Array()
 var _last_populations := {}
 var _last_lost := {}
 var _last_tick := -1
+## Actions worth watching: {"id", "name", "level_name", "started", "ends",
+## "effect_until"}. Kept in memory; a loaded game starts from the timed
+## interventions still in effect.
+var _watch: Array[Dictionary] = []
+var _watch_loaded := false
 
 
 ## options: as PlaySession.parse_args gives them. chronicle_line(line) gets
@@ -56,14 +63,18 @@ static func create(options: Dictionary, chronicle_line: Callable) -> SimResult:
 	var advisor_read := HintAdvisor.load_json()
 	var texts_read := ChronicleTexts.load_json(ChronicleTexts.DEFAULT_PATH)
 	var goals_read := GoalTracker.load_json()
-	if not advisor_read.is_ok() or not texts_read.is_ok() or not goals_read.is_ok():
+	var display_read := _load_display(opened.value["manager"])
+	if not advisor_read.is_ok() or not texts_read.is_ok() or not goals_read.is_ok() or not display_read.is_ok():
 		var failed := SimResult.new()
-		failed.errors = advisor_read.errors + texts_read.errors + goals_read.errors
+		failed.errors = advisor_read.errors + texts_read.errors + goals_read.errors + display_read.errors
 		return failed
 	var session := GameSession.new()
 	session.manager = opened.value["manager"]
 	session.advisor = advisor_read.value
 	session.texts = texts_read.value
+	session.display = display_read.value
+	session.advisor.scale = session.display
+	session.texts.number_format = session._chronicle_number
 	session.hints = options.get("hints", true)
 	session.new_game = not opened.value["loaded"]
 	session.warnings = opened.value["warnings"]
@@ -79,14 +90,32 @@ static func create(options: Dictionary, chronicle_line: Callable) -> SimResult:
 	# files off with "file_logs": false.
 	if options.get("file_logs", true):
 		var log_id := SimulationRunner.run_id(config.seed())
-		var created: Array[SimResult] = [SimulationRunner.create_chronicle(config, log_id, false)]
+		var created: Array[SimResult] = [SimulationRunner.create_chronicle(config, log_id, false, ChronicleTexts.DEFAULT_PATH, session._chronicle_number)]
 		if options.get("full_logs", false):
 			created.append(SimulationRunner.create_log(config, log_id, false))
 		for result: SimResult in created:
 			if result.is_ok() and result.value != null:
 				session.manager.attach_log(result.value)
 	session.manager.attach_log(PlanetChronicle.new([LineSink.new(chronicle_line)], texts_read.value))
+	session._load_watch()
 	return SimResult.success(session)
+
+
+## A chronicle number in the player's units; a difference converts around the
+## parameter's value now (the chronicle writes as events happen).
+func _chronicle_number(param: String, measure: String, value: float) -> String:
+	return display.chronicle_number(param, measure, value, manager.snapshot().get_value(StringName(param)))
+
+
+## Player units, validated against this planet's parameters and interventions.
+static func _load_display(manager: SimulationManager) -> SimResult:
+	var schema := manager.snapshot().schema()
+	var parameters: Array[StringName] = []
+	for i in schema.size():
+		parameters.append(schema.def_at(i).id())
+	var hand := manager.system(InterventionSystem.ID) as InterventionSystem
+	var actions: Array[StringName] = [] if hand == null else hand.catalog().ids()
+	return DisplayScale.load_json(DisplayScale.DEFAULT_PATH, parameters, actions)
 
 
 ## Starts watching for the next decision point from the current tick.
@@ -147,15 +176,22 @@ func last_tick() -> int:
 	return _last_tick
 
 
-## Each parameter: {"name", "value", "change"} ("" on the first decision).
+## Each parameter: {"id", "name", "value" (0-100), "shown" (in the player's
+## units), "zone" (LifeZones: none, good, poor or bad) and "change" in those
+## units ("" on the first decision)}.
 func planet_rows() -> Array[Dictionary]:
 	var snapshot := manager.snapshot()
 	var schema := snapshot.schema()
+	var biosphere := _biosphere()
+	var life: Array[SpeciesData] = [] if biosphere == null else LifeZones.relevant(biosphere)
 	var rows: Array[Dictionary] = []
 	for i in schema.size():
+		var id := String(schema.def_at(i).id())
 		var value := snapshot.get_value_at(i)
-		rows.append({"id": String(schema.def_at(i).id()), "name": schema.def_at(i).display_name(), "value": value,
-				"change": "" if _last_values.is_empty() else trend(value - _last_values[i], 1)})
+		var change := "" if _last_values.is_empty() else trend(display.change(id, _last_values[i], value), display.decimals(id))
+		rows.append({"id": id, "name": display.label(id, schema.def_at(i).display_name()), "value": value,
+				"shown": display.shown(id, value),
+				"zone": String(LifeZones.zone(StringName(id), value, life)), "change": change})
 	return rows
 
 
@@ -204,8 +240,9 @@ func hint_lines(act_label: Callable) -> PackedStringArray:
 	return advisor.hints(decision_point(), manager.snapshot(), _biosphere(), texts.species, act_label)
 
 
-## Every intervention: {"id", "name", "help", "ready", "ready_at", "species"
-## (needs a species), "levels" ([[id, name], ...]), "default_level"}.
+## Every intervention: {"id", "name", "help", "ready", "ready_at", "ready_in"
+## (ticks until it can be used; 0 when ready), "species" (needs a species),
+## "levels" ([[id, name], ...]), "default_level"}.
 func actions() -> Array[Dictionary]:
 	var catalog := hand().catalog()
 	var list: Array[Dictionary] = []
@@ -216,9 +253,57 @@ func actions() -> Array[Dictionary]:
 			levels.append([level, def.levels[level]["name"]])
 		var ready_at := hand().ready_at(id)
 		list.append({"id": String(id), "name": def.name, "help": def.help, "ready_at": ready_at,
-				"ready": ready_at <= manager.tick() + 1, "species": def.args.has("species"), "levels": levels,
-				"default_level": def.default_level})
+				"ready": ready_at <= manager.tick() + 1, "ready_in": maxi(0, ready_at - manager.tick() - 1),
+				"species": def.args.has("species"), "levels": levels, "default_level": def.default_level})
 	return list
+
+
+## Actions worth watching, oldest first. Each: {"id", "name", "level_name",
+## "phase", "remaining", "fade_min", "fade_max", "progress"}. Phase "queued": starts next
+## tick. "running": its modifiers act, "remaining" ticks left. "observe": it has
+## ended but its effect still shows; "fade_min" and "fade_max" are the ticks
+## until it usually fades (measured, see DisplayScale.effect_ticks).
+func active_actions() -> Array[Dictionary]:
+	_load_watch()
+	var now := manager.tick()
+	_watch = _watch.filter(func(entry: Dictionary) -> bool: return now <= maxi(entry["ends"], entry["effect_until"]))
+	var list: Array[Dictionary] = []
+	for entry in _watch:
+		# 0..1 along the whole timeline: the action, then its measured effect.
+		var total: int = maxi(entry["ends"], entry["effect_until"]) - entry["started"] + 1
+		var row := {"id": entry["id"], "name": entry["name"], "level_name": entry["level_name"], "remaining": 0,
+				"fade_min": 0, "fade_max": 0, "progress": clampf(float(now - entry["started"]) / total, 0.0, 1.0)}
+		if now < entry["started"]:
+			row["phase"] = "queued"
+		elif now <= entry["ends"]:
+			row["phase"] = "running"
+			row["remaining"] = entry["ends"] - now + 1
+		else:
+			row["phase"] = "observe"
+		var span := display.effect_ticks(entry["id"])
+		if not span.is_empty():
+			row["fade_min"] = maxi(0, entry["started"] + span[0] - now)
+			row["fade_max"] = maxi(0, entry["started"] + span[1] - now)
+		list.append(row)
+	return list
+
+
+## A game loaded in the middle of an action: its modifiers are still in effect.
+func _load_watch() -> void:
+	if _watch_loaded:
+		return
+	_watch_loaded = true
+	for entry in hand().active():
+		var def := hand().catalog().get_def(StringName(entry["id"]))
+		var level := def.level_of(entry["args"])
+		_watch.append(_watch_entry(def, level, int(entry["started"])))
+
+
+func _watch_entry(def: InterventionDef, level: String, started: int) -> Dictionary:
+	var span := display.effect_ticks(String(def.id))
+	var ends := started + def.duration - 1 if def.duration > 0 else started
+	return {"id": String(def.id), "name": def.name, "level_name": "" if level.is_empty() else str(def.levels[level]["name"]),
+			"started": started, "ends": ends, "effect_until": started + (span[1] if not span.is_empty() else 0)}
 
 
 ## Species the player can seed or cull: {"id", "name", "state", "needs"}.
@@ -251,6 +336,9 @@ func submit(id: String, args: Dictionary) -> SimResult:
 	var submitted := manager.submit(InterventionSystem.ID, StringName(id), args)
 	if not submitted.is_ok():
 		return submitted
+	_load_watch()
+	if def.duration > 0 or not display.effect_ticks(id).is_empty():
+		_watch.append(_watch_entry(def, def.level_of(args) if not def.levels.is_empty() else "", (submitted.value as SimCommand).tick))
 	return SimResult.success(def.name + _args_text(def, args))
 
 
@@ -272,6 +360,18 @@ static func trend(change: float, decimals: int) -> String:
 	if shown < 0.5 * precision:
 		return "="
 	return ("↑ " if change > 0.0 else "↓ ") + (("%." + str(decimals) + "f") % shown)
+
+
+## "12 s" or "1 min 05 s" for a number of ticks at `ticks_per_second` (always
+## rounded up, so a countdown never shows 0 s before it is ready).
+static func seconds_text(ticks: int, ticks_per_second: float) -> String:
+	if ticks_per_second <= 0.0:
+		return "–"
+	var seconds := ceili(float(ticks) / ticks_per_second)
+	if seconds < 60:
+		return "%d s" % seconds
+	var minutes := floori(float(seconds) / 60.0)
+	return "%d min %02d s" % [minutes, seconds - minutes * 60]
 
 
 ## Polish plural of "tick" for a count.

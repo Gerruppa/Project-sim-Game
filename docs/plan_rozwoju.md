@@ -44,6 +44,14 @@ mutacją), pomiar narzędziami z rozdziału 1, dokumentacja, commit na prośbę.
 
 ### Etap A. Sesje gry i wnioski (krótki, pierwszy po przerwie)
 
+Pierwsze wnioski z partii (2026-10-06), już zrobione (szczegóły
+`docs/gameplay.md`, „Czytelność po sesjach gry”): odliczanie cooldownu
+w sekundach w oknie, panel „Działające akcje” z czasem widocznego skutku,
+zwykłe jednostki z punktami kotwiczącymi (`resources/display/display.json`,
+start 10 °C, epoka lodowa poniżej 0 °C), kolory stref życia z danych
+gatunków. Do sprawdzenia w kolejnych partiach: czy kolory i jednostki
+zmieniają decyzje, czy gracz patrzy na skutek w podanym czasie.
+
 - Zagrać 2-3 partie: `./godot/play.sh`, w tym
   `./godot/play.sh --personality chaotic`.
 - Zebrać: czy pojawia się „ciekawe, co jeśli…”, które akcje są używane,
@@ -119,6 +127,10 @@ docelowa.
 - więcej ambicji
 - poziomy siły także dla wulkanów i zasiewu chmur
 - tempo i grupowanie punktów decyzji
+- oś wykresu w oknie w zwykłych jednostkach (dziś 0-100)
+- zmierzyć czas widocznego skutku zasiewu (`intervention_trace.gd`) i dopisać
+  go do `display.json`, żeby panel „Działające akcje” śledził też zasiew
+- tryb komend (`run_simulation.sh`) w zwykłych jednostkach albo w obu
 
 **Symulacja**
 - nowe gatunki
@@ -170,6 +182,10 @@ docelowa.
 **Pułapki z dotychczasowej pracy**
 - Heredoc w bashu psuje się na polskich cudzysłowach („…”). Edycje lepiej
   robić skryptem `.py` zapisanym w scratchpadzie.
+- W skryptach `.py` uruchamianych z basha `\\` w tekście potrafi zgubić
+  jeden ukośnik, a `Path.write_text` na Windows zapisuje CRLF. Edycje
+  plików `.gd` najpewniej narzędziem Edit; po skrypcie sprawdzić
+  `git ls-files --eol` (pliki `.gd` muszą mieć LF).
 - Błąd kompilacji skryptu uruchamianego przez `-s` (SceneTree) zawiesza
   Godota zamiast go zakończyć. Zawieszone procesy spowalniają testy, więc
   trzeba je sprawdzać i zamykać.
