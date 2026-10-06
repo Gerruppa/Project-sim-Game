@@ -1,0 +1,153 @@
+{
+	"perks_version": 1,
+	"refund_ratio": 0.7,
+	"income_per_biomass_tick": 0.00001,
+	"free_interventions": ["seed_species"],
+	"perks": [
+		{
+			"id": "perk_hardy",
+			"name": "Wytrzymałość",
+			"help": "Gatunki lepiej znoszą stres, ale rosną nieco wolniej.",
+			"tree": "life",
+			"cost": 4,
+			"modifiers": [
+				{"target": "biosphere.stress_scale", "operation": "multiply", "value": 0.8},
+				{"target": "biosphere.growth_scale", "operation": "multiply", "value": 0.95}
+			],
+			"side_effect": "Wytrzymałe gatunki rosną wolniej (−5% wzrostu).",
+			"story": {
+				"bought": "Creator unosi brew: Praktykant nauczył się wytrzymałości.",
+				"refunded": "Praktykant zapomina wytrzymałość: życie znów łatwiej ulega stresowi."
+			}
+		},
+		{
+			"id": "perk_fast_growth",
+			"name": "Szybki wzrost",
+			"help": "Gatunki rosną szybciej, ale gorzej znoszą stres.",
+			"tree": "life",
+			"cost": 12,
+			"requires": ["perk_hardy"],
+			"modifiers": [
+				{"target": "biosphere.growth_scale", "operation": "multiply", "value": 1.2},
+				{"target": "biosphere.stress_scale", "operation": "multiply", "value": 1.1}
+			],
+			"side_effect": "Szybko rosnące gatunki są wrażliwsze na stres (+10%).",
+			"story": {
+				"bought": "Creator kiwa głową: Praktykant przyspieszył wzrost życia.",
+				"refunded": "Praktykant zapomina, jak przyspieszać wzrost: życie rośnie w zwykłym tempie."
+			}
+		},
+		{
+			"id": "perk_fire_resistance",
+			"name": "Odporność na ogień",
+			"help": "Pożary wybuchają rzadziej, a lasy rosną nieco wolniej.",
+			"tree": "life",
+			"cost": 10,
+			"requires": ["perk_hardy"],
+			"modifiers": [
+				{"target": "biosphere.fire_rate", "operation": "multiply", "value": 0.6},
+				{"target": "biosphere.growth_scale", "operation": "multiply", "value": 0.97}
+			],
+			"side_effect": "Gęstsze drewno rośnie wolniej (−3% wzrostu).",
+			"story": {
+				"bought": "Creator unosi brew: Praktykant uodpornił lasy na ogień.",
+				"refunded": "Praktykant zapomina o odporności na ogień: lasy znów płoną jak dawniej."
+			}
+		},
+		{
+			"id": "perk_regrowth",
+			"name": "Odbudowa",
+			"help": "Gatunki szybciej wracają na opustoszałe ziemie, kosztem większego stresu.",
+			"tree": "life",
+			"cost": 8,
+			"modifiers": [
+				{"target": "biosphere.recolonization", "operation": "add", "value": 0.02},
+				{"target": "biosphere.stress_scale", "operation": "multiply", "value": 1.05}
+			],
+			"side_effect": "Ciągłe odnawianie zwiększa stres o 5%.",
+			"story": {
+				"bought": "Creator zaciera ręce: Praktykant nauczył życie wracać na zgliszcza.",
+				"refunded": "Praktykant zapomina, jak odbudowywać życie: puste ziemie zarastają wolniej."
+			}
+		},
+		{
+			"id": "perk_mirrors_warm",
+			"name": "Lustra orbitalne",
+			"help": "Odblokowuje lustra orbitalne, które ogrzewają planetę.",
+			"tree": "environment",
+			"cost": 8,
+			"unlocks": ["mirrors_warm"],
+			"side_effect": "Zbyt mocne ogrzanie przegrzewa życie.",
+			"story": {
+				"bought": "Creator spogląda w niebo: Praktykant zbudował lustra orbitalne.",
+				"refunded": "Praktykant zwija lustra orbitalne i odkłada je do magazynu."
+			}
+		},
+		{
+			"id": "perk_mirrors_cool",
+			"name": "Pył orbitalny",
+			"help": "Odblokowuje pył orbitalny, który ochładza planetę.",
+			"tree": "environment",
+			"cost": 8,
+			"unlocks": ["mirrors_cool"],
+			"side_effect": "Zbyt mocny pył wywołuje epokę lodową.",
+			"story": {
+				"bought": "Creator mruży oczy: Praktykant nauczył się przysłaniać słońce pyłem.",
+				"refunded": "Praktykant zapomina o pyle orbitalnym: słońce świeci bez przeszkód."
+			}
+		},
+		{
+			"id": "perk_cloud_seeding",
+			"name": "Zasiew chmur",
+			"help": "Odblokowuje zasiew chmur, który wywołuje deszcz.",
+			"tree": "environment",
+			"cost": 10,
+			"unlocks": ["cloud_seeding"],
+			"side_effect": "Deszcz wysusza powietrze: mchy i glony cierpią.",
+			"story": {
+				"bought": "Creator patrzy na chmury: Praktykant opanował zasiew chmur.",
+				"refunded": "Praktykant zapomina, jak zasiewać chmury: niebo robi, co chce."
+			}
+		},
+		{
+			"id": "perk_aquifer",
+			"name": "Wody podziemne",
+			"help": "Odblokowuje uwolnienie wód podziemnych na powierzchnię.",
+			"tree": "environment",
+			"cost": 10,
+			"unlocks": ["aquifer_release"],
+			"side_effect": "Więcej chmur ochładza planetę.",
+			"story": {
+				"bought": "Creator nasłuchuje: Praktykant dotarł do wód podziemnych.",
+				"refunded": "Praktykant zapomina drogę do wód podziemnych: warstwy wodonośne milkną."
+			}
+		},
+		{
+			"id": "perk_volcanic",
+			"name": "Przebudzenie wulkanów",
+			"help": "Odblokowuje przebudzenie wulkanów. Wymaga luster orbitalnych.",
+			"tree": "environment",
+			"cost": 14,
+			"requires": ["perk_mirrors_warm"],
+			"unlocks": ["volcanic_awakening"],
+			"side_effect": "CO₂ zostaje w atmosferze na długo.",
+			"story": {
+				"bought": "Creator drapie się po brodzie: Praktykant ośmielił się obudzić wulkany.",
+				"refunded": "Praktykant zapomina, jak budzić wulkany: góry znów śpią spokojnie."
+			}
+		},
+		{
+			"id": "perk_cull",
+			"name": "Przerzedzanie",
+			"help": "Odblokowuje przerzedzanie gatunku, które odsłania światło niższym roślinom.",
+			"tree": "environment",
+			"cost": 6,
+			"unlocks": ["cull_species"],
+			"side_effect": "Mniej roślin to mniej tlenu.",
+			"story": {
+				"bought": "Creator unosi brew: Praktykant nauczył się przerzedzać zarośla.",
+				"refunded": "Praktykant zapomina o przerzedzaniu: zarośla gęstnieją bez ingerencji."
+			}
+		}
+	]
+}
