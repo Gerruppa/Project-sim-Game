@@ -49,9 +49,11 @@ echo 'export GODOT_BIN="C:/Users/jkapk/AppData/Local/Microsoft/WinGet/Packages/G
 ./godot/play_window.sh --load decision.json
 ```
 
-Okno pokazuje planetę na żywo. Na środku globus, pod nim panel decyzji
-i kronika; po lewej liczby planety i życie; po prawej akcje, tempo,
-**Dalej ▶** i **Cele ★**.
+Okno pokazuje planetę na żywo i **gra sama się nie zatrzymuje**: planeta
+żyje bez przerwy, a Ty działasz, kiedy chcesz (stop daje tylko **Pauza**).
+Na środku globus, pod nim panel z komunikatami i kronika; po lewej liczby
+planety i życie; po prawej sklep z perkami, akcje, tempo, **Pauza** i
+**Cele ★**; na górze licznik **Iskier**.
 
 - **globus 3D**: przeciągnij myszą, żeby go obrócić, kółko przybliża.
   Kontynenty są stałe dla numeru planety (każda planeta wygląda inaczej);
@@ -63,9 +65,10 @@ i kronika; po lewej liczby planety i życie; po prawej akcje, tempo,
   dużej. Symulacja nie ma regionów: globus pokazuje wartości całej
   planety, nie lokalną pogodę
 - **tabele** parametrów i gatunków z paskami i strzałkami zmian od
-  ostatniej decyzji; parametry są w zwykłych jednostkach (rozdział 6)
+  początku gry (w oknie nie ma punktów decyzji); parametry są w zwykłych
+  jednostkach (rozdział 6)
 - **wpływ życia**: pod każdym gatunkiem, co zmienił na planecie od
-  ostatniej decyzji, np. „Tlen +24.7 % atmosfery · Dwutlenek węgla
+  początku gry, np. „Tlen +24.7 % atmosfery · Dwutlenek węgla
   −6153 ppm” u glonów; pod listą **Reszta planety** (skały, oceany,
   pogoda, zdarzenia) i **Twoje akcje**. To pomiar z symulacji, nie
   szacunek: wszystkie udziały sumują się do zmiany w tabeli planety.
@@ -79,8 +82,8 @@ i kronika; po lewej liczby planety i życie; po prawej akcje, tempo,
   gatunek tego parametru nie potrzebuje. Strefy przesuwają się razem z
   sukcesją: drzewa chcą cieplej niż bakterie
 - **przyciski akcji** w trakcie odnawiania pokazują odliczanie w sekundach
-  przy wybranym tempie, np. „Wody podziemne (9 s)”; w pauzie i w punkcie
-  decyzji licznik stoi i ma dopisek „przy x100”
+  przy wybranym tempie, np. „Wody podziemne (9 s)”; w pauzie licznik stoi
+  i ma dopisek „przy x100”
 - **Działające akcje** (pod celami): każda akcja z paskiem, jak długo
   jeszcze działa i przez ile mniej więcej sekund widać jej skutek (z
   pomiarów na wielu planetach). Wtedy warto patrzeć na globus i kronikę
@@ -88,16 +91,26 @@ i kronika; po lewej liczby planety i życie; po prawej akcje, tempo,
   (po lewej, pod tabelami)
 - **Cele ★** (po prawej, na dole): pełna lista celu głównego, gwiazdek
   i ambicji z warunkami i tym, co już zdobyte (jak klawisz **c** w konsoli)
-- **panel decyzji** pod globusem: gra sama się zatrzymuje w punkcie
-  decyzji, pokazuje, co się stało, i podpowiedź; akcje to przyciski
-  w prawej kolumnie (gatunek i siłę wybierasz z listy pod przyciskiem),
-  **Dalej ▶** puszcza planetę dalej
-- **x5 / x10 / x25 / x100**: tempo (ticków na sekundę, domyślnie x10),
-  **Pauza**: zatrzymaj
-  w dowolnej chwili i działaj
+- **panel pod globusem**: pokazuje komunikaty gry (na początku wstęp, potem
+  „Planeta żyje…” albo „PAUZA”); akcje to przyciski w prawej kolumnie
+  (gatunek i siłę wybierasz z listy pod przyciskiem) i działają przez cały
+  czas, także gdy planeta biegnie
+- **Iskry i perki**: **Iskry Życia** zdobywasz od żyjącej planety, licznik
+  jest na górze okna. Za Iskry kupujesz w sklepie (prawa kolumna, dwa
+  drzewka: **Środowisko** i **Życie**) perki: stała korzyść, czasem z ceną
+  uboczną opisaną w podpowiedzi. Część perków wymaga innych (przy takim
+  perku widać „wymaga: …”). Perk możesz cofnąć i odzyskać część Iskier.
+  Perki odblokowują też **moce** (akcje): przycisk akcji, której jeszcze nie
+  masz, jest szary i podpisany „wymaga: <nazwa perka>”. Kupno i zwrot
+  zaczynają działać w następnym ticku
+- **x5 / x10 / x25 / x50 / x100**: tempo (ticków na sekundę, domyślnie
+  **x25**), **Pauza**: zatrzymaj planetę w dowolnej chwili i działaj
+  (akcja ruszy w następnym ticku po wznowieniu)
 
-Gra zapisuje się w każdym punkcie decyzji (`saves/decision.json`), tak samo
-jak w konsoli; zapis z okna wczytasz też w konsoli i odwrotnie.
+Okno zapisuje grę samo (co 1000 ticków i przy zamknięciu okna) w
+`saves/decision.json`, tak jak konsola; zapis z okna wczytasz też w
+konsoli i odwrotnie. Zapisu sprzed sklepu z perkami okno nie wczyta:
+pokaże komunikat i ekran nowej gry.
 
 ### Paczka dla testerów
 

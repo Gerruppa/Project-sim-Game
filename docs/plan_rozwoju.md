@@ -16,6 +16,8 @@ Symulacja zostaje globalna (bez regionów).
 - Specyfikacja: `docs/superpowers/specs/2026-10-06-nowy-rdzen-gry-design.md`
 - Plan (etapy 0-1): `docs/superpowers/plans/2026-10-06-iskry-i-perki.md`
 - Księga postępu wykonania: `.superpowers/sdd/2026-10-06-iskry-i-perki/progress.md`
+  to lokalny plik roboczy (jest w .gitignore, w klonie repozytorium może go
+  brakować); trwałym zapisem są specyfikacja i plan powyżej
 
 | Etap | Treść | Pytanie do testera |
 |---|---|---|
@@ -44,7 +46,15 @@ i ma przeciwdziałanie.
   ticków): pierwszy zakup w ticku 123-131, wszystkie 10 perków w ticku
   11602-18402, 134-143 przyznane Iskry, ok. 3,0 bąbelka na 1000 ticków
   (4,5-4,6 na minutę przy x25, ok. 9 przy x50). `ambient.every_ticks`
-  skrócono z 600 do 400, by przy x25 trafić w cel 4-6 na minutę.
+  skrócono z 600 do 400, by przy x25 trafić w cel 4-6 na minutę. Cel jest
+  mierzony przy domyślnym tempie x25; ok. 9 na minutę przy x50 jest przyjęte,
+  a czy bąbelki ambient mają się pojawiać w czasie rzeczywistym, rozstrzygnie
+  Etap 3 razem z długością partii.
+- Uwaga: Etap 1 ma 10 z ok. 20 perków, a doskonały gracz ma wszystkie w
+  ticku ok. 11,6-18,4 tys., więc Iskry niczego nie kupują przez większość
+  72-tysięcznej partii, dopóki kolejne etapy nie dodadzą perków. Bąbelek
+  ambient nie ma przyczyny w stanie planety (odstępstwo od specyfikacji 3.2,
+  zastępnik do czasu mutacji); szczegóły w `docs/perks.md`.
 - Następny plan: Etap 2, zasięg na kontynentach i wybór lądowania.
 
 Poniższe rozdziały 1-3 to historia i pomiary sprzed zmiany. Etapy A-E
@@ -282,8 +292,9 @@ Kontynuujemy projekt Genesis Error (D:\PythonProject_game, Godot 4.7.2,
 GDScript), nowy rdzeń w stylu Plague Inc. Przeczytaj najpierw
 docs/superpowers/specs/2026-10-06-nowy-rdzen-gry-design.md (specyfikacja),
 docs/superpowers/plans/2026-10-06-iskry-i-perki.md (plan) oraz księgę
-postępu .superpowers/sdd/2026-10-06-iskry-i-perki/progress.md (które
-zadania są zrobione). Potem docs/plan_rozwoju.md (rozdział 0 i zasady
+postępu .superpowers/sdd/2026-10-06-iskry-i-perki/progress.md (lokalny plik
+roboczy, może go brakować w klonie; wtedy oprzyj się na specyfikacji, planie
+i git log). Potem docs/plan_rozwoju.md (rozdział 0 i zasady
 w rozdziale 4) oraz CLAUDE.md. Sprawdź git log i git status, uruchom pełny
 zestaw testów (GODOT_BIN jak w planie, ./godot/run_tests.sh) i potwierdź,
 że jest zielony.

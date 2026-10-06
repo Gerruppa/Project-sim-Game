@@ -54,19 +54,25 @@ Okno:
   * pod globusem: panel decyzji i kronika planety - co się wydarzyło
     i DLACZEGO
   * po lewej: liczby planety i życie; strzałki pokazują, co wzrosło (↑)
-    i zmalało (↓) od ostatniej decyzji, a pod każdym gatunkiem, co zmienił
+    i zmalało (↓) od początku gry, a pod każdym gatunkiem, co zmienił
     (np. ile tlenu dały glony); przycisk "Wykresy"
-  * po prawej: przyciski akcji, tempo, "Dalej" i "Cele"
+  * po prawej: sklep z perkami, przyciski akcji, tempo, "Pauza" i "Cele"
+  * na górze: licznik "Iskry"
 
-Gra sama się zatrzymuje, gdy dzieje się coś ważnego (PUNKT DECYZJI).
-Przeczytaj, co się stało, i podpowiedź. Potem:
+Gra sama się nie zatrzymuje: planeta żyje bez przerwy, a Ty działasz,
+kiedy chcesz. Przeczytaj kronikę, zobacz, co się dzieje, i:
   * kliknij akcję (gatunek i siłę wybierasz z listy pod przyciskiem),
-  * albo nic nie rób,
-  * i kliknij "Dalej".
+  * albo nic nie rób i patrz.
+Przycisk "Pauza" zatrzymuje planetę w każdej chwili; w pauzie też możesz
+działać (akcja ruszy w pierwszym ticku po wznowieniu).
 
-Przyciski akcji działają w punkcie decyzji i w pauzie: w każdej chwili
-możesz kliknąć "Pauza" i działać.
-Tempo: x5 (wolno), x10 (domyślnie), x25, x100 (szybko).
+Iskry Życia zdobywasz od żyjącej planety. Za Iskry kupujesz w sklepie
+perki (po prawej, dwa drzewka: Środowisko i Życie). Perk daje stałą
+korzyść i odblokowuje moc: przycisk akcji, której jeszcze nie masz, jest
+szary i podpisany "wymaga: <nazwa perka>". Kupiony perk możesz cofnąć
+i odzyskać część Iskier.
+
+Tempo: x5 (wolno), x10, x25 (domyślnie), x50, x100 (szybko).
 Co jest do zdobycia: przycisk "Cele" w prawej kolumnie.
 Szare przyciski się odnawiają; najedź myszą, żeby zobaczyć, od kiedy
 będą dostępne.
@@ -83,8 +89,8 @@ Akcje:
 
 Wskazówka: gatunek, który wymarł, prawie nigdy nie wraca sam.
 
-Gra zapisuje się w każdym punkcie decyzji. Po ponownym uruchomieniu
-kliknij "Wczytaj ostatnią grę".
+Gra zapisuje się sama co jakiś czas i przy zamknięciu okna. Po ponownym
+uruchomieniu kliknij "Wczytaj ostatnią grę".
 
 Partia trwa zwykle kilkanaście minut (zależy od tempa i od tego, jak
 długo czytasz kronikę).
@@ -98,10 +104,11 @@ Po 1-3 partiach odpisz proszę krótko na pytania:
  1. Czy choć raz pomyślałeś "ciekawe, co się stanie, jeśli..."?
     Przy czym?
  2. Co cię zaskoczyło? Co było niezrozumiałe?
- 3. Czy wiedziałeś, co możesz zrobić w punkcie decyzji?
-    Czy podpowiedzi pomagały?
- 4. Których akcji używałeś najczęściej, a których wcale? Dlaczego?
- 5. Czy gra zatrzymywała się za często, za rzadko, w sam raz?
+ 3. Czy wiedziałeś, co możesz zrobić w danej chwili?
+    Czy do czegoś zabrakło wskazówki?
+ 4. Których akcji i perków używałeś najczęściej, a których wcale?
+    Dlaczego?
+ 5. Czy tempo gry było za wolne, za szybkie, w sam raz?
  6. Czy cel i gwiazdki motywowały? Czy wygrałeś?
  7. Czy chciałbyś zagrać jeszcze raz (inną planetą albo tą samą)?
  8. Jedna rzecz, którą byś zmienił.

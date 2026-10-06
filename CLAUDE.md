@@ -8,8 +8,8 @@ Engine: Godot 4.7.2 stable (pinned, see docs/simulation.md)
 Language: GDScript
 Architecture: Data Driven + Event Driven
 Platform: Steam
-Development Stage: Stage 0 of the new core (documents), then Stage 1
-(bubbles, Sparks, perk shop). Spec:
+Development Stage: Stage 0 (documents) and Stage 1 (bubbles, Sparks, perk
+shop) of the new core are done; next is Stage 2. Spec:
 docs/superpowers/specs/2026-10-06-nowy-rdzen-gry-design.md
 
 ---
@@ -131,7 +131,7 @@ Scope:
 The veto applies to features,
 not to engineering rules.
 
-Determinism, snapshot + deltas, tests and the build order
+Determinism, snapshot + deltas, tests and the stage order
 are never traded for fun.
 They keep the simulation trustworthy enough to be fun.
 
@@ -618,25 +618,24 @@ simulation/narrative/
 
 simulation/interventions/
 
-simulation/perks/ (planned, Stage 1: PerkSystem, PerkCatalog)
+simulation/perks/ (PerkSystem, PerkCatalog)
 
 simulation/tests/
 
 game/ (game layer above the simulation: SimulationRunner,
-PlaySession, GoalTracker, DecisionWatcher, HintAdvisor, saves;
-planned, Stage 1: BubbleField)
+PlaySession, GoalTracker, DecisionWatcher, HintAdvisor, BubbleField, saves)
 
-ui/ (the window: GameView, PlanetView (3D globe + shaders), HistoryChart;
-planned, Stage 1: BubbleLayer, PerkPanel;
+ui/ (the window: GameView, PlanetView (3D globe + shaders), HistoryChart,
+BubbleLayer, PerkPanel;
 Godot nodes and signals only here)
 
 tools/ (console entry points only: run_simulation.gd, play.gd)
 
 resources/
 
-resources/perks/ (planned, Stage 1: perk data)
+resources/perks/ (perk data)
 
-resources/bubbles/ (planned, Stage 1: bubble data)
+resources/bubbles/ (bubble data)
 
 Outside res:// (repository root):
 

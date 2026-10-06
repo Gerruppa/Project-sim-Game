@@ -951,12 +951,13 @@ res://  (godot/)
     personality/    PersonalitySystem, PersonalityCatalog, PersonalityArchetype
     narrative/      PlanetChronicle, ChronicleTexts (observers, presentation only)
     interventions/  InterventionSystem, InterventionCatalog, InterventionDef (player's hand)
+    perks/          PerkSystem, PerkCatalog, PerkDef (Sparks and perks)
     tests/          unit, integration, simulation, architecture,
                     support (test-only helpers), golden, tools
   resources/        data assets (planet/, simulation/, chronicle/, ...)
   game/             game layer: GameSession, SimulationRunner, PlaySession, GoalTracker,
-                    DecisionWatcher, HintAdvisor, RunSaver, ConsoleInput (above simulation/)
-  ui/               the window: GameView (main.tscn), PlanetView, HistoryChart
+                    DecisionWatcher, HintAdvisor, BubbleField, RunSaver, ConsoleInput (above simulation/)
+  ui/               the window: GameView (main.tscn), PlanetView, HistoryChart, BubbleLayer, PerkPanel
   tools/            entry points only: run_simulation.gd, play.gd
 ```
 

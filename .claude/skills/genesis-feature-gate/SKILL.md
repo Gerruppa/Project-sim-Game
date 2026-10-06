@@ -1,6 +1,6 @@
 ---
 name: genesis-feature-gate
-description: Gate and specification step for any new feature, system or mechanic in Genesis Error, run before implementation. Applies the CLAUDE.md acceptance criteria template, the docs/DESIGN_PRINCIPLES.md checklist, the docs/CORE_LOOP.md validation test and the system build order. Use this whenever the user proposes or asks to add a new feature, mechanic, system, species, event or player action, or asks "should we add X?", even if they want to jump straight to code.
+description: Gate and specification step for any new feature, system or mechanic in Genesis Error, run before implementation. Applies the CLAUDE.md acceptance criteria template, the docs/DESIGN_PRINCIPLES.md checklist, the docs/CORE_LOOP.md validation test and the stage order. Use this whenever the user proposes or asks to add a new feature, mechanic, system, species, event or player action, or asks "should we add X?", even if they want to jump straight to code.
 ---
 
 # Feature gate

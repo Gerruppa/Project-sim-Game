@@ -50,7 +50,21 @@ Iskry pochodzą z dwóch źródeł:
 | bloom | gatunek pierwszy raz przekroczył populację 20, 40, 60 | 3 (raz na próg) |
 
 Bąbelek żyje 15 sekund zegarowych (liczone, tylko gdy gra biegnie), na ekranie
-jest ich najwyżej 8. Pozycja zależy od seeda i numeru bąbelka.
+jest ich najwyżej 8. Wartość bąbelka nie może przekroczyć 100 (tyle najwyżej
+Iskier daje jedno przyznanie w `PerkSystem`); dane powyżej są odrzucane przy
+wczytaniu. Pozycja jest czysto kosmetyczna: bąbelek pojawia się blisko tego
+fragmentu globusa, który gracz akurat widzi (do 25° szerokości i 35°
+długości od środka widoku), a w obrębie tej okolicy zależy od seeda i numeru
+bąbelka. Na odwróconej stronie planety nie pojawia się prawie nic, bo
+widać tylko ok. 31% kuli, a bąbelek żyje 15 s.
+
+### Odstępstwo od specyfikacji (3.2)
+
+Bąbelek ambient nie ma przyczyny w stanie planety: pojawia się co 400 ticków
+niezależnie od tego, co robi życie. Specyfikacja (3.2) chce bąbelków, które
+wynikają z planety. Ambient to zastępnik do czasu, aż pojawią się mutacje
+(Etap 4) i inne zdarzenia, które same dają bąbelki; do tego czasu zostaje.
+
 
 ## Pomiar
 
@@ -58,7 +72,7 @@ Test `godot/simulation/tests/simulation/perk_economy_test.gd`: "doskonały
 gracz" zbiera wszystkie bąbelki i co tick kupuje najtańszy dostępny perk.
 30 000 ticków, tryb live, seedy 13 i 42. Granice testu: pierwszy zakup
 do ticku 600; wszystkie 10 perków przed tickiem 30 000; 80-260 przyznanych
-Iskier; 1,3-4,0 bąbelka na 1000 ticków. Tempo x25 to 1500 ticków na minutę,
+Iskier; 2,7-4,0 bąbelka na 1000 ticków (4-6 na minutę przy x25). Tempo x25 to 1500 ticków na minutę,
 x50 to 3000.
 
 Wartości z `ambient.every_ticks = 400` (aktualne dane):
@@ -70,9 +84,11 @@ Wartości z `ambient.every_ticks = 400` (aktualne dane):
 
 Wcześniejsza wartość `every_ticks = 600` dawała 3,05 i 3,35 bąbelka na minutę
 przy x25 (poniżej celu 4-6), więc ambient skrócono do 400. Cel 4-6 na minutę
-przy x25 jest spełniony; przy x50 bąbelków jest ok. 9 na minutę, czyli więcej
-niż cel 4-6 (cel dla x50 to 1,3-2,0 na 1000 ticków). Jeśli x50 okaże się
-zbyt gorączkowe, trzeba będzie zdecydować, przy którym tempie stroić.
+jest mierzony przy domyślnym tempie x25 i jest spełniony; test
+wymusza 2,7-4,0 bąbelka na 1000 ticków. Przy x50 bąbelków jest ok. 9 na minutę
+i to jest przyjęte. Czy bąbelki ambient mają się pojawiać w czasie
+rzeczywistym (niezależnie od tempa gry), rozstrzygnie Etap 3 razem z długością
+partii.
 Koszty perków nie wymagały zmian: całą półkę doskonały gracz kupuje w 11-18
 tysięcy ticków z 30 000.
 
@@ -85,5 +101,8 @@ tysięcy ticków z 30 000.
   (punkty decyzyjne) pozostaje bez blokad.
 - Nie ma jeszcze Prób ani Gniewu Creatora (Etap 3), więc Iskry nie mają
   zagrożenia, przeciw któremu trzeba je wydać.
+- Etap 1 ma 10 z ok. 20 planowanych perków. Doskonały gracz ma wszystkie w
+  ticku ok. 11,6-18,4 tys., więc przez większość 72-tysięcznej partii Iskry
+  niczego nie kupują, dopóki kolejne etapy nie dodadzą perków.
 - Perk nie ma kosztu rosnącego z liczbą zakupów, drzewka Dyspersji ani
   Ekosystemu (kolejne etapy).

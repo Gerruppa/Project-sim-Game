@@ -26,7 +26,7 @@ Fun always outranks elegance.
 
 The veto applies to **features** (what exists and how deep it goes), not to
 **engineering invariants**. Determinism, the snapshot + delta model, tests and
-the build order are not traded for fun: they are what keeps the simulation
+the stage order are not traded for fun: they are what keeps the simulation
 trustworthy enough to be fun. When fun and an invariant collide, propose a
 different feature, never a broken rule.
 
