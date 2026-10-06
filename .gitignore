@@ -93,3 +93,9 @@ $RECYCLE.BIN/
 *.tmp
 *.bak
 *.orig
+
+# --------------------------------------------------
+# graphify (generated knowledge graph)
+# --------------------------------------------------
+
+graphify-out/
