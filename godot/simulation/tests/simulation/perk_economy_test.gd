@@ -96,4 +96,4 @@ func test_sparks_granted_stay_in_the_designed_range() -> void:
 func test_bubble_rate_matches_the_target() -> void:
 	for seed_value in SEEDS:
 		var rate: float = _runs[seed_value]["bubbles_per_1000"]
-		assert_bool(rate >= 1.3 and rate <= 4.0).override_failure_message("seed %d: %.2f bubbles per 1000 ticks, wanted 1.3..4.0" % [seed_value, rate]).is_true()
+		assert_bool(rate >= 2.7 and rate <= 4.0).override_failure_message("seed %d: %.2f bubbles per 1000 ticks, wanted 2.7..4.0 (4-6 per minute at x25)" % [seed_value, rate]).is_true()

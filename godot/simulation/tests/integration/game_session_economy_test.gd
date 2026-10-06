@@ -184,3 +184,68 @@ func test_load_keeps_sparks_perks_and_bloom_milestones() -> void:
 	loaded.step(1)
 	for bubble: Dictionary in loaded.bubbles.bubbles():
 		assert_str(bubble["kind"]).is_not_equal("bloom")
+
+
+func test_pending_sparks_count_the_queued_grants_until_they_land() -> void:
+	var game := _session()
+	game.begin_round()
+	game.step(2)
+	assert_int(game.pending_sparks()).is_equal(0)
+	var id := _discovery(game)
+	assert_bool(game.collect_bubble(id).is_ok()).is_true()
+	assert_int(game.pending_sparks()).is_equal(4)
+	assert_int(game.sparks()).is_equal(0)
+	# Another queued command is not Sparks.
+	assert_bool(game.manager.submit(PerkSystem.ID, PerkSystem.ACTION_GRANT, {"amount": 3, "source": "test"}).is_ok()).is_true()
+	assert_int(game.pending_sparks()).is_equal(7)
+	game.step(2)
+	assert_int(game.pending_sparks()).is_equal(0)
+	assert_int(game.sparks()).is_equal(7)
+
+
+func test_buying_a_perk_is_not_counted_as_pending_sparks() -> void:
+	var game := _session()
+	game.begin_round()
+	_fund(game, 4)
+	assert_bool(game.buy_perk("perk_hardy").is_ok()).is_true()
+	assert_int(game.pending_sparks()).is_equal(0)
+
+
+const BLOCKER := "user://game_session_economy_test/blocker"
+
+
+## A path no platform can write: its "directory" is a file.
+func _unwritable_save() -> String:
+	DirAccess.make_dir_recursive_absolute(BLOCKER.get_base_dir())
+	var file := FileAccess.open(BLOCKER, FileAccess.WRITE)
+	file.store_string("not a directory")
+	file.close()
+	return BLOCKER.path_join("save.json")
+
+
+func _autosave_warnings(game: GameSession) -> int:
+	return game.warnings.size()
+
+
+## A save that keeps failing is reported once; the next failure after a good save is news again.
+func test_a_failing_autosave_warns_once_until_a_save_succeeds() -> void:
+	var good := "user://game_session_economy_test/autosave_recovers.json"
+	DirAccess.make_dir_recursive_absolute(good.get_base_dir())
+	var game := _session(true, good)
+	var broken := _unwritable_save()
+	game.begin_round()
+	game.save_path = broken
+	game.step(1100)
+	assert_int(_autosave_warnings(game)).is_equal(1)
+	assert_str(game.warnings[0]).contains("Autozapis się nie udał")
+	game.step(1000)
+	assert_int(game.tick()).is_equal(2100)
+	assert_int(_autosave_warnings(game)).is_equal(1)
+	game.save_path = good
+	game.step(1000)
+	assert_int(_autosave_warnings(game)).is_equal(1)
+	assert_bool(FileAccess.file_exists(good)).is_true()
+	game.save_path = broken
+	game.step(1000)
+	assert_int(game.tick()).is_equal(4100)
+	assert_int(_autosave_warnings(game)).is_equal(2)

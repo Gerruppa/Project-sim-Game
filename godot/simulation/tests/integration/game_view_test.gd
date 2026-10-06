@@ -265,3 +265,56 @@ func test_the_globe_follows_the_planet_and_charts_wait_behind_a_button() -> void
 	assert_bool(view.charts_visible()).is_false()
 	view.show_charts()
 	assert_bool(view.charts_visible()).is_true()
+
+
+const OLD_SAVE := "user://game_view_test/old_save.json"
+
+
+## A save as the game wrote it before the Spark shop existed: no state of the perks system.
+func _write_old_save() -> void:
+	var options: Dictionary = PlaySession.parse_args(PackedStringArray(["--seed", "13", "--save", OLD_SAVE])).value
+	options["file_logs"] = false
+	var created := GameSession.create(options, func(_line: String) -> void: pass)
+	assert_bool(created.is_ok()).is_true()
+	var game: GameSession = created.value
+	assert_bool(game.save().is_ok()).is_true()
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(OLD_SAVE))
+	assert_bool((data["systems"] as Dictionary).erase("perks")).is_true()
+	var file := FileAccess.open(OLD_SAVE, FileAccess.WRITE)
+	file.store_string(JSON.stringify(data))
+	file.close()
+
+
+func test_an_old_save_gives_a_polish_message_and_the_new_game_screen() -> void:
+	_write_old_save()
+	var view := _open(["--load", OLD_SAVE])
+	assert_object(view.session).is_null()
+	assert_str(view.error_text()).contains("Nie udało się wczytać zapisu").contains("Zacznij nową grę")
+	# The technical reason follows for whoever reports it.
+	assert_str(view.error_text()).contains("perks")
+	# The player can start over without restarting the application.
+	assert_str(view.decision_text()).contains("nowa planeta")
+	view.choose_planet("13", 1)
+	view.new_game()
+	assert_object(view.session).is_not_null()
+	assert_str(view.error_text()).is_empty()
+	assert_str(view.decision_text()).contains("Witaj w Genesis Error")
+
+
+func test_an_old_save_chosen_on_the_new_game_screen_keeps_that_screen() -> void:
+	_write_old_save()
+	var view := _open_without_options()
+	view.open_game(PlaySession.parse_args(PackedStringArray(["--load", OLD_SAVE])).value)
+	assert_object(view.session).is_null()
+	assert_str(view.error_text()).contains("Nie udało się wczytać zapisu")
+	view.choose_planet("42")
+	view.new_game()
+	assert_int(view.session.manager.config().seed()).is_equal(42)
+	assert_str(view.error_text()).is_empty()
+
+
+func test_a_missing_save_is_reported_the_same_friendly_way() -> void:
+	var view := _open_without_options()
+	view.open_game(PlaySession.parse_args(PackedStringArray(["--load", "user://game_view_test/none.json"])).value)
+	assert_str(view.error_text()).contains("Nie udało się wczytać zapisu").contains("none.json")
+	assert_object(view.session).is_null()

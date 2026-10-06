@@ -111,3 +111,50 @@ func test_expired_bubble_loses_its_button() -> void:
 	_layer.refresh()
 	assert_array(_layer.visible_bubble_ids()).is_empty()
 	assert_int(_layer.get_child_count()).is_equal(0)
+
+
+## Several different views of the globe: turned around its axis and tilted.
+const VIEWS: Array[Vector2] = [Vector2(0.0, 0.0), Vector2(1.3, 0.4), Vector2(-2.4, -0.7), Vector2(4.0, 0.9), Vector2(0.6, -1.1)]
+
+
+func test_facing_point_is_the_visible_point_at_the_center_of_the_view() -> void:
+	await get_tree().process_frame
+	for view in VIEWS:
+		_planet.turn(view)
+		var facing := _planet.facing_point()
+		assert_float(facing.x).is_between(-90.0, 90.0)
+		assert_float(facing.y).is_between(-180.0, 180.0)
+		var point: Variant = _planet.screen_point(facing.x, facing.y)
+		assert_object(point).is_not_null()
+		assert_float((point as Vector2).distance_to(SIZE * 0.5)).is_less(2.0)
+
+
+func test_a_point_far_from_the_facing_point_is_hidden() -> void:
+	await get_tree().process_frame
+	var facing := _planet.facing_point()
+	assert_object(_planet.screen_point(-facing.x, facing.y + 180.0)).is_null()
+
+
+## What a player watching the globe gets: every bubble spawns where it can be seen.
+func test_bubbles_spawned_at_the_facing_point_are_on_screen() -> void:
+	await get_tree().process_frame
+	_planet.turn(Vector2(2.1, 0.5))
+	var species: Array[String] = []
+	var field: BubbleField = BubbleField.from_data(DATA, 7, species, func(_id: String) -> float: return 0.0).value
+	field.set_center_provider(_planet.facing_point)
+	for i in 8:
+		field.on_tick(600 * (i + 1))
+	for bubble: Dictionary in field.bubbles():
+		assert_object(_planet.screen_point(bubble["lat"], bubble["lon"])).is_not_null()
+
+
+## A bubble lives 15 s and the globe spins SPIN_SPEED rad/s; it must still be there at the end.
+func test_a_bubble_at_the_facing_point_is_still_visible_after_its_whole_life() -> void:
+	await get_tree().process_frame
+	for view in VIEWS:
+		_planet.turn(view)
+		var facing := _planet.facing_point()
+		assert_object(_planet.screen_point(facing.x, facing.y)).is_not_null()
+		_planet.turn(Vector2(PlanetView.SPIN_SPEED * 15.0, 0.0))
+		assert_object(_planet.screen_point(facing.x, facing.y)).is_not_null()
+		_planet.turn(Vector2(-PlanetView.SPIN_SPEED * 15.0, 0.0))

@@ -265,3 +265,80 @@ func test_reports_all_errors_at_once() -> void:
 	var result := BubbleField.from_data(_data({"lifetime_seconds": 0, "max_visible": 0, "ambient": {"every_ticks": 0, "value": 1}}),
 			1, SPECIES, func(_id: String) -> float: return 0.0)
 	assert_int(result.errors.size()).is_greater_equal(3)
+
+
+## "ambient.value" etc. above the most one grant can pay would let a collect fail after the bubble is gone.
+func test_rejects_values_above_the_perk_systems_max_grant() -> void:
+	var limit := int(PerkSystem.MAX_GRANT)
+	assert_str(_errors({"ambient": {"every_ticks": 600, "value": limit + 1}})).contains("ambient.value")
+	assert_str(_errors({"discovery": {"value": limit + 1}})).contains("discovery.value")
+	assert_str(_errors({"bloom": {"value": limit + 1, "thresholds": [20]}})).contains("bloom.value")
+	var all_three := BubbleField.from_data(_data({"ambient": {"every_ticks": 600, "value": 500}, "discovery": {"value": 101},
+			"bloom": {"value": 1000, "thresholds": [20]}}), 1, SPECIES, func(_id: String) -> float: return 0.0)
+	assert_int(all_three.errors.size()).is_equal(3)
+	var at_the_limit := BubbleField.from_data(_data({"ambient": {"every_ticks": 600, "value": limit}, "discovery": {"value": limit},
+			"bloom": {"value": limit, "thresholds": [20]}}), 1, SPECIES, func(_id: String) -> float: return 0.0)
+	assert_bool(at_the_limit.is_ok()).is_true()
+
+
+## The shortest way round the globe between two longitudes, in degrees.
+func _lon_gap(a: float, b: float) -> float:
+	return fposmod(a - b + 180.0, 360.0) - 180.0
+
+
+func test_center_provider_places_bubbles_near_the_center() -> void:
+	var field := _field()
+	field.set_center_provider(func() -> Vector2: return Vector2(10.0, 170.0))
+	for i in 8:
+		field.on_tick(600 * (i + 1))
+	assert_int(field.bubbles().size()).is_equal(8)
+	for bubble: Dictionary in field.bubbles():
+		assert_float(bubble["lat"]).is_between(10.0 - 25.0, 10.0 + 25.0)
+		assert_float(_lon_gap(bubble["lon"], 170.0)).is_between(-35.0, 35.0)
+		assert_float(bubble["lon"]).is_between(-180.0, 180.0)
+
+
+func test_center_provider_clamps_latitude_and_wraps_longitude() -> void:
+	var field := _field()
+	field.set_center_provider(func() -> Vector2: return Vector2(-79.0, -179.0))
+	for i in 8:
+		field.on_tick(600 * (i + 1))
+	var wrapped := false
+	for bubble: Dictionary in field.bubbles():
+		assert_float(bubble["lat"]).is_between(-80.0, -79.0 + 25.0)
+		assert_float(bubble["lon"]).is_between(-180.0, 180.0)
+		assert_float(_lon_gap(bubble["lon"], -179.0)).is_between(-35.0, 35.0)
+		wrapped = wrapped or float(bubble["lon"]) > 100.0
+	assert_bool(wrapped).override_failure_message("no bubble crossed the date line").is_true()
+
+
+func test_center_provider_follows_the_view_at_every_spawn() -> void:
+	var field := _field()
+	var center := [Vector2(0.0, 0.0)]
+	field.set_center_provider(func() -> Vector2: return center[0])
+	field.on_tick(600)
+	center[0] = Vector2(0.0, 120.0)
+	field.on_tick(1200)
+	var bubbles := field.bubbles()
+	assert_float(_lon_gap(bubbles[0]["lon"], 0.0)).is_between(-35.0, 35.0)
+	assert_float(_lon_gap(bubbles[1]["lon"], 120.0)).is_between(-35.0, 35.0)
+
+
+func test_center_provider_keeps_a_seed_deterministic() -> void:
+	var a := _field({}, 7)
+	var b := _field({}, 7)
+	for field: BubbleField in [a, b]:
+		field.set_center_provider(func() -> Vector2: return Vector2(5.0, 60.0))
+		for i in 4:
+			field.on_tick(600 * (i + 1))
+	assert_array(a.bubbles()).is_equal(b.bubbles())
+
+
+func test_without_a_provider_bubbles_still_spread_over_the_whole_globe() -> void:
+	var field := _field()
+	for i in 8:
+		field.on_tick(600 * (i + 1))
+	var far := false
+	for bubble: Dictionary in field.bubbles():
+		far = far or absf(float(bubble["lon"])) > 90.0
+	assert_bool(far).is_true()

@@ -8,7 +8,7 @@ extends ModifierProvider
 ## "perk:<id>"), removes those of refunded ones and accrues income from the
 ## biomass of the previous tick. Never returns deltas: a perk reaches the
 ## planet only through modifiers and, via unlocks(), the interventions the
-## player may use. Design: docs/gameplay.md.
+## player may use. Design: docs/perks.md.
 
 const ID := &"perks"
 const FORMAT := "perks_state"

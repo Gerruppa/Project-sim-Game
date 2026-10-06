@@ -257,3 +257,74 @@ func test_perk_panel_presses_ask_to_buy_or_refund() -> void:
 	await assert_signal(_panel).is_emitted("buy_requested", ["a"])
 	_panel.press("c")
 	await assert_signal(_panel).is_emitted("refund_requested", ["c"])
+
+
+## A live game never reaches a decision point, so the tracker's news (the
+## ambition below is real: a tree population above 10) must reach the chronicle
+## from advance().
+func test_live_goal_news_reaches_the_chronicle() -> void:
+	var view := _open()
+	view.start()
+	view.advance(5)
+	assert_str(view.chronicle_text()).not_contains("Ambicja zdobyta")
+	var biosphere := view.session.manager.system(BiosphereSystem.ID) as BiosphereSystem
+	biosphere.set_population(&"tree", 50.0)
+	view.advance(5)
+	assert_str(view.chronicle_text()).contains("Ambicja zdobyta: Pierwszy las")
+	assert_bool(view.at_decision()).is_false()
+	# Said once: the news were taken from the tracker.
+	view.advance(5)
+	assert_int(view.chronicle_text().split("Ambicja zdobyta: Pierwszy las").size()).is_equal(2)
+
+
+## The bubbles of the window spawn where the globe faces the player.
+func test_live_bubbles_spawn_in_view_of_the_player() -> void:
+	var view := _open()
+	view.start()
+	# Six bubbles (they only age while the window runs in real time): by chance
+	# all six would be on the near side of a globe less than once in a thousand.
+	var done := 0
+	while view.session.bubbles.bubbles().size() < 6 and done < 20000:
+		view.advance(10)
+		done += 10
+	var shown := view.session.bubbles.bubbles()
+	assert_int(shown.size()).is_greater_equal(6)
+	for bubble: Dictionary in shown:
+		assert_object(view.planet().screen_point(bubble["lat"], bubble["lon"])).is_not_null()
+
+
+## A bubble collected in a pause waits for the next tick; the label says so.
+func test_pending_sparks_show_in_the_label_during_a_pause() -> void:
+	var view := _open()
+	view.start()
+	_to_bubble(view)
+	view.toggle_pause()
+	var id: int = view.session.bubbles.bubbles()[0]["id"]
+	var collected := view.collect_bubble(id)
+	assert_bool(collected.is_ok()).is_true()
+	var sparks := int(collected.value)
+	assert_int(view.session.pending_sparks()).is_equal(sparks)
+	assert_str(view.sparks_text()).is_equal("Iskry: 0 (+%d)" % sparks)
+	view.advance(2)
+	assert_int(view.session.pending_sparks()).is_equal(0)
+	assert_str(view.sparks_text()).is_equal("Iskry: %d" % sparks)
+
+
+## Closing the window saves a live game that has begun, so no bubble is a reason not to quit.
+func test_closing_the_window_saves_a_live_game() -> void:
+	var view := _open()
+	view.start()
+	view.advance(30)
+	if FileAccess.file_exists(SAVE):
+		DirAccess.remove_absolute(SAVE)
+	view._notification(Node.NOTIFICATION_WM_CLOSE_REQUEST)
+	assert_bool(FileAccess.file_exists(SAVE)).is_true()
+
+
+## A new game that never ran must not overwrite the player's last save.
+func test_closing_the_window_before_the_first_tick_saves_nothing() -> void:
+	var view := _open()
+	if FileAccess.file_exists(SAVE):
+		DirAccess.remove_absolute(SAVE)
+	view._notification(Node.NOTIFICATION_WM_CLOSE_REQUEST)
+	assert_bool(FileAccess.file_exists(SAVE)).is_false()

@@ -27,6 +27,9 @@ const LIVE_RUNNING_TEXT := "Planeta biegnie sama. Zbieraj Iskry z bąbelków, ku
 const SINCE_DECISION := "od ostatniej decyzji"
 const SINCE_START := "od początku gry"
 const RUNNING_TEXT := "Gra sama się zatrzyma, gdy wydarzy się coś ważnego. Możesz też ją zatrzymać i działać."
+## What the player reads when a game cannot be opened; the reasons follow in small text.
+const LOAD_FAILED := "Nie udało się wczytać zapisu (zapis z innej wersji gry). Zacznij nową grę."
+const START_FAILED := "Nie udało się rozpocząć gry. Spróbuj jeszcze raz albo zacznij nową grę."
 ## The layout is built for this size and scales with the window (project
 ## stretch settings); nothing inside may ask for more.
 const BASE_SIZE := Vector2(1366, 800)
@@ -86,6 +89,8 @@ var _watch_rows := {}
 var _param_ids: Array[String] = []
 var _zone_styles := {}
 var _error: Label
+## The technical reason under a friendly error, in smaller text.
+var _error_detail: Label
 var _new_game_box: HFlowContainer
 var _seed_edit: LineEdit
 var _character: OptionButton
@@ -116,14 +121,20 @@ func open_game(game_options: Dictionary) -> void:
 	options = game_options
 	# A game in the window runs live unless the options say otherwise.
 	options["live"] = options.get("live", true)
+	_error.visible = false
+	_error_detail.visible = false
+	var created := GameSession.create(options, _on_chronicle_line)
+	if not created.is_ok():
+		# The new-game screen stays (or comes back) so the player can start over.
+		_show_error(LOAD_FAILED if options.has("load") else START_FAILED, "\n".join(created.errors))
+		if _new_game_box == null:
+			_show_new_game()
+		return
 	if _new_game_box != null:
 		_new_game_box.queue_free()
 		_new_game_box = null
-	var created := GameSession.create(options, _on_chronicle_line)
-	if not created.is_ok():
-		_show_error("\n".join(created.errors))
-		return
 	session = created.value
+	session.bubbles.set_center_provider(_planet.facing_point)
 	_scheduler = session.manager.scheduler()
 	_scheduler.set_speed(DEFAULT_SPEED)
 	_planet.set_planet(session.manager.config().seed())
@@ -214,6 +225,13 @@ func _running_text() -> String:
 	return LIVE_RUNNING_TEXT if session.live else RUNNING_TEXT
 
 
+## Closing the window saves a live game that has begun (a game that never ran
+## would only overwrite the player's last save with an empty planet).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and session != null and session.live and session.tick() > 0:
+		session.save()
+
+
 func _process(delta: float) -> void:
 	if session == null:
 		return
@@ -242,6 +260,11 @@ func advance(ticks: int) -> void:
 	while _warnings_shown < session.warnings.size():
 		_on_chronicle_line("UWAGA: " + session.warnings[_warnings_shown])
 		_warnings_shown += 1
+	# A live game has no decision screen to announce a win or an ambition
+	# (_enter_decision does it for the others): the chronicle does.
+	if session.live:
+		for item in session.goals.take_news():
+			_on_chronicle_line("[color=gold][b]%s[/b][/color]" % item)
 	_refresh()
 
 
@@ -419,13 +442,19 @@ func bubble_layer() -> BubbleLayer:
 	return _bubbles
 
 
+func planet() -> PlanetView:
+	return _planet
+
+
 func perk_panel() -> PerkPanel:
 	return _perks
 
 
 ## The error shown instead of the game (empty when the game runs).
 func error_text() -> String:
-	return _error.text if _error.visible else ""
+	if not _error.visible:
+		return ""
+	return _error.text + ("\n" + _error_detail.text if _error_detail.visible else "")
 
 
 func at_decision() -> bool:
@@ -541,7 +570,9 @@ func _refresh() -> void:
 		button.disabled = not allowed or not action["ready"]
 		button.tooltip_text = action["help"] + ("" if action["ready"] else "\nGotowe za %s%s." % [wait, _speed_note()])
 		button.text = action["name"] + ("" if action["ready"] else " (%s)" % wait)
-	_sparks_label.text = "Iskry: %d" % session.sparks()
+	# A bubble collected in a pause is still queued: show it, so the click has an answer.
+	var pending := session.pending_sparks()
+	_sparks_label.text = "Iskry: %d" % session.sparks() + (" (+%d)" % pending if pending > 0 else "")
 	_perks.refresh(session.perk_rows(), session.sparks())
 	_update_watch()
 
@@ -638,9 +669,11 @@ func _goal_lines() -> PackedStringArray:
 	return lines
 
 
-func _show_error(text: String) -> void:
+func _show_error(text: String, detail: String = "") -> void:
 	_error.text = text
 	_error.visible = true
+	_error_detail.text = detail
+	_error_detail.visible = not detail.is_empty()
 	_running = false
 
 
@@ -698,6 +731,12 @@ func _build() -> void:
 	_error.add_theme_color_override("font_color", Color("ff6b6b"))
 	_error.autowrap_mode = TextServer.AUTOWRAP_WORD
 	root.add_child(_error)
+	_error_detail = Label.new()
+	_error_detail.visible = false
+	_error_detail.add_theme_color_override("font_color", Color("b86a6a"))
+	_error_detail.add_theme_font_size_override("font_size", 12)
+	_error_detail.autowrap_mode = TextServer.AUTOWRAP_WORD
+	root.add_child(_error_detail)
 
 	_goals_dialog = AcceptDialog.new()
 	_goals_dialog.title = "Cele · co jest do zdobycia"

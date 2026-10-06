@@ -61,6 +61,8 @@ var _last_tick := -1
 ## interventions still in effect.
 var _watch: Array[Dictionary] = []
 var _watch_loaded := false
+## The last autosave failed (and was reported); cleared by the next good one.
+var _autosave_failing := false
 
 
 ## options: as PlaySession.parse_args gives them. chronicle_line(line) gets
@@ -166,7 +168,11 @@ func step(max_ticks: int) -> int:
 		executed += 1
 		if live and floori(float(manager.tick()) / AUTOSAVE_TICKS) > floori(float(before) / AUTOSAVE_TICKS):
 			var saved := save()
-			if not saved.is_ok():
+			if saved.is_ok():
+				_autosave_failing = false
+			elif not _autosave_failing:
+				# A disk that stays broken is told once, not every 1000 ticks.
+				_autosave_failing = true
 				warnings.append("Autozapis się nie udał: %s" % "; ".join(saved.errors))
 	return executed
 
@@ -482,6 +488,16 @@ static func ticks_word(count: int) -> String:
 ## Whole Sparks the player holds.
 func sparks() -> int:
 	return floori(perks().sparks())
+
+
+## Sparks queued for the next tick and not yet in the purse (a bubble collected
+## while the planet is paused waits for the next tick to run).
+func pending_sparks() -> int:
+	var total := 0
+	for queued in manager.command_queue().pending():
+		if queued.target == PerkSystem.ID and queued.action == PerkSystem.ACTION_GRANT:
+			total += int(queued.args.get("amount", 0))
+	return total
 
 
 ## Every perk: {"id", "name", "help", "tree", "cost", "owned", "affordable"

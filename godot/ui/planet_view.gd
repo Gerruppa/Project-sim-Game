@@ -194,6 +194,16 @@ func distance() -> float:
 	return _camera.position.z
 
 
+## The latitude and longitude (degrees, as Vector2(lat, lon)) of the point of
+## the globe that faces the camera: the inverse of screen_point's mapping, so
+## screen_point(facing.x, facing.y) is the centre of this view. Bubbles spawn
+## around it, where the player looks.
+func facing_point() -> Vector2:
+	var to_camera := (_camera.global_position - _pivot.global_position).normalized()
+	var local := _pivot.global_transform.basis.orthonormalized().inverse() * to_camera
+	return Vector2(rad_to_deg(asin(clampf(local.y, -1.0, 1.0))), rad_to_deg(atan2(local.z, local.x)))
+
+
 ## Where a point of the globe (degrees) falls in this container, or null while
 ## it is on the side turned away from the camera. The container stretches its
 ## viewport, so the projected pixel is already in its own coordinates.
