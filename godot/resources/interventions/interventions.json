@@ -7,77 +7,77 @@
 	"interventions": [
 		{
 			"id": "seed_species",
-			"name": "Zasiew gatunku",
-			"help": "Dodaje 5 punktów populacji wybranego gatunku. Przywraca gatunki wymarłe; bez dobrych warunków zasiany gatunek znów zginie.",
+			"name": "Seed a species",
+			"help": "Adds 5 population points of the chosen species. Brings back lost species; without good conditions the seeded species will die again.",
 			"args": ["species"],
 			"cooldown": 300,
-			"story": {"applied": "Gracz zasiewa {species}."},
+			"story": {"applied": "The player seeds {species}."},
 			"commands": [
 				{"target": "biosphere", "action": "add_population", "args": {"species": "$species", "amount": 5.0}}
 			]
 		},
 		{
 			"id": "cull_species",
-			"name": "Przerzedzenie gatunku",
-			"help": "Zostawia 10% populacji gatunku. Odsłania światło niższym roślinom i ogranicza paliwo dla pożarów.",
+			"name": "Thin a species",
+			"help": "Leaves 10% of the species' population. Lets light through to lower plants and reduces fuel for wildfires.",
 			"args": ["species"],
 			"cooldown": 300,
-			"story": {"applied": "Gracz przerzedza {species}: zostaje jedna dziesiąta."},
+			"story": {"applied": "The player thins out {species}: a tenth remains."},
 			"commands": [
 				{"target": "biosphere", "action": "scale_population", "args": {"species": "$species", "factor": 0.1}}
 			]
 		},
 		{
 			"id": "mirrors_warm",
-			"name": "Lustra orbitalne",
-			"help": "Na 500 ticków podnosi temperaturę, do której dąży klimat (lekko, umiarkowanie albo z pełną mocą). Lekko często pomaga, mocno to ryzyko.",
+			"name": "Orbital mirrors",
+			"help": "For 500 ticks raises the temperature the climate settles toward (light, moderate or full power). Light often helps, strong is a risk.",
 			"cooldown": 1500,
 			"cooldown_group": "mirrors",
 			"duration": 500,
 			"story": {
-				"applied": "Gracz rozkłada lustra orbitalne ({level_name}): planeta dostaje więcej światła.",
-				"ended": "Lustra orbitalne składają się."
+				"applied": "The player unfolds orbital mirrors ({level_name}): the planet receives more light.",
+				"ended": "The orbital mirrors fold away."
 			},
 			"levels": {
 				"default": "strong",
 				"options": {
-					"weak": {"scale": 0.25, "name": "lekko"},
-					"medium": {"scale": 0.5, "name": "umiarkowanie"},
-					"strong": {"scale": 1.0, "name": "z pełną mocą"}
+					"weak": {"scale": 0.25, "name": "light"},
+					"medium": {"scale": 0.5, "name": "moderate"},
+					"strong": {"scale": 1.0, "name": "full power"}
 				}
 			},
 			"modifiers": [{"target": "climate.base_temperature", "operation": "add", "value": 8.0}]
 		},
 		{
 			"id": "mirrors_cool",
-			"name": "Pył orbitalny",
-			"help": "Na 500 ticków obniża temperaturę, do której dąży klimat (lekko, umiarkowanie albo z pełną mocą). Mocne ochłodzenie potrafi wywołać epokę lodową.",
+			"name": "Orbital dust",
+			"help": "For 500 ticks lowers the temperature the climate settles toward (light, moderate or full power). Strong cooling can trigger an ice age.",
 			"cooldown": 1500,
 			"cooldown_group": "mirrors",
 			"duration": 500,
 			"story": {
-				"applied": "Gracz rozpyla pył na orbicie ({level_name}): planeta dostaje mniej światła.",
-				"ended": "Pył orbitalny opada."
+				"applied": "The player scatters dust in orbit ({level_name}): the planet receives less light.",
+				"ended": "The orbital dust settles."
 			},
 			"levels": {
 				"default": "strong",
 				"options": {
-					"weak": {"scale": 0.25, "name": "lekko"},
-					"medium": {"scale": 0.5, "name": "umiarkowanie"},
-					"strong": {"scale": 1.0, "name": "z pełną mocą"}
+					"weak": {"scale": 0.25, "name": "light"},
+					"medium": {"scale": 0.5, "name": "moderate"},
+					"strong": {"scale": 1.0, "name": "full power"}
 				}
 			},
 			"modifiers": [{"target": "climate.base_temperature", "operation": "add", "value": -8.0}]
 		},
 		{
 			"id": "cloud_seeding",
-			"name": "Zasiew chmur",
-			"help": "Na 300 ticków deszcz pada nawet z rzadkich chmur. Dobre dla krzewów i drzew, ale wysusza powietrze, z którego żyją mchy i glony.",
+			"name": "Cloud seeding",
+			"help": "For 300 ticks rain falls even from thin clouds. Good for shrubs and trees, but dries the air that moss and algae live on.",
 			"cooldown": 900,
 			"duration": 300,
 			"story": {
-				"applied": "Gracz zasiewa chmury: deszcz pada nawet z rzadkich chmur.",
-				"ended": "Zasiane chmury wygasają."
+				"applied": "The player seeds the clouds: rain falls even from thin clouds.",
+				"ended": "The seeded clouds fade."
 			},
 			"modifiers": [
 				{"target": "climate.rain_cloud_low", "operation": "add", "value": -25.0},
@@ -86,25 +86,25 @@
 		},
 		{
 			"id": "aquifer_release",
-			"name": "Wody podziemne",
-			"help": "Na 300 ticków ląd paruje 2,5 raza mocniej: rośnie wilgotność i opady. Dobra odpowiedź na suszę.",
+			"name": "Aquifers",
+			"help": "For 300 ticks the land evaporates 2.5 times more: humidity and rainfall rise. A good answer to drought.",
 			"cooldown": 900,
 			"duration": 300,
 			"story": {
-				"applied": "Gracz uwalnia wody podziemne: ląd znów paruje.",
-				"ended": "Wody podziemne wysychają."
+				"applied": "The player releases the aquifers: the land evaporates again.",
+				"ended": "The aquifers run dry."
 			},
 			"modifiers": [{"target": "climate.evaporation_rate", "operation": "multiply", "value": 2.5}]
 		},
 		{
 			"id": "volcanic_awakening",
-			"name": "Przebudzenie wulkanów",
-			"help": "Na 400 ticków wulkany wydzielają 3 razy więcej CO₂: pokarm dla roślin i długotrwałe ocieplenie.",
+			"name": "Awaken volcanoes",
+			"help": "For 400 ticks volcanoes release 3 times more CO₂: food for plants and long-lasting warming.",
 			"cooldown": 2000,
 			"duration": 400,
 			"story": {
-				"applied": "Gracz budzi wulkany: do atmosfery płynie CO₂.",
-				"ended": "Wulkany zasypiają."
+				"applied": "The player awakens the volcanoes: CO₂ pours into the atmosphere.",
+				"ended": "The volcanoes fall asleep."
 			},
 			"modifiers": [{"target": "atmosphere.volcanic_co2", "operation": "multiply", "value": 3.0}]
 		}

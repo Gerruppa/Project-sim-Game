@@ -1,0 +1,8 @@
+{
+	"bubbles_version": 1,
+	"lifetime_seconds": 15,
+	"max_visible": 8,
+	"ambient": {"every_ticks": 400, "value": 1},
+	"discovery": {"value": 4},
+	"bloom": {"value": 3, "thresholds": [20, 40, 60]}
+}

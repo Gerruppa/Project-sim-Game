@@ -1,5 +1,10 @@
 ; Engine configuration file.
-; Pinned engine version: Godot 4.7.2 stable (see docs/simulation.md).
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -9,15 +14,22 @@ config/name="Genesis Error"
 run/main_scene="res://ui/main.tscn"
 config/features=PackedStringArray("4.7")
 
-[display]
-
-window/size/viewport_width=1366
-window/size/viewport_height=800
-
 [debug]
 
 gdscript/warnings/untyped_declaration=2
 
+[display]
+
+window/size/viewport_width=1366
+window/size/viewport_height=800
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg")
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

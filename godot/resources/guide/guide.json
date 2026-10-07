@@ -1,0 +1,32 @@
+{
+	"guide_version": 1,
+	"thresholds": {"ideal": 0.8, "ok": 0.4, "blocked_below": 0.02},
+	"labels": {
+		"ideal": "Ideal conditions",
+		"ok": "Good conditions",
+		"weak": "Weak conditions",
+		"blocked": "Too early: {why}",
+		"waiting": "Waiting for {precursor}"
+	},
+	"short": {"ideal": "Ideal", "ok": "Good", "weak": "Weak", "blocked": "Too early", "waiting": "Waiting"},
+	"why": {
+		"heat": "too hot",
+		"cold": "too cold",
+		"drought": "too dry",
+		"co2_starvation": "not enough CO₂",
+		"oxygen_lack": "not enough oxygen",
+		"poor_soil": "not enough soil"
+	},
+	"needs": {
+		"temperature": "Temperature",
+		"water": "Water",
+		"co2": "CO₂",
+		"oxygen": "Oxygen",
+		"soil": "Soil"
+	},
+	"range": {
+		"between": "{low} to {high}",
+		"at_least": "at least {low}",
+		"at_most": "at most {high}"
+	}
+}

@@ -51,7 +51,7 @@ func test_capture_holds_the_envelope_and_every_system() -> void:
 	assert_int(int(data["tick"])).is_equal(5)
 	assert_str(data["personality"]).is_equal("guardian")
 	assert_array((data["systems"] as Dictionary).keys()).contains_exactly_in_any_order(
-			["climate", "atmosphere", "biosphere", "personality", "events", "interventions"])
+			["climate", "atmosphere", "biosphere", "personality", "events", "interventions", "perks"])
 	assert_dict(data["systems"]["atmosphere"]).is_empty()
 	assert_array(data["lineage"]).is_empty()
 	assert_array((data["data_fingerprints"] as Dictionary).keys()).contains(["climate", "species", "events"])

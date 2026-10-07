@@ -33,7 +33,7 @@ func test_speed_multiplies_tick_rate() -> void:
 
 
 func test_rejects_speed_not_in_config() -> void:
-	assert_bool(_scheduler.set_speed(5)).is_false()
+	assert_bool(_scheduler.set_speed(7)).is_false()
 	assert_int(_scheduler.speed()).is_equal(1)
 
 
