@@ -70,7 +70,7 @@ func _init() -> void:
 	_pivot = Node3D.new()
 	_tilt.add_child(_pivot)
 	var hint := Label.new()
-	hint.text = "przeciągnij: obrót · kółko: przybliżenie"
+	hint.text = "drag: rotate · wheel: zoom"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	hint.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.35))

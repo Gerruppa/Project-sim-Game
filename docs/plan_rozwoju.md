@@ -306,3 +306,24 @@ gracz chce kliknąć jeszcze raz?"), przed strojeniem pomiar, testy z dowodem
 mutacją; lokalne commity po zadaniach są dozwolone, push tylko na moją
 prośbę.
 ```
+
+
+---
+
+## Stan po poprawkach z testów (2026-10-07)
+
+Plan: `docs/superpowers/plans/2026-10-07-poprawki-po-testach.md`. Zrobione
+(uwagi pierwszych testerów): data zamiast ticków ("Year 29, November"), tekst
+gry po angielsku, strzałki zamiast liczb przy gatunkach, kronika w
+półprzezroczystym pasku nad globusem, karta zakończenia (wygrana, koniec 200
+lat), przewodnik "kiedy sadzić", ostrzeżenia o kryzysach z przeciwdziałaniami,
+drabina życia z postępem i toasty, okno perków (6 gałęzi, 47 perków, poziomy
+do III), fauna (owady, małe zwierzęta, duże ssaki) i jej perki, balans
+(mediana wygranej bota ok. 20 000 ticków). Zmiany względem specyfikacji:
+fauna i ostrzeżenia weszły przed Etapami 2-4; cel "Dojrzała planeta" wymaga
+też zwierząt i trwa 5 lat.
+
+Do sprawdzenia przez testerów: czy wiedzą, kiedy sadzić; czy zauważają
+ostrzeżenia; czy okno perków jest czytelne i czy wybory się różnią; czy
+zwierzęta są nagrodą; czy wiedzą, że skończyli. Backlog: rysunek fauny na
+globusie, dźwięk, Próby Creatora (Etap 3), zasięg na kontynentach (Etap 2).

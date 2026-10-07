@@ -45,6 +45,37 @@
 			"shade": 0.0, "flammable": 1.0, "base_mortality": 0.001, "stress_mortality": 0.015,
 			"emerges_from": "shrub", "seed": 0.0005,
 			"oxygen": 0.09, "co2_uptake": 0.035, "respiration": 0.035, "transpiration": 0.08
+		},
+		{
+			"id": "insects", "layer": 0, "weight": 0.0, "growth": 0.03, "capacity": 70,
+			"t_min": 8, "t_max": 42, "t_margin": 8,
+			"water": "humidity", "water_min": 25, "water_margin": 8,
+			"co2_need": 0, "o2_need": 10, "o2_max": 0, "o2_refuge": 0, "biomass_need": 0,
+			"shade": 0.0, "flammable": 0.1, "base_mortality": 0.004, "stress_mortality": 0.05,
+			"emerges_from": "moss", "seed": 0.002,
+			"oxygen": 0.0, "co2_uptake": 0.0, "respiration": 0.01, "transpiration": 0.0,
+			"food": "moss", "food_need": 20, "food_ticks": 720, "graze": 0.004, "pollinator": 1.0
+		},
+		{
+			"id": "small_animals", "layer": 0, "weight": 0.0, "growth": 0.02, "capacity": 60,
+			"t_min": 10, "t_max": 42, "t_margin": 8,
+			"water": "precipitation", "water_min": 5, "water_margin": 4,
+			"co2_need": 0, "o2_need": 14, "o2_max": 0, "o2_refuge": 0, "biomass_need": 0,
+			"shade": 0.0, "flammable": 0.2, "base_mortality": 0.003, "stress_mortality": 0.04,
+			"emerges_from": "insects", "seed": 0.001,
+			"oxygen": 0.0, "co2_uptake": 0.0, "respiration": 0.02, "transpiration": 0.0,
+			"food": "shrub", "food_need": 20, "food_ticks": 1080, "graze": 0.003, "pollinator": 0.0
+		},
+		{
+			"id": "large_mammals", "layer": 0, "weight": 0.0, "growth": 0.012, "capacity": 50,
+			"t_min": 5, "t_max": 40, "t_margin": 8,
+			"water": "precipitation", "water_min": 8, "water_margin": 4,
+			"co2_need": 0, "o2_need": 18, "o2_max": 0, "o2_refuge": 0, "biomass_need": 0,
+			"shade": 0.0, "flammable": 0.3, "base_mortality": 0.002, "stress_mortality": 0.03,
+			"emerges_from": "small_animals", "seed": 0.0005,
+			"oxygen": 0.0, "co2_uptake": 0.0, "respiration": 0.035, "transpiration": 0.0,
+			"food": "tree", "food_need": 20, "food_ticks": 1440, "graze": 0.002, "pollinator": 0.0
 		}
+
 	]
 }

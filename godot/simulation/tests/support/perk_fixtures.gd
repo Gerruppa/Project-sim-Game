@@ -23,7 +23,9 @@ static func perk(id: String, overrides: Dictionary = {}) -> Dictionary:
 static func parse(perks: Array, extra: Dictionary = {}) -> SimResult:
 	var ids := I.project_catalog().ids()
 	var data := {"perks_version": 1, "refund_ratio": 0.7, "income_per_biomass_tick": 0.00001,
-			"free_interventions": ids.map(func(id: StringName) -> String: return String(id)), "perks": perks}
+			"free_interventions": ids.map(func(id: StringName) -> String: return String(id)), "perks": perks,
+			"branches": [{"id": "life", "name": "Life", "help": "Traits of life."},
+					{"id": "environment", "name": "Environment", "help": "Divine powers."}]}
 	data.merge(extra, true)
 	return PerkCatalog.from_data(data, Q.specs(), ids)
 

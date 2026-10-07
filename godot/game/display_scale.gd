@@ -19,12 +19,16 @@ const DEFAULT_PATH := "res://resources/display/display.json"
 ## Measures of ParamHistory that are levels (they convert like a value); the
 ## others (change, range, anomaly) are differences.
 const LEVEL_MEASURES: Array[String] = ["value", "mean", "min", "max"]
+const DEFAULT_MONTHS: Array[String] = ["January", "February", "March", "April", "May", "June", "July", "August",
+		"September", "October", "November", "December"]
 
 ## parameter id -> {"label": String ("" = the schema name), "unit": String,
 ## "decimals": int, "points": PackedFloat64Array pairs (value, shown, ...)}
 var _parameters: Dictionary[String, Dictionary] = {}
 ## action id -> [first, last] ticks after the action in which its effect shows
 var _effect_ticks: Dictionary[String, Array] = {}
+## The 12 month names, January first.
+var _months := PackedStringArray(DEFAULT_MONTHS)
 
 
 static func load_json(path: String, parameter_ids: Array[StringName], action_ids: Array[StringName]) -> SimResult:
@@ -43,6 +47,12 @@ static func from_data(data: Dictionary, parameter_ids: Array[StringName], action
 	else:
 		for id: Variant in parameters:
 			scale._read_parameter(String(id), parameters[id], parameter_ids, result)
+	var months: Variant = data.get("months", DEFAULT_MONTHS)
+	if typeof(months) != TYPE_ARRAY or (months as Array).size() != 12 \
+			or not (months as Array).all(func(m: Variant) -> bool: return typeof(m) == TYPE_STRING and not (m as String).is_empty()):
+		result.add_error("display: 'months' must be a list of 12 month names")
+	else:
+		scale._months = PackedStringArray(months)
 	var actions: Variant = data.get("actions", {})
 	if typeof(actions) != TYPE_DICTIONARY:
 		result.add_error("display: 'actions' must be an object")
@@ -114,6 +124,11 @@ func _read_action(id: String, raw: Variant, known: Array[StringName], result: Si
 	_effect_ticks[id] = [int(span[0]), int(span[1])]
 
 
+## The 12 month names (January first), for dates in the window.
+func months() -> PackedStringArray:
+	return _months
+
+
 func has_parameter(id: String) -> bool:
 	return _parameters.has(id)
 
@@ -147,7 +162,7 @@ func difference(id: String, delta: float, around: float) -> float:
 	return change(id, around - delta * 0.5, around + delta * 0.5)
 
 
-## The name the player sees ("Średnia temperatura"), or `fallback`.
+## The name the player sees ("Average temperature"), or `fallback`.
 func label(id: String, fallback: String) -> String:
 	var own: String = _parameters[id]["label"] if _parameters.has(id) else ""
 	return fallback if own.is_empty() else own
@@ -166,12 +181,12 @@ func shown(id: String, value: float) -> String:
 	return _with_unit(id, ("%." + str(decimals(id)) + "f") % to_display(id, value))
 
 
-## A number as the chronicle writes it: decimal comma, unit included. `measure`
+## A number as the chronicle writes it: decimal point, unit included. `measure`
 ## says whether the number is a level or a difference (see LEVEL_MEASURES);
 ## a difference converts around the parameter's current value `around`.
 func chronicle_number(id: String, measure: String, value: float, around: float) -> String:
 	var number := to_display(id, value) if LEVEL_MEASURES.has(measure) else difference(id, value, around)
-	return _with_unit(id, (("%." + str(decimals(id)) + "f") % number).replace(".", ","))
+	return _with_unit(id, ("%." + str(decimals(id)) + "f") % number)
 
 
 func _with_unit(id: String, number: String) -> String:

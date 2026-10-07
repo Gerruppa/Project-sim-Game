@@ -24,7 +24,12 @@ if [ ! -s "$build/$package/GenesisError.exe" ]; then
 	exit 1
 fi
 # Windows line endings, so the guide reads well in every editor.
-sed 's/$/\r/' ../docs/instrukcja_testera.txt > "$build/$package/INSTRUKCJA.txt"
+sed 's/$/\r/' ../docs/instrukcja_testera.txt > "$build/$package/INSTRUCTIONS.txt"
 
-(cd "$build" && rm -f "$package.zip" && python -m zipfile -c "$package.zip" "$package")
+# Python when it works, else PowerShell (no Python needed on a plain Windows).
+if python -c 1 > /dev/null 2>&1; then
+	(cd "$build" && rm -f "$package.zip" && python -m zipfile -c "$package.zip" "$package")
+else
+	(cd "$build" && rm -f "$package.zip" && powershell.exe -NoProfile -Command "Compress-Archive -Path '$package' -DestinationPath '$package.zip' -Force")
+fi
 echo "$build/$package.zip"

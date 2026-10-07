@@ -3,106 +3,106 @@
 	"parameters": [
 		{
 			"id": "temperature",
-			"display_name": "Temperatura",
+			"display_name": "Temperature",
 			"unit": "normalized 0-100",
 			"min": 0,
 			"max": 100,
 			"initial": 30,
 			"anchors": {
-				"0": "zamarznięta, życie niemożliwe",
-				"50": "optimum dla życia ziemskiego",
-				"100": "wrząca, życie niemożliwe"
+				"0": "frozen, life impossible",
+				"50": "optimum for Earth-like life",
+				"100": "boiling, life impossible"
 			}
 		},
 		{
 			"id": "humidity",
-			"display_name": "Wilgotność",
+			"display_name": "Humidity",
 			"unit": "normalized 0-100",
 			"min": 0,
 			"max": 100,
 			"initial": 15,
 			"anchors": {
-				"0": "pustynia absolutna",
-				"50": "klimat umiarkowany",
-				"100": "nasycenie, ciągłe opady"
+				"0": "absolute desert",
+				"50": "temperate climate",
+				"100": "saturated, constant rain"
 			}
 		},
 		{
 			"id": "oxygen",
-			"display_name": "Tlen",
+			"display_name": "Oxygen",
 			"unit": "normalized 0-100",
 			"min": 0,
 			"max": 100,
 			"initial": 2,
 			"anchors": {
-				"0": "brak tlenu",
-				"50": "poziom ziemski",
-				"100": "toksyczny, ekstremalne ryzyko pożarów"
+				"0": "no oxygen",
+				"50": "Earth level",
+				"100": "toxic, extreme fire risk"
 			}
 		},
 		{
 			"id": "biomass",
-			"display_name": "Biomasa",
+			"display_name": "Biomass",
 			"unit": "normalized 0-100",
 			"min": 0,
 			"max": 100,
 			"initial": 0,
 			"anchors": {
-				"0": "martwa planeta",
-				"50": "lasy i krzewy",
-				"100": "gęsta biosfera"
+				"0": "dead planet",
+				"50": "forests and shrubs",
+				"100": "dense biosphere"
 			}
 		},
 		{
 			"id": "cloud_cover",
-			"display_name": "Zachmurzenie",
+			"display_name": "Cloud cover",
 			"unit": "normalized 0-100",
 			"min": 0,
 			"max": 100,
 			"initial": 10,
 			"anchors": {
-				"0": "bezchmurne niebo",
-				"50": "umiarkowane zachmurzenie",
-				"100": "pełna pokrywa chmur"
+				"0": "cloudless sky",
+				"50": "moderate cloud cover",
+				"100": "full cloud cover"
 			}
 		},
 		{
 			"id": "precipitation",
-			"display_name": "Opady",
+			"display_name": "Rainfall",
 			"unit": "normalized 0-100",
 			"min": 0,
 			"max": 100,
 			"initial": 0,
 			"anchors": {
-				"0": "brak opadów",
-				"50": "regularne opady, klimat umiarkowany",
-				"100": "ulewy, ciągły monsun"
+				"0": "no rainfall",
+				"50": "regular rainfall, temperate climate",
+				"100": "downpours, constant monsoon"
 			}
 		},
 		{
 			"id": "co2",
-			"display_name": "Dwutlenek węgla",
+			"display_name": "Carbon dioxide",
 			"unit": "normalized 0-100",
 			"min": 0,
 			"max": 100,
 			"initial": 40,
 			"anchors": {
-				"0": "brak CO₂, brak efektu cieplarnianego, rośliny głodują",
-				"50": "gęsta atmosfera młodej planety, silny efekt cieplarniany",
-				"100": "duszący, wenusjański"
+				"0": "no CO₂, no greenhouse effect, plants starve",
+				"50": "thick atmosphere of a young planet, strong greenhouse effect",
+				"100": "suffocating, Venus-like"
 			}
 		},
 		{
 			"id": "crust_oxidation",
-			"display_name": "Utlenienie skorupy",
+			"display_name": "Crust oxidation",
 			"unit": "normalized 0-100",
 			"min": 0,
 			"max": 100,
 			"initial": 0,
 			"anchors": {
-				"0": "świeża, zredukowana skorupa pochłania tlen",
-				"50": "skorupa w połowie utleniona",
-				"100": "skorupa w pełni utleniona, tlen może się gromadzić"
+				"0": "fresh, reduced crust absorbs oxygen",
+				"50": "crust half oxidized",
+				"100": "crust fully oxidized, oxygen can accumulate"
 			}
 		}
 	]

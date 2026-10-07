@@ -9,7 +9,9 @@ Language: GDScript
 Architecture: Data Driven + Event Driven
 Platform: Steam
 Development Stage: Stage 0 (documents) and Stage 1 (bubbles, Sparks, perk
-shop) of the new core are done; next is Stage 2. Spec:
+shop) of the new core are done, plus the playtest pass of 2026-10-07 (date,
+planting guide, crisis warnings, life ladder, perk window with branches and
+tiers, fauna, ending cards; the game text is in English); next is Stage 2. Spec:
 docs/superpowers/specs/2026-10-06-nowy-rdzen-gry-design.md
 
 ---
@@ -626,7 +628,7 @@ game/ (game layer above the simulation: SimulationRunner,
 PlaySession, GoalTracker, DecisionWatcher, HintAdvisor, BubbleField, saves)
 
 ui/ (the window: GameView, PlanetView (3D globe + shaders), HistoryChart,
-BubbleLayer, PerkPanel;
+BubbleLayer, PerkWindow, OverlayCard, ChronicleOverlay, ThreatStrip, LifePathBar, SpeciesPanel;
 Godot nodes and signals only here)
 
 tools/ (console entry points only: run_simulation.gd, play.gd)

@@ -25,6 +25,18 @@ const SPEC := {
 	"photorespiration_high": [0.0, 100.0, false],
 	"loss_memory": [0.0, 1.0, false],
 	"recolonization": [0.0, 1.0, false],
+	"cold_tolerance": [0.0, 40.0, false],
+	"heat_tolerance": [0.0, 40.0, false],
+	"drought_tolerance": [0.0, 40.0, false],
+	"seed_scale": [0.0, 10.0, false],
+	"natural_seed_scale": [0.0, 10.0, false],
+	"capacity_scale": [0.1, 3.0, false],
+	"photosynthesis_scale": [0.0, 3.0, false],
+	"fauna_growth_scale": [0.0, 10.0, false],
+	"fauna_seed_scale": [0.0, 10.0, false],
+	"food_need_scale": [0.1, 2.0, false],
+	"graze_scale": [0.0, 10.0, false],
+	"pollination": [0.0, 2.0, false],
 }
 const ORDERED_PAIRS := [
 	["fire_o2_low", "fire_o2_high"],
@@ -59,6 +71,25 @@ var loss_memory: float
 ## seeding: 0 = gone for good unless the player seeds it, 1 = it returns as
 ## easily as it first appeared. Makes the player's choices leave a mark.
 var recolonization: float
+## Perks of resistance: how far (planet scale 0-100) every species' temperature
+## window widens on the cold and hot side and its water need drops.
+var cold_tolerance: float
+var heat_tolerance: float
+var drought_tolerance: float
+## Multiplies the population a seeding adds, and the natural seeding of species.
+var seed_scale: float
+var natural_seed_scale: float
+## Multiplies every species' capacity and its photosynthesis.
+var capacity_scale: float
+var photosynthesis_scale: float
+## Fauna: multipliers on animals' growth and natural seeding, on the food they
+## need before they appear, and on how much they eat; and how much a full
+## population of pollinators speeds up the growth of the plants above the soil.
+var fauna_growth_scale: float
+var fauna_seed_scale: float
+var food_need_scale: float
+var graze_scale: float
+var pollination: float
 
 
 static func load_json(path: String) -> SimResult:

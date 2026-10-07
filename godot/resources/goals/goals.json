@@ -2,34 +2,47 @@
 	"goals_version": 1,
 	"victory": {
 		"id": "mature_planet",
-		"name": "Dojrzała planeta",
-		"text": "Wszystkie etapy życia żyją naraz i utrzymują się przez 2 lata.",
+		"name": "Mature planet",
+		"text": "Every stage of life, from bacteria to large mammals, is alive at once and holds for 5 years.",
 		"species": [
 			"bacteria",
 			"algae",
 			"moss",
 			"shrub",
-			"tree"
+			"tree",
+			"insects",
+			"small_animals",
+			"large_mammals"
 		],
 		"min_population": 1.0,
-		"for_ticks": 720
+		"for_ticks": 1800
+	},
+	"ending": {
+		"won": {
+			"title": "Congratulations, Apprentice!",
+			"body": "You made the planet bloom. [b]{goal}[/b] was reached on [b]{date}[/b]: {alive} of {total} stages of life are alive. Stars: {stars}.\n\nYou bought {perks} perks and caught {bubbles} bubbles. The Creator is silent, and humanity has some thinking to do.\n\nThe planet is yours to keep growing."
+		},
+		"timeup": {
+			"title": "Time is up",
+			"body": "The {years} years are over. {alive} of {total} stages of life live on the planet.\n\nThe Creator is not convinced yet. You bought {perks} perks and caught {bubbles} bubbles; the planet is still yours to keep growing."
+		}
 	},
 	"stars": [
 		{
 			"id": "no_losses",
-			"name": "Bez strat",
-			"text": "żaden gatunek nie wymarł"
+			"name": "No losses",
+			"text": "no species died out"
 		},
 		{
 			"id": "fast",
-			"name": "Szybko",
-			"text": "wygrana przed rokiem {max_years}",
-			"max_years": 30
+			"name": "Fast",
+			"text": "win before year {max_years}",
+			"max_years": 40
 		},
 		{
 			"id": "light_hand",
-			"name": "Lekką ręką",
-			"text": "od {min_interventions} do {max_interventions} akcji, a lustra i pył tylko lekko",
+			"name": "Light hand",
+			"text": "{min_interventions} to {max_interventions} actions, with mirrors and dust only lightly",
 			"max_interventions": 5,
 			"min_interventions": 1
 		}
@@ -37,8 +50,8 @@
 	"ambitions": [
 		{
 			"id": "oxygenated",
-			"name": "Oddech planety",
-			"text": "tlen powyżej 10,9 % atmosfery przed rokiem 13",
+			"name": "Breath of the planet",
+			"text": "oxygen above 10.9 % of atmosphere before year 13",
 			"kind": "parameter",
 			"param": "oxygen",
 			"op": ">",
@@ -47,24 +60,40 @@
 		},
 		{
 			"id": "first_forest",
-			"name": "Pierwszy las",
-			"text": "drzewa z populacją powyżej 10",
+			"name": "First forest",
+			"text": "trees with a population above 10",
 			"kind": "species",
 			"species": "tree",
 			"min_population": 10
 		},
 		{
+			"id": "first_animals",
+			"name": "First animals",
+			"text": "insects with a population above 10",
+			"kind": "species",
+			"species": "insects",
+			"min_population": 10
+		},
+		{
+			"id": "big_game",
+			"name": "Big game",
+			"text": "large mammals with a population above 10",
+			"kind": "species",
+			"species": "large_mammals",
+			"min_population": 10
+		},
+		{
 			"id": "survive_winter",
-			"name": "Przetrwać zimę",
-			"text": "epoka lodowa minęła bez wymarcia, a żyły co najmniej 4 etapy życia",
+			"name": "Survive the winter",
+			"text": "an ice age passed with no extinction while at least 4 stages of life lived",
 			"kind": "event_survived",
 			"event": "ice_age",
 			"min_alive": 4
 		},
 		{
 			"id": "survive_fire",
-			"name": "Po pożarze",
-			"text": "sezon pożarów minął, a drzewa mają populację co najmniej 10",
+			"name": "After the fire",
+			"text": "a fire season passed and trees have a population of at least 10",
 			"kind": "event_survived",
 			"event": "fire_season",
 			"species": "tree",
@@ -72,14 +101,14 @@
 		},
 		{
 			"id": "gardener",
-			"name": "Ogrodnik",
-			"text": "przywróć zasiewem gatunek, który wymarł",
+			"name": "Gardener",
+			"text": "bring back a species that died out by seeding it",
 			"kind": "player_returned"
 		},
 		{
 			"id": "tame_chaos",
-			"name": "Ujarzmić chaos",
-			"text": "drzewa na planecie chaotycznej",
+			"name": "Tame the chaos",
+			"text": "trees on a chaotic planet",
 			"kind": "species",
 			"species": "tree",
 			"min_population": 1,
@@ -87,8 +116,8 @@
 		},
 		{
 			"id": "hands_off",
-			"name": "Nie ruszaj",
-			"text": "dojrzała planeta bez żadnej akcji",
+			"name": "Hands off",
+			"text": "a mature planet without a single action",
 			"kind": "victory_untouched"
 		}
 	]

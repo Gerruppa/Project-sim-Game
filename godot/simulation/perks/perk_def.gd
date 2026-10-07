@@ -10,16 +10,24 @@ var id: StringName
 var name: String
 ## One sentence for the player: what the perk does.
 var help := ""
-## Which tree the perk sits in: &"environment" or &"life".
+## Which branch of the perk window the perk sits in (an id from the catalog's branches).
 var tree: StringName
+## The family the perk belongs to ("cold_resistance"); a perk without one is its own family.
+var line: StringName
+## Level within the line: 1 is the first, each next level requires the one below.
+var tier := 1
 ## Price in Sparks.
 var cost := 0
 ## Perks that must be owned first.
 var requires: Array[StringName] = []
+## Species that must have lived on the planet before the perk can be bought.
+var requires_species: Array[StringName] = []
 ## Each entry: {"target", "operation", "value"}; active while the perk is owned.
 var modifiers: Array[Dictionary] = []
 ## Interventions the player may use while the perk is owned.
 var unlocks: Array[StringName] = []
+## What the perk does to the Spark income while owned (1 = nothing).
+var income_scale := 1.0
 ## The price of the perk in the world, shown before buying.
 var side_effect := ""
 ## "bought" and "refunded": one sentence each for the chronicle.

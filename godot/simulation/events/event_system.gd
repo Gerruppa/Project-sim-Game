@@ -17,19 +17,26 @@ const ID := &"events"
 const FORMAT := "event_system"
 const STARTED_EVENT := &"world_event_started"
 const ENDED_EVENT := &"world_event_ended"
+## An early warning was issued, or withdrawn because the danger passed.
+const WARNED_EVENT := &"world_event_warned"
+const WARNING_CLEARED_EVENT := &"world_event_warning_cleared"
 const NUMBER_FORMAT := "%.2f"
 
 var _archetype: StringName
+## The crisis coefficients (severity, cooldown); null on a planet that has none.
+var _k: EventConfig
 ## Definitions that apply to this planet, in catalog order.
 var _defs: Array[EventDef] = []
 var _lifecycles: Array[EventLifecycle] = []
 var _required: Array[int] = []
+var _warning_required: Array[int] = []
 var _history: ParamHistory
 
 
 ## archetype: the planet's archetype id ("none" or empty for no personality).
-func _init(catalog: EventCatalog, archetype: StringName = &"") -> void:
+func _init(catalog: EventCatalog, archetype: StringName = &"", config: EventConfig = null) -> void:
 	_archetype = archetype
+	_k = config
 	var needs := {}
 	for def in catalog.all():
 		if not def.applies_to(archetype):
@@ -37,6 +44,7 @@ func _init(catalog: EventCatalog, archetype: StringName = &"") -> void:
 		_defs.append(def)
 		_lifecycles.append(EventLifecycle.new())
 		_required.append(def.required_samples())
+		_warning_required.append(def.warning_required_samples())
 		var def_needs := def.history_needs()
 		for id: StringName in def_needs:
 			needs[id] = maxi(int(needs.get(id, 0)), int(def_needs[id]))
@@ -50,6 +58,18 @@ static func source_of(def: EventDef) -> StringName:
 func system_id() -> StringName:
 	return ID
 
+
+## The base coefficients; null without a config, so perks have nothing to turn.
+func coefficients() -> Object:
+	return _k
+
+
+func coefficient_spec() -> Dictionary:
+	return EventConfig.SPEC
+
+
+func apply_coefficients(effective: Object) -> void:
+	_k = effective
 
 ## Ids of the events this planet can have.
 func event_ids() -> Array[StringName]:
@@ -66,6 +86,29 @@ func phase_of(id: StringName) -> StringName:
 	return &""
 
 
+## Events the player was warned about and that have not started (nor been withdrawn).
+func warned_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for i in _defs.size():
+		if _lifecycles[i].warned:
+			ids.append(_defs[i].id)
+	return ids
+
+
+## What the window needs to know about an event: {"name", "warning_text", "counters"}.
+func info_of(id: StringName) -> Dictionary:
+	for def in _defs:
+		if def.id == id:
+			return {"name": def.name, "warning_text": def.warning_text,
+					"counters": def.warning_counters.map(func(c: StringName) -> String: return String(c))}
+	return {}
+
+
+## The crisis coefficients in force now (null on a planet without them).
+func current_config() -> EventConfig:
+	return _k
+
+
 func active_ids() -> Array[StringName]:
 	var ids: Array[StringName] = []
 	for i in _defs.size():
@@ -79,13 +122,20 @@ func detect(snapshot: PlanetSnapshot, _tick: int, registry: ModifierRegistry) ->
 	for i in _defs.size():
 		var lifecycle := _lifecycles[i]
 		var waiting := lifecycle.phase == EventLifecycle.INACTIVE or lifecycle.phase == EventLifecycle.PENDING
-		if waiting and _history.recorded() < _required[i]:
+		if not (waiting and _history.recorded() < _required[i]):
+			match lifecycle.advance(_defs[i], _history):
+				EventLifecycle.STARTED:
+					_start(_defs[i], registry)
+				EventLifecycle.ENDED:
+					_end(_defs[i], lifecycle, registry)
+		# After the lifecycle moved: a crisis that just started is not warned about.
+		if _history.recorded() < _warning_required[i]:
 			continue
-		match lifecycle.advance(_defs[i], _history):
-			EventLifecycle.STARTED:
-				_start(_defs[i], registry)
-			EventLifecycle.ENDED:
-				_end(_defs[i], lifecycle, registry)
+		match lifecycle.advance_warning(_defs[i], _history):
+			EventLifecycle.WARNED:
+				_warn(_defs[i])
+			EventLifecycle.WARNING_CLEARED:
+				_clear_warning(_defs[i])
 
 
 func _start(def: EventDef, registry: ModifierRegistry) -> void:
@@ -101,8 +151,31 @@ func _start(def: EventDef, registry: ModifierRegistry) -> void:
 	})
 
 
+func _warn(def: EventDef) -> void:
+	var facts := def.warning.describe(_history)
+	emit_event(WARNED_EVENT, {
+		"id": String(def.id),
+		"name": def.name,
+		"causes": facts,
+		"counters": def.warning_counters.map(func(c: StringName) -> String: return String(c)),
+		"story": def.warning_text,
+		"summary": "%s warned: %s" % [def.name, _facts_text(facts)],
+	})
+
+
+func _clear_warning(def: EventDef) -> void:
+	emit_event(WARNING_CLEARED_EVENT, {
+		"id": String(def.id),
+		"name": def.name,
+		"story": def.warning_cleared_text,
+		"summary": "%s warning withdrawn" % def.name,
+	})
+
+
 func _end(def: EventDef, lifecycle: EventLifecycle, registry: ModifierRegistry) -> void:
 	registry.remove_source(source_of(def))
+	if lifecycle.phase == EventLifecycle.COOLDOWN and _k != null:
+		lifecycle.cooldown_left = ceili(float(def.cooldown) * _k.cooldown_scale)
 	var facts := def.end.describe(_history)
 	var by_conditions := lifecycle.end_reason == EventLifecycle.END_CONDITIONS
 	var why := "end conditions" if by_conditions else "time limit"
@@ -117,11 +190,19 @@ func _end(def: EventDef, lifecycle: EventLifecycle, registry: ModifierRegistry) 
 	})
 
 
+## The value of an event modifier at the current severity: a multiplier is pulled
+## toward 1 and an added amount shrinks (severity 1 changes nothing).
+func _severe(operation: String, value: float) -> float:
+	if _k == null or _k.severity == 1.0:
+		return value
+	return 1.0 + (value - 1.0) * _k.severity if operation == "multiply" else value * _k.severity
+
+
 ## Modifiers for systems the planet does not run are skipped (like personality).
 func _register_modifiers(def: EventDef, registry: ModifierRegistry) -> Array[String]:
 	var applied: Array[String] = []
 	for entry in def.modifiers:
-		var modifier := Modifier.new(StringName(entry["target"]), StringName(entry["operation"]), entry["value"], source_of(def))
+		var modifier := Modifier.new(StringName(entry["target"]), StringName(entry["operation"]), _severe(entry["operation"], entry["value"]), source_of(def))
 		if registry.has_target(modifier.system_id()) and registry.add(modifier).is_ok():
 			applied.append("%s %s %s" % [modifier.target, modifier.operation, modifier.value])
 	return applied

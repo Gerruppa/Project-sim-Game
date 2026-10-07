@@ -181,7 +181,7 @@ func test_chronicle_tells_a_real_run_without_changing_it() -> void:
 	told.stop()
 	assert_str(told.state_hash()).is_equal(plain.state_hash())
 	var text := FileAccess.get_file_as_string(ProjectSettings.globalize_path(TEST_DIR).path_join("told_run.chronicle.txt"))
-	assert_str(text).starts_with("# Kronika planety | seed 42")
+	assert_str(text).starts_with("# Planet chronicle | seed 42")
 
 
 func test_full_batch_run_writes_every_tick() -> void:

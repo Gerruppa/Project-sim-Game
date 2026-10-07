@@ -18,18 +18,17 @@ extends Control
 const SPEEDS: Array[int] = [5, 10, 25, 50, 100]
 const DEFAULT_SPEED := 25
 ## What the player reads before a live game starts.
-const LIVE_INTRO := "Creator patrzy Ci przez ramię. Ludzkość założyła się, że byle głupiec z boskimi mocami potrafi stworzyć życie. " \
-		+ "Masz 200 lat, żeby ją przekonać. Jesteś Praktykantem: zbieraj Iskry z bąbelków nad globem, kupuj za nie perki i prowadź planetę, " \
-		+ "póki żyje."
-const LIVE_RUNNING_TEXT := "Planeta biegnie sama. Zbieraj Iskry z bąbelków, kupuj perki po prawej i działaj, kiedy chcesz; możesz też wstrzymać grę."
-## What the trends of the left column count from: a live game has no decision
-## points (the trends run from its start), the legacy flow from the last one.
-const SINCE_DECISION := "od ostatniej decyzji"
-const SINCE_START := "od początku gry"
-const RUNNING_TEXT := "Gra sama się zatrzyma, gdy wydarzy się coś ważnego. Możesz też ją zatrzymać i działać."
+const LIVE_INTRO := "The Creator is watching over your shoulder. Humanity has bet that any fool with divine powers can create life. " \
+		+ "You have 200 years to prove them wrong. You are the Apprentice: collect Sparks from the bubbles over the globe, " \
+		+ "spend them on perks and guide the planet while it lives. You start with a few Sparks: buy your first perk and keep catching bubbles."
+const LIVE_RUNNING_TEXT := "The planet runs on its own. Collect Sparks from the bubbles, buy perks on the right and act whenever you like; you can also pause the game."
+## What the trends of the left column count from in the legacy flow (a live
+## game shows arrows for the last few years instead).
+const SINCE_DECISION := "since the last decision"
+const RUNNING_TEXT := "The game stops by itself when something important happens. You can also stop it and act."
 ## What the player reads when a game cannot be opened; the reasons follow in small text.
-const LOAD_FAILED := "Nie udało się wczytać zapisu (zapis z innej wersji gry). Zacznij nową grę."
-const START_FAILED := "Nie udało się rozpocząć gry. Spróbuj jeszcze raz albo zacznij nową grę."
+const LOAD_FAILED := "Could not load the save (a save from a different version of the game). Start a new game."
+const START_FAILED := "Could not start the game. Try again or start a new game."
 ## The layout is built for this size and scales with the window (project
 ## stretch settings); nothing inside may ask for more.
 const BASE_SIZE := Vector2(1366, 800)
@@ -41,8 +40,8 @@ const CHART_PARAMS: Array[String] = ["temperature", "humidity", "oxygen", "bioma
 ## where it only just grows, and a range it cannot.
 const ZONE_COLORS := {"good": Color("3fb950"), "poor": Color("d29922"), "bad": Color("f85149")}
 ## Planet characters on the new-game screen: [personality option, label].
-const CHARACTERS := [["random", "losowy"], ["harmonious", "Harmonijna"], ["chaotic", "Chaotyczna"],
-		["guardian", "Strażnik"]]
+const CHARACTERS := [["random", "random"], ["harmonious", "Harmonious"], ["chaotic", "Chaotic"],
+		["guardian", "Guardian"]]
 
 ## Set before add_child to skip the command line (tests).
 var options := {}
@@ -60,7 +59,17 @@ var _sparks_label: Label
 ## Headers of the left column; they say what the trends count from.
 var _params_title: Label
 var _life_title: Label
-var _perks: PerkPanel
+var _species_title: Label
+## The perk window over the globe and the button that opens it.
+var _perk_window: PerkWindow
+var _perks_button: Button
+## The game was running when the perk window opened (it resumes when it closes).
+var _perks_resume := false
+var _perks_open := false
+## The perk the warning card points at.
+var _perk_focus := ""
+## Which species suit the planet now, and the Plant buttons (live game).
+var _species: SpeciesPanel
 var _bubbles: BubbleLayer
 ## How many of session.warnings are in the chronicle already.
 var _warnings_shown := 0
@@ -70,12 +79,23 @@ var _planet: PlanetView
 var _chart: HistoryChart
 var _params: GridContainer
 var _life: VBoxContainer
-## One per species, in life_rows order: {"bar", "value", "change", "effects"}.
+## One per species, in life_rows order: {"bar", "value", "change"}.
 var _life_cells: Array[Dictionary] = []
-## The rest of the change: the planet itself and the player's actions.
-var _others: Label
 var _goals: RichTextLabel
-var _chronicle: RichTextLabel
+## The translucent news ticker over the top of the globe.
+var _chronicle: ChronicleOverlay
+## The card in the middle of the globe: welcome, new game, endings.
+var _card: OverlayCard
+var _toast: Toast
+## The ladder of life above the globe, and the next perk in reach.
+var _path_bar: LifePathBar
+var _next_perk: Label
+## The crises that loom or rage, under the chronicle.
+var _threats: ThreatStrip
+## The bottom row of the legacy flow (decision text); a live game hides it.
+var _console: HBoxContainer
+var _chronicle_dialog: AcceptDialog
+var _chronicle_dialog_text: RichTextLabel
 var _decision_title: Label
 var _decision_text: RichTextLabel
 var _actions: VBoxContainer
@@ -134,6 +154,8 @@ func open_game(game_options: Dictionary) -> void:
 		_new_game_box.queue_free()
 		_new_game_box = null
 	session = created.value
+	_card.hide_card()
+	_console.visible = not session.live
 	session.bubbles.set_center_provider(_planet.facing_point)
 	_scheduler = session.manager.scheduler()
 	_scheduler.set_speed(DEFAULT_SPEED)
@@ -143,11 +165,10 @@ func open_game(game_options: Dictionary) -> void:
 			_chart.add_series(row["id"], row["name"])
 	_build_actions()
 	_bubbles.setup(_planet, session.bubbles)
-	var since := SINCE_START if session.live else SINCE_DECISION
-	_params_title.text = "Planeta (zmiana %s)" % since
-	_life_title.text = "Życie (populacja 0-100) i jego wpływ %s" % since
+	_params_title.text = "Planet" if session.live else "Planet (change %s)" % SINCE_DECISION
+	_life_title.text = "Life (population 0-100)" if session.live else "Life (population 0-100), change %s" % SINCE_DECISION
 	for warning in session.warnings:
-		_on_chronicle_line("UWAGA: " + warning)
+		_on_chronicle_line("WARNING: " + warning)
 	_warnings_shown = session.warnings.size()
 	if session.new_game:
 		_show_intro()
@@ -157,19 +178,20 @@ func open_game(game_options: Dictionary) -> void:
 
 ## The first screen of a double-clicked game: which planet to play.
 func _show_new_game() -> void:
-	_decision_title.text = "Genesis Error · nowa planeta"
-	_decision_text.text = "Każdy numer to inna planeta. Zostaw pole puste, żeby wylosować; ten sam numer daje zawsze tę samą planetę."
+	_decision_title.text = "Genesis Error · new planet"
+	_decision_text.text = "Every number is a different planet. Leave the field empty for a random one; the same number always gives the same planet."
 	_new_game_box = HFlowContainer.new()
-	_decision_extra.add_child(_new_game_box)
+	_card.show_card(_decision_title.text, _decision_text.text, [])
+	_card.content().add_child(_new_game_box)
 	var seed_label := Label.new()
-	seed_label.text = "Numer planety:"
+	seed_label.text = "Planet number:"
 	_new_game_box.add_child(seed_label)
 	_seed_edit = LineEdit.new()
-	_seed_edit.placeholder_text = "losowy"
+	_seed_edit.placeholder_text = "random"
 	_seed_edit.custom_minimum_size = Vector2(110, 0)
 	_new_game_box.add_child(_seed_edit)
 	var character_label := Label.new()
-	character_label.text = "  Charakter:"
+	character_label.text = "  Character:"
 	_new_game_box.add_child(character_label)
 	_character = OptionButton.new()
 	for pair: Array in CHARACTERS:
@@ -177,13 +199,13 @@ func _show_new_game() -> void:
 		_character.set_item_metadata(_character.item_count - 1, pair[0])
 	_new_game_box.add_child(_character)
 	var start_button := Button.new()
-	start_button.text = "Nowa gra ▶"
+	start_button.text = "New game ▶"
 	start_button.pressed.connect(new_game)
 	_new_game_box.add_child(start_button)
 	var config: SimConfig = SimConfig.load_json(SimConfig.DEFAULT_PATH).value
 	if config != null and FileAccess.file_exists(SimulationRunner.resolve_save_path(SimulationRunner.DECISION_SAVE, config)):
 		var load_button := Button.new()
-		load_button.text = "Wczytaj ostatnią grę"
+		load_button.text = "Load last game"
 		load_button.pressed.connect(load_last_game)
 		_new_game_box.add_child(load_button)
 
@@ -208,16 +230,17 @@ func load_last_game() -> void:
 
 ## Lets the planet run until the next decision point.
 func start() -> void:
+	_card.hide_card()
 	_at_decision = false
 	# Trends shown until the next decision count from here.
 	session.remember()
 	session.begin_round()
 	_scheduler.resume()
 	_running = true
-	_decision_title.text = "Planeta żyje…"
+	_decision_title.text = "The planet lives…"
 	_decision_text.text = _running_text()
 	_continue_button.visible = false
-	_continue_button.text = "Dalej ▶"
+	_continue_button.text = "Next ▶"
 	_refresh()
 
 
@@ -258,14 +281,68 @@ func advance(ticks: int) -> void:
 		_enter_decision()
 	# Warnings that came up while playing (an autosave that failed).
 	while _warnings_shown < session.warnings.size():
-		_on_chronicle_line("UWAGA: " + session.warnings[_warnings_shown])
+		_on_chronicle_line("WARNING: " + session.warnings[_warnings_shown])
 		_warnings_shown += 1
 	# A live game has no decision screen to announce a win or an ambition
 	# (_enter_decision does it for the others): the chronicle does.
 	if session.live:
 		for item in session.goals.take_news():
 			_on_chronicle_line("[color=gold][b]%s[/b][/color]" % item)
+		_check_ending()
+		_check_warnings()
+		_celebrate()
 	_refresh()
+
+
+## New life gets a toast that names the next rung of the ladder.
+func _celebrate() -> void:
+	for news in session.milestones.take_news():
+		var name: String = session.texts.species.get(news["species"], news["species"])
+		var line := ""
+		match news["kind"]:
+			"emerged":
+				line = "New life: %s!" % name
+			"returned":
+				line = "%s are back!" % name.capitalize()
+			"extinct":
+				line = "Lost: %s." % name
+		if news["kind"] != "extinct":
+			for step in session.life_path():
+				if step["is_next"]:
+					line += " Next: %s." % step["name"]
+		_toast.show_text(line)
+
+
+## A warning of a kind of crisis the player has not met yet stops the game
+## with a card that says what is coming and what helps; later ones only show
+## on the threat strip (and in the chronicle).
+func _check_warnings() -> void:
+	for warning in session.threat_log.take_new_warnings():
+		if not warning["first_time"] or _card.is_open():
+			continue
+		var helpers := PackedStringArray()
+		for counter: String in warning["counters"]:
+			helpers.append(str(session.counter_row(counter)["name"]))
+		var body: String = warning["text"]
+		if not helpers.is_empty():
+			body += "\n\nWhat helps: %s." % ", ".join(helpers)
+		_running = false
+		_at_decision = true
+		_scheduler.pause()
+		_card.show_card("Warning: %s" % warning["name"], body, [["ok", "Got it"], ["perks", "Open perks"]])
+		_perk_focus = str(warning["counters"][0]) if not (warning["counters"] as Array).is_empty() else ""
+
+
+## The first time the game is won (or its years run out) it stops and the
+## card tells how it went; "Keep playing" lets the planet run on.
+func _check_ending() -> void:
+	if session.outcome().is_empty() or session.ending_seen or _card.is_open():
+		return
+	var ending := session.ending_card()
+	_running = false
+	_at_decision = true
+	_scheduler.pause()
+	_card.show_card(ending["title"], ending["body"], [["continue", "Keep playing"], ["new", "New planet"]])
 
 
 func _sample() -> void:
@@ -282,38 +359,69 @@ func _enter_decision() -> void:
 	_running = false
 	_at_decision = true
 	if session.manager.is_halted():
-		_show_error("Symulacja zatrzymała się z błędem: %s" % ", ".join(session.manager.errors()))
+		_show_error("The simulation halted with an error: %s" % ", ".join(session.manager.errors()))
 		return
 	session.save()
 	var lines := PackedStringArray()
 	if session.decision_point() != null:
-		lines.append("[b]Co się stało:[/b] " + " ".join(session.decision_sentences()))
+		lines.append("[b]What happened:[/b] " + " ".join(session.decision_sentences()))
 	else:
-		lines.append("[b]Co się stało:[/b] przez %d ticków nic ważnego, planeta żyje spokojnie." % GameSession.ROUND_LIMIT)
+		lines.append("[b]What happened:[/b] nothing important for %d ticks, the planet lives quietly." % GameSession.ROUND_LIMIT)
 	for item in session.goals.take_news():
 		lines.append("[color=gold][b]%s[/b][/color]" % item)
 		_on_chronicle_line(item)
 	if session.hints:
 		for hint in session.hint_lines(_act_label):
 			lines.append("• " + hint)
-	_decision_title.text = "PUNKT DECYZJI · tick %d · rok %d" % [session.tick(), session.year()]
+	_decision_title.text = "DECISION POINT · %s" % session.date_text()
 	_decision_text.text = "\n".join(lines)
 	_continue_button.visible = true
 	_refresh()
 
 
 func _show_intro() -> void:
-	_decision_title.text = "Witaj w Genesis Error"
+	_decision_title.text = "Welcome to Genesis Error"
 	_decision_text.text = (LIVE_INTRO if session.live else "\n".join(session.advisor.intro)) \
-			+ "\n\nCo jest do zdobycia: cel główny, gwiazdki i ambicje są pod przyciskiem „Cele” na górze okna."
-	_continue_button.text = "Zacznij ▶"
-	_continue_button.visible = true
+			+ "\n\nWhat there is to win: the main goal, stars and ambitions are under the Goals button."
+	_continue_button.text = "Start ▶"
+	_continue_button.visible = not session.live
+	if session.live:
+		_card.show_card(_decision_title.text, _decision_text.text, [["start", "Start ▶"]])
 	_at_decision = true
 	_refresh()
 
 
+## The card is closed and the planet runs on.
+func _resume_after_card() -> void:
+	_card.hide_card()
+	_at_decision = false
+	_scheduler.resume()
+	_running = true
+	_refresh()
+
+
+## A button of the card was pressed.
+func _on_card_button(id: String) -> void:
+	if id == "start":
+		_card.hide_card()
+		_on_continue()
+	elif id == "ok":
+		_resume_after_card()
+	elif id == "perks":
+		_resume_after_card()
+		open_perks(_perk_focus)
+	elif id == "continue":
+		session.ending_seen = true
+		_card.hide_card()
+		_resume_after_card()
+	elif id == "new":
+		session.ending_seen = true
+		session.save()
+		_show_new_game()
+
+
 func _on_continue() -> void:
-	_continue_button.text = "Dalej ▶"
+	_continue_button.text = "Next ▶"
 	start()
 
 
@@ -323,12 +431,12 @@ func toggle_pause() -> void:
 	_running = not _running
 	if _running:
 		_scheduler.resume()
-		_decision_title.text = "Planeta żyje…"
+		_decision_title.text = "The planet lives…"
 		_decision_text.text = _running_text()
 	else:
 		_scheduler.pause()
-		_decision_title.text = "PAUZA · tick %d · rok %d" % [session.tick(), session.year()]
-		_decision_text.text = "Możesz działać; akcja zacznie się w następnym ticku."
+		_decision_title.text = "PAUSED · %s" % session.date_text()
+		_decision_text.text = "You can act; the action starts on the next tick."
 	_refresh()
 
 
@@ -346,6 +454,12 @@ func show_goals() -> void:
 	_goals_dialog.popup_centered(Vector2i(640, 0))
 
 
+## The whole chronicle in a window (the globe shows only the latest lines).
+func show_chronicle() -> void:
+	_chronicle_dialog_text.text = _chronicle.text()
+	_chronicle_dialog.popup_centered(Vector2i(700, 440))
+
+
 ## The charts of the planet's values over time (a curiosity next to the globe).
 func show_charts() -> void:
 	_charts_dialog.popup_centered(Vector2i(960, 520))
@@ -355,25 +469,9 @@ func charts_visible() -> bool:
 	return _charts_dialog.visible
 
 
-## What a species did since the last decision, as its line under the life
-## table shows it ("" when nothing worth showing).
-func life_effects_text(species: String) -> String:
-	var life := session.life_rows()
-	for i in life.size():
-		if life[i]["id"] == species and i < _life_cells.size():
-			var label: Label = _life_cells[i]["effects"]
-			return label.text if label.visible else ""
-	return ""
-
-
 ## What the globe shows now (PlanetView.look).
 func planet_look() -> Dictionary:
 	return _planet.current_look()
-
-
-## The planet's and the player's share of the change, as shown under life.
-func others_text() -> String:
-	return _others.text if _others.visible else ""
 
 
 ## The text of the goals window (empty while it is closed).
@@ -394,9 +492,9 @@ func act(id: String) -> SimResult:
 		args["level"] = level.get_item_metadata(level.selected)
 	var submitted := session.submit(id, args)
 	if submitted.is_ok():
-		_on_chronicle_line("Zrobione: %s." % submitted.value)
+		_on_chronicle_line("Done: %s." % submitted.value)
 	else:
-		_on_chronicle_line("Nie da się: %s" % ", ".join(submitted.errors))
+		_on_chronicle_line("Cannot do that: %s" % ", ".join(submitted.errors))
 	_refresh()
 	return submitted
 
@@ -404,10 +502,60 @@ func act(id: String) -> SimResult:
 ## Picks a bubble (a click on the globe). The Sparks land on the next tick.
 func collect_bubble(id: int) -> SimResult:
 	var collected := session.collect_bubble(id)
+	if collected.is_ok():
+		_bubbles.show_gain(id, int(collected.value))
 	if not collected.is_ok():
-		_on_chronicle_line("Nie da się: %s" % ", ".join(collected.errors))
+		_on_chronicle_line("Cannot do that: %s" % ", ".join(collected.errors))
 	_refresh()
 	return collected
+
+
+## Opens the perk window with the game paused (it resumes when the window closes
+## if it was running). focus_id: a perk to show first.
+func open_perks(focus_id: String = "") -> void:
+	if session == null or _perks_open or (_at_decision and not _card.is_open()):
+		return
+	_perks_resume = _running and not _at_decision
+	_perks_open = true
+	if _perks_resume:
+		_running = false
+		_scheduler.pause()
+	_perk_window.open(session.perk_rows(), session.perk_branches(), session.spendable_sparks(), focus_id)
+
+
+## Closes the perk window; a game that was running runs on.
+func close_perks() -> void:
+	if not _perks_open:
+		return
+	_perks_open = false
+	_perk_window.close()
+	if _perks_resume:
+		_perks_resume = false
+		_running = true
+		_scheduler.resume()
+	_refresh()
+
+
+## P opens and closes the perk window.
+func _unhandled_key_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if key != null and key.pressed and not key.echo and key.keycode == KEY_P and session != null:
+		if _perks_open:
+			close_perks()
+		else:
+			open_perks()
+
+
+## Seeds a species (the Plant button of the planting guide). Value on
+## success: what was done.
+func plant(species_id: String) -> SimResult:
+	var submitted := session.submit("seed_species", {"species": species_id})
+	if submitted.is_ok():
+		_on_chronicle_line("Done: %s." % submitted.value)
+	else:
+		_on_chronicle_line("Cannot do that: %s" % ", ".join(submitted.errors))
+	_refresh()
+	return submitted
 
 
 ## Buys a perk of the shop; it works from the next tick.
@@ -421,9 +569,9 @@ func refund_perk(id: String) -> SimResult:
 
 func _perk_done(done: SimResult) -> SimResult:
 	if done.is_ok():
-		_on_chronicle_line("Zrobione: %s." % done.value)
+		_on_chronicle_line("Done: %s." % done.value)
 	else:
-		_on_chronicle_line("Nie da się: %s" % ", ".join(done.errors))
+		_on_chronicle_line("Cannot do that: %s" % ", ".join(done.errors))
 	_refresh()
 	return done
 
@@ -438,6 +586,47 @@ func trend_titles() -> Array[String]:
 	return [_params_title.text, _life_title.text]
 
 
+## The card over the globe (welcome, new game, endings).
+func card() -> OverlayCard:
+	return _card
+
+
+func toast() -> Toast:
+	return _toast
+
+
+func chronicle_overlay() -> ChronicleOverlay:
+	return _chronicle
+
+
+## Whether the bottom row of the legacy flow is on screen (a live game hides it).
+func console_visible() -> bool:
+	return _console.visible
+
+
+func threat_strip() -> ThreatStrip:
+	return _threats
+
+
+func path_bar() -> LifePathBar:
+	return _path_bar
+
+
+## "next perk: Hardiness (4), 1 to go", or "" when none is left to buy.
+func next_perk_text() -> String:
+	if session == null:
+		return ""
+	var goal := session.next_perk_goal()
+	if goal.is_empty():
+		return ""
+	return "next perk: %s (%d), %s" % [goal["name"], goal["cost"],
+			"ready to buy" if goal["missing"] == 0 else "%d to go" % goal["missing"]]
+
+
+func species_panel() -> SpeciesPanel:
+	return _species
+
+
 func bubble_layer() -> BubbleLayer:
 	return _bubbles
 
@@ -446,8 +635,27 @@ func planet() -> PlanetView:
 	return _planet
 
 
-func perk_panel() -> PerkPanel:
-	return _perks
+func perk_window() -> PerkWindow:
+	return _perk_window
+
+
+## "Perks ✦", with how many perks the Sparks can buy now in brackets.
+func perks_button_text() -> String:
+	return _perks_button.text
+
+
+func perks_open() -> bool:
+	return _perks_open
+
+
+## The top bar: planet, date and speed.
+func info_text() -> String:
+	return _info.text
+
+
+## Month names for dates; the defaults until a game is open.
+func _months() -> PackedStringArray:
+	return session.display.months() if session != null else PackedStringArray(DisplayScale.DEFAULT_MONTHS)
 
 
 ## The error shown instead of the game (empty when the game runs).
@@ -462,10 +670,12 @@ func at_decision() -> bool:
 
 
 func chronicle_text() -> String:
-	return _chronicle.get_parsed_text()
+	return _chronicle.text()
 
 
 func decision_text() -> String:
+	if _card.is_open():
+		return _card.title_text() + "\n" + _card.body_text()
 	return _decision_title.text + "\n" + _decision_text.get_parsed_text()
 
 
@@ -490,7 +700,7 @@ func parameter_color(id: String) -> Color:
 	return label.get_theme_color("font_color") if label.has_theme_color_override("font_color") else Color.TRANSPARENT
 
 
-## The lines of the "Działające akcje" panel.
+## The lines of the "Running actions" panel.
 func watch_lines() -> PackedStringArray:
 	var lines := PackedStringArray()
 	for id: String in _watch_rows:
@@ -500,7 +710,7 @@ func watch_lines() -> PackedStringArray:
 
 func _on_chronicle_line(line: String) -> void:
 	if _chronicle != null:
-		_chronicle.append_text(line + "\n")
+		_chronicle.add_line(GameCalendar.localize_line(line, _months()))
 
 
 ## How the window names an advised act: "Lustra orbitalne (lekko)".
@@ -518,10 +728,9 @@ func _act_label(act_text: String) -> String:
 func _refresh() -> void:
 	if session == null:
 		return
-	var running_text := "▶ x%d" % _scheduler.speed() if _running else "⏸ pauza"
-	_info.text = "seed %d · rok %d · tick %d   %s" % [session.manager.config().seed(), session.year(), session.tick(),
-			running_text]
-	_pause_button.text = "Wznów ▶" if not _running and not _at_decision else "Pauza ⏸"
+	var running_text := "▶ x%d" % _scheduler.speed() if _running else "⏸ paused"
+	_info.text = "planet %d · %s   %s" % [session.manager.config().seed(), session.date_text(), running_text]
+	_pause_button.text = "Resume ▶" if not _running and not _at_decision else "Pause ⏸"
 	_pause_button.disabled = _at_decision
 	_goals_button.disabled = false
 	for button in _speed_buttons:
@@ -546,15 +755,19 @@ func _refresh() -> void:
 			(cells["bar"] as ProgressBar).value = life[i]["population"]
 			_set_cell(cells["value"], life[i]["shown"])
 			_set_cell(cells["change"], life[i]["change"])
-			var effects := GameSession.effects_text(life[i]["effects"])
-			(cells["effects"] as Label).text = effects.replace(", ", " · ")
-			(cells["effects"] as Label).visible = not effects.is_empty()
-	_others.text = "
-".join(PackedStringArray(session.other_effects().map(func(row: Dictionary) -> String:
-			return "%s: %s" % [row["name"], GameSession.effects_text(row["effects"]).replace(", ", " · ")])))
-	_others.visible = not _others.text.is_empty()
 	_planet.show_state(values, populations)
 	_goals.text = "\n".join(_goal_lines())
+	_threats.visible = session.live
+	if session.live:
+		_threats.refresh(session.threats())
+	_path_bar.visible = session.live
+	if session.live:
+		_path_bar.refresh(session.life_path())
+	_next_perk.text = next_perk_text()
+	_species_title.visible = session.live
+	_species.visible = session.live
+	if session.live:
+		_species.refresh(session.species_guide_rows())
 	var allowed := session.tick() > 0 and (session.live or _at_decision or not _running)
 	for action in session.actions():
 		var row: Dictionary = _action_rows.get(action["id"], {})
@@ -563,8 +776,8 @@ func _refresh() -> void:
 		var button: Button = row["button"]
 		if session.live and not action["unlocked"]:
 			button.disabled = true
-			button.tooltip_text = "%s\nOdblokuje ją perk „%s”." % [action["help"], action["unlock_perk"]]
-			button.text = "%s (wymaga: %s)" % [action["name"], action["unlock_perk"]]
+			button.tooltip_text = "%s\nUnlocked by the perk \"%s\"." % [action["help"], action["unlock_perk"]]
+			button.text = "%s (needs: %s)" % [action["name"], action["unlock_perk"]]
 			continue
 		var wait := time_text(int(action["ready_in"]))
 		button.disabled = not allowed or not action["ready"]
@@ -572,8 +785,12 @@ func _refresh() -> void:
 		button.text = action["name"] + ("" if action["ready"] else " (%s)" % wait)
 	# A bubble collected in a pause is still queued: show it, so the click has an answer.
 	var pending := session.pending_sparks()
-	_sparks_label.text = "Iskry: %d" % session.sparks() + (" (+%d)" % pending if pending > 0 else "")
-	_perks.refresh(session.perk_rows(), session.sparks())
+	_sparks_label.text = "Sparks: %d" % session.sparks() + (" (+%d)" % pending if pending > 0 else "")
+	var affordable := session.perk_rows().filter(func(r: Dictionary) -> bool:
+			return not r["owned"] and r["available"] and r["affordable"] and r["queued"] == "" and (r["locked_species"] as Array).is_empty())
+	_perks_button.text = "Perks ✦" if affordable.is_empty() else "Perks ✦ (%d to buy)" % affordable.size()
+	if _perks_open:
+		_perk_window.refresh(session.perk_rows(), session.spendable_sparks())
 	_update_watch()
 
 
@@ -642,21 +859,21 @@ func _update_watch() -> void:
 	_watch_box.visible = not _watch_rows.is_empty()
 
 
-## "Pył orbitalny (lekko): działa jeszcze 8 s · skutek zwykle widać jeszcze 12–40 s".
+## "Orbital dust (light): acts for 8 s more · the effect usually shows for another 12–40 s".
 func watch_text(action: Dictionary) -> String:
 	var name: String = action["name"] + (" (%s)" % action["level_name"] if not (action["level_name"] as String).is_empty() else "")
 	var text := ""
 	match action["phase"]:
 		"queued":
-			text = "ruszy w następnym ticku"
+			text = "starts next tick"
 		"running":
-			text = "działa jeszcze %s" % time_text(int(action["remaining"]))
+			text = "acts for %s more" % time_text(int(action["remaining"]))
 		_:
-			text = "już nie działa"
+			text = "no longer acting"
 	if action["fade_max"] > 0:
 		var lower := time_text(int(action["fade_min"]))
 		var upper := time_text(int(action["fade_max"]))
-		text += " · skutek zwykle widać jeszcze %s" % (upper if lower == upper else "%s–%s" % [lower, upper])
+		text += " · the effect usually shows for another %s" % (upper if lower == upper else "%s–%s" % [lower, upper])
 	return "%s: %s%s" % [name, text, _speed_note()]
 
 
@@ -684,6 +901,15 @@ const LEFT_WIDTH := 400.0
 const RIGHT_WIDTH := 290.0
 const CONSOLE_HEIGHT := 240.0
 const SMALL_FONT := 14
+const CHRONICLE_MARGIN := 12.0
+## Space around the perk window over the globe.
+const PERK_WINDOW_MARGIN := 18.0
+## Where the threat strip starts under the chronicle.
+const THREAT_TOP := 150.0
+## Widths of the value and change cells (arrows are narrow; legacy numbers fit too).
+const PARAM_VALUE_WIDTH := 118.0
+const LIFE_VALUE_WIDTH := 50.0
+const CHANGE_WIDTH := 60.0
 
 
 func _build() -> void:
@@ -712,11 +938,15 @@ func _build() -> void:
 	_info.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	top.add_child(_info)
 	_sparks_label = Label.new()
-	_sparks_label.text = "Iskry: 0"
+	_sparks_label.text = "Sparks: 0"
 	_sparks_label.add_theme_font_size_override("font_size", 18)
 	_sparks_label.add_theme_color_override("font_color", Color("f2c14e"))
-	_sparks_label.tooltip_text = "Iskry zbierasz z bąbelków nad globem; kupujesz za nie perki."
+	_sparks_label.tooltip_text = "You collect Sparks from the bubbles over the globe and spend them on perks."
 	top.add_child(_sparks_label)
+	_next_perk = Label.new()
+	_next_perk.add_theme_color_override("font_color", Color("9fb4c8"))
+	_next_perk.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	top.add_child(_next_perk)
 
 	var main := HBoxContainer.new()
 	main.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -738,14 +968,22 @@ func _build() -> void:
 	_error_detail.autowrap_mode = TextServer.AUTOWRAP_WORD
 	root.add_child(_error_detail)
 
+	_chronicle_dialog = AcceptDialog.new()
+	_chronicle_dialog.title = "Planet chronicle"
+	_chronicle_dialog.ok_button_text = "Close"
+	_chronicle_dialog_text = RichTextLabel.new()
+	_chronicle_dialog_text.custom_minimum_size = Vector2(640, 360)
+	_chronicle_dialog_text.selection_enabled = true
+	_chronicle_dialog.add_child(_chronicle_dialog_text)
+	add_child(_chronicle_dialog)
 	_goals_dialog = AcceptDialog.new()
-	_goals_dialog.title = "Cele · co jest do zdobycia"
-	_goals_dialog.ok_button_text = "Zamknij"
+	_goals_dialog.title = "Goals · what there is to win"
+	_goals_dialog.ok_button_text = "Close"
 	_goals_dialog.dialog_autowrap = true
 	add_child(_goals_dialog)
 	_charts_dialog = AcceptDialog.new()
-	_charts_dialog.title = "Wykresy · planeta w czasie"
-	_charts_dialog.ok_button_text = "Zamknij"
+	_charts_dialog.title = "Charts · the planet over time"
+	_charts_dialog.ok_button_text = "Close"
 	add_child(_charts_dialog)
 	_chart = HistoryChart.new()
 	_chart.custom_minimum_size = Vector2(900, 440)
@@ -769,30 +1007,36 @@ func _build_left(parent: Control) -> void:
 	_params = GridContainer.new()
 	_params.columns = 4
 	_params.add_theme_constant_override("h_separation", 8)
-	_params_title = _title_label("Planeta (zmiana %s)" % SINCE_DECISION)
+	_params_title = _title_label("Planet (change %s)" % SINCE_DECISION)
 	left.add_child(_params_title)
 	left.add_child(_params)
-	_life_title = _title_label("Życie (populacja 0-100) i jego wpływ %s" % SINCE_DECISION)
+	_life_title = _title_label("Life (population 0-100), change %s" % SINCE_DECISION)
 	left.add_child(_life_title)
 	_life = VBoxContainer.new()
 	_life.add_theme_constant_override("separation", 2)
 	left.add_child(_life)
-	_others = Label.new()
-	_others.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_others.add_theme_color_override("font_color", Color("9fb4c8"))
-	_others.add_theme_font_size_override("font_size", 13)
-	left.add_child(_others)
+	_species_title = _title_label("Planting guide")
+	left.add_child(_species_title)
+	_species = SpeciesPanel.new()
+	_species.plant_requested.connect(plant)
+	left.add_child(_species)
 	_watch_box = VBoxContainer.new()
 	_watch_box.visible = false
 	left.add_child(_watch_box)
-	_watch_box.add_child(_title_label("Działające akcje"))
+	_watch_box.add_child(_title_label("Running actions"))
 	_goals = RichTextLabel.new()
 	_goals.fit_content = true
 	_goals.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	left.add_child(_goals)
+	var chronicle_button := Button.new()
+	chronicle_button.text = "Chronicle"
+	chronicle_button.tooltip_text = "Everything that happened to the planet."
+	chronicle_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	chronicle_button.pressed.connect(show_chronicle)
+	left.add_child(chronicle_button)
 	var charts_button := Button.new()
-	charts_button.text = "Wykresy"
-	charts_button.tooltip_text = "Jak zmieniały się wartości planety w czasie."
+	charts_button.text = "Charts"
+	charts_button.tooltip_text = "How the planet's values changed over time."
 	charts_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	charts_button.pressed.connect(show_charts)
 	left.add_child(charts_button)
@@ -804,6 +1048,8 @@ func _build_center(parent: Control) -> void:
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	center.add_theme_constant_override("separation", 8)
 	parent.add_child(center)
+	_path_bar = LifePathBar.new()
+	center.add_child(_path_bar)
 	_planet = PlanetView.new()
 	_planet.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	center.add_child(_planet)
@@ -811,7 +1057,40 @@ func _build_center(parent: Control) -> void:
 	_bubbles.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_planet.add_child(_bubbles)
 	_bubbles.bubble_pressed.connect(collect_bubble)
+	_chronicle = ChronicleOverlay.new()
+	_chronicle.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_chronicle.offset_left = CHRONICLE_MARGIN
+	_chronicle.offset_right = -CHRONICLE_MARGIN
+	_chronicle.offset_top = CHRONICLE_MARGIN
+	_planet.add_child(_chronicle)
+	_threats = ThreatStrip.new()
+	_threats.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_threats.offset_left = CHRONICLE_MARGIN
+	_threats.offset_right = -CHRONICLE_MARGIN
+	_threats.offset_top = CHRONICLE_MARGIN + THREAT_TOP
+	_planet.add_child(_threats)
+	_toast = Toast.new()
+	_toast.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_toast.offset_top = -80.0
+	_toast.offset_bottom = -40.0
+	_toast.offset_left = -300.0
+	_toast.offset_right = 300.0
+	_planet.add_child(_toast)
+	_perk_window = PerkWindow.new()
+	_perk_window.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_perk_window.offset_left = PERK_WINDOW_MARGIN
+	_perk_window.offset_right = -PERK_WINDOW_MARGIN
+	_perk_window.offset_top = PERK_WINDOW_MARGIN
+	_perk_window.offset_bottom = -PERK_WINDOW_MARGIN
+	_planet.add_child(_perk_window)
+	_perk_window.buy_requested.connect(buy_perk)
+	_perk_window.refund_requested.connect(refund_perk)
+	_perk_window.closed.connect(close_perks)
+	_card = OverlayCard.new()
+	_planet.add_child(_card)
+	_card.button_pressed.connect(_on_card_button)
 	var console := HBoxContainer.new()
+	_console = console
 	console.custom_minimum_size = Vector2(0, CONSOLE_HEIGHT)
 	console.add_theme_constant_override("separation", 8)
 	center.add_child(console)
@@ -836,17 +1115,6 @@ func _build_center(parent: Control) -> void:
 	_decision_extra = VBoxContainer.new()
 	box.add_child(_decision_extra)
 
-	var chronicle := VBoxContainer.new()
-	chronicle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	console.add_child(chronicle)
-	chronicle.add_child(_title_label("Kronika planety"))
-	_chronicle = RichTextLabel.new()
-	_chronicle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_chronicle.scroll_following = true
-	_chronicle.selection_enabled = true
-	_chronicle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	chronicle.add_child(_chronicle)
-
 
 ## Right: actions one under another, then time and the way on.
 func _build_right(parent: Control) -> void:
@@ -856,13 +1124,14 @@ func _build_right(parent: Control) -> void:
 	parent.add_child(right)
 	var small := Theme.new()
 	small.default_font_size = SMALL_FONT
-	_perks = PerkPanel.new()
-	_perks.theme = small
-	_perks.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_perks.buy_requested.connect(buy_perk)
-	_perks.refund_requested.connect(refund_perk)
-	right.add_child(_perks)
-	right.add_child(_title_label("Akcje"))
+	_perks_button = Button.new()
+	_perks_button.text = "Perks ✦"
+	_perks_button.tooltip_text = "Open the perk window (P). The game pauses while you read."
+	_perks_button.custom_minimum_size = Vector2(0, 40)
+	_perks_button.add_theme_font_size_override("font_size", 16)
+	_perks_button.pressed.connect(open_perks)
+	right.add_child(_perks_button)
+	right.add_child(_title_label("Actions"))
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -872,7 +1141,7 @@ func _build_right(parent: Control) -> void:
 	_actions.add_theme_constant_override("separation", 6)
 	scroll.add_child(_actions)
 
-	right.add_child(_title_label("Tempo"))
+	right.add_child(_title_label("Speed"))
 	var speeds := HBoxContainer.new()
 	right.add_child(speeds)
 	for speed in SPEEDS:
@@ -889,15 +1158,15 @@ func _build_right(parent: Control) -> void:
 	_pause_button.pressed.connect(toggle_pause)
 	right.add_child(_pause_button)
 	_continue_button = Button.new()
-	_continue_button.text = "Dalej ▶"
+	_continue_button.text = "Next ▶"
 	_continue_button.visible = false
 	_continue_button.custom_minimum_size = Vector2(0, 44)
 	_continue_button.add_theme_font_size_override("font_size", 18)
 	_continue_button.pressed.connect(_on_continue)
 	right.add_child(_continue_button)
 	_goals_button = Button.new()
-	_goals_button.text = "Cele ★"
-	_goals_button.tooltip_text = "Cel główny, gwiazdki i ambicje: co jest do zdobycia."
+	_goals_button.text = "Goals ★"
+	_goals_button.tooltip_text = "The main goal, stars and ambitions: what there is to win."
 	_goals_button.disabled = true
 	_goals_button.pressed.connect(show_goals)
 	right.add_child(_goals_button)
@@ -919,12 +1188,11 @@ func _fill_params(names: Array) -> void:
 		label.text = name
 		_params.add_child(label)
 		_params.add_child(_bar())
-		_params.add_child(_cell(118, HORIZONTAL_ALIGNMENT_RIGHT))
-		_params.add_child(_cell(70, HORIZONTAL_ALIGNMENT_LEFT))
+		_params.add_child(_cell(PARAM_VALUE_WIDTH, HORIZONTAL_ALIGNMENT_RIGHT))
+		_params.add_child(_cell(CHANGE_WIDTH, HORIZONTAL_ALIGNMENT_LEFT))
 
 
-## A species: name, bar, population and change on one line; under it what
-## it did to the planet since the last decision.
+## A species: name, bar, population and change on one line.
 func _fill_life(names: Array) -> void:
 	_life_cells.clear()
 	for name: String in names:
@@ -937,17 +1205,11 @@ func _fill_life(names: Array) -> void:
 		line.add_child(label)
 		var bar := _bar()
 		line.add_child(bar)
-		var value := _cell(70, HORIZONTAL_ALIGNMENT_RIGHT)
+		var value := _cell(LIFE_VALUE_WIDTH, HORIZONTAL_ALIGNMENT_RIGHT)
 		line.add_child(value)
-		var change := _cell(70, HORIZONTAL_ALIGNMENT_LEFT)
+		var change := _cell(CHANGE_WIDTH, HORIZONTAL_ALIGNMENT_LEFT)
 		line.add_child(change)
-		var effects := Label.new()
-		effects.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		effects.add_theme_color_override("font_color", Color("9fb4c8"))
-		effects.add_theme_font_size_override("font_size", 13)
-		effects.visible = false
-		_life.add_child(effects)
-		_life_cells.append({"bar": bar, "value": value, "change": change, "effects": effects})
+		_life_cells.append({"bar": bar, "value": value, "change": change})
 
 
 func _bar() -> ProgressBar:
@@ -976,6 +1238,9 @@ func _build_actions() -> void:
 	_fill_params(session.planet_rows().map(func(r: Dictionary) -> String: return r["name"]))
 	_fill_life(session.life_rows().map(func(r: Dictionary) -> String: return r["name"]))
 	for action in session.actions():
+		# A live game plants through the planting guide.
+		if session.live and action["id"] == "seed_species":
+			continue
 		var row := {}
 		var group := VBoxContainer.new()
 		group.add_theme_constant_override("separation", 2)

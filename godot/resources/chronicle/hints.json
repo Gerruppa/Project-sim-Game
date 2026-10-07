@@ -1,110 +1,118 @@
 {
 	"hints_version": 1,
 	"intro": [
-		"Witaj w Genesis Error.",
+		"Welcome to Genesis Error.",
 		"",
-		"Jesteś katalizatorem młodej planety. Nie budujesz niczego: obserwujesz,",
-		"jak planeta żyje, i od czasu do czasu w nią ingerujesz.",
+		"You are the catalyst of a young planet. You build nothing: you watch",
+		"how the planet lives and step in now and then.",
 		"",
-		"Planeta toczy się sama. Gdy wydarzy się coś ważnego (pojawi się gatunek,",
-		"gatunek wymrze, zacznie się susza), gra się zatrzyma i zapyta, co robisz.",
-		"Możesz też nic nie robić: planeta poradzi sobie po swojemu.",
+		"The planet runs on its own. When something important happens (a species",
+		"appears, a species dies out, a drought begins), the game stops and asks",
+		"what you do. You can also do nothing: the planet will cope in its own way.",
 		"",
-		"Wartości planety są w zwykłych jednostkach (temperatura w °C, opady w mm).",
-		"Jeden tick to jeden krok symulacji, rok ma 360 ticków. Wymarłe gatunki",
-		"prawie nie wracają same.",
+		"Planet values are in everyday units (temperature in °C, rainfall in mm).",
+		"One tick is one simulation step, a year has 360 ticks. Lost species",
+		"hardly ever return on their own.",
 		"",
-		"Cel? Zrozumieć planetę. Zadawaj sobie pytanie: co się stanie, jeśli...?"
+		"The goal? Understand the planet. Keep asking: what happens if...?"
 	],
-	"quiet": "Planeta radzi sobie sama. Możesz poczekać (0) albo spróbować czegoś nowego.",
-	"acts_line": "Możesz spróbować: {acts}.",
+	"quiet": "The planet is coping on its own. You can wait (0) or try something new.",
+	"acts_line": "You could try: {acts}.",
 	"causes": {
 		"heat": {
-			"text": "{species} wymarły z gorąca. Ochłodzenie pomoże, ale zbyt mocne może wywołać epokę lodową.",
+			"text": "{species} died out from the heat. Cooling will help, but too much can trigger an ice age.",
 			"acts": [
 				"mirrors_cool:weak"
 			]
 		},
 		"cold": {
-			"text": "{species} wymarły z zimna. Lekkie ocieplenie może pomóc im wrócić.",
+			"text": "{species} died out from the cold. A light warming may help them return.",
 			"acts": [
 				"mirrors_warm:weak",
 				"volcanic_awakening"
 			]
 		},
 		"drought": {
-			"text": "{species} wymarły z braku wody. Wody podziemne podnoszą wilgotność powietrza; zasiew chmur daje deszcz (dobry dla krzewów i drzew, zły dla mchów i glonów).",
+			"text": "{species} died out for lack of water. Aquifers raise the humidity of the air; cloud seeding brings rain (good for shrubs and trees, bad for moss and algae).",
 			"acts": [
 				"aquifer_release",
 				"cloud_seeding"
 			]
 		},
 		"co2_starvation": {
-			"text": "{species} wymarły, bo zabrakło CO₂. Wulkany go dostarczą, ale też ocieplą planetę na długo.",
+			"text": "{species} died out because CO₂ ran short. Volcanoes will supply it, but also warm the planet for a long time.",
 			"acts": [
 				"volcanic_awakening"
 			]
 		},
 		"oxygen_lack": {
-			"text": "{species} wymarły, bo zabrakło tlenu. Tlen wytwarzają glony i rośliny: poczekaj, aż go przybędzie, i dopiero wtedy zasiej je ponownie.",
+			"text": "{species} died out because oxygen ran short. Algae and plants make oxygen: wait until there is more, and only then sow them again.",
 			"acts": []
 		},
 		"poor_soil": {
-			"text": "{species} wymarły, bo było za mało gleby. Glebę tworzy biomasa niższych roślin: daj im czas.",
+			"text": "{species} died out because there was too little soil. Soil comes from the biomass of lower plants: give them time.",
 			"acts": []
 		},
 		"fire": {
-			"text": "{species} spłonęły w pożarach. Pożary rosną przy dużej ilości tlenu i suchym powietrzu; wilgoć je gasi.",
+			"text": "{species} burned in wildfires. Fires grow with plenty of oxygen and dry air; moisture puts them out.",
 			"acts": [
 				"aquifer_release"
 			]
 		},
 		"shade": {
-			"text": "{species} wymarły w cieniu wyższych roślin. Przerzedzenie krzewów lub drzew odsłoni im światło.",
+			"text": "{species} died out in the shade of taller plants. Thinning shrubs or trees will let the light back in.",
 			"acts": [
 				"cull_species"
 			]
 		},
 		"oxygen_excess": {
-			"text": "{species} cofają się, gdy tlenu przybywa. To naturalna kolej rzeczy: zostaną w niszach bez tlenu.",
+			"text": "{species} retreat as oxygen builds up. That is the natural course of things: they will survive in oxygen-free niches.",
 			"acts": []
 		},
 		"old_age": {
-			"text": "{species} obumierały szybciej, niż się odnawiały: warunki są na granicy ich możliwości.",
+			"text": "{species} were dying faster than they renewed: conditions are at the edge of what they can bear.",
 			"acts": []
 		},
 		"culled": {
-			"text": "{species} wymarły po Twoim przerzedzeniu. Jeśli chcesz je z powrotem, zasiej je.",
+			"text": "{species} died out after your thinning. If you want them back, sow them.",
 			"acts": [
 				"seed_species"
 			]
+		},
+		"hunger": {
+			"text": "{species} died out: nothing left to eat. Let their food plants grow back before they return.",
+			"acts": []
+		},
+		"grazed": {
+			"text": "{species} were eaten faster than they grew back. Animals that graze them will thin out on their own.",
+			"acts": []
 		}
 	},
 	"events": {
 		"drought": {
-			"text": "Susza osłabia rośliny i podsyca pożary. Wody podziemne pomagały w większości susz; zasiew chmur w suszy wysusza powietrze.",
+			"text": "Drought weakens plants and feeds wildfires. Aquifers helped in most droughts; cloud seeding dries the air in a drought.",
 			"acts": [
 				"aquifer_release"
 			]
 		},
 		"guardian_healing": {
-			"text": "Planeta-Strażnik sama leczy rany: życie odrasta szybciej. Często najlepiej poczekać.",
+			"text": "The Guardian planet heals its own wounds: life regrows faster. Often it is best to wait.",
 			"acts": []
 		},
 		"ice_age": {
-			"text": "Epoka lodowa: zimno spowalnia rośliny, a lód sam się wzmacnia. Lekkie ocieplenie pomagało w większości epok; mocne często szkodziło.",
+			"text": "Ice age: cold slows plants and the ice reinforces itself. A light warming helped in most ice ages; a strong one often did harm.",
 			"acts": [
 				"mirrors_warm:weak"
 			]
 		},
 		"fire_season": {
-			"text": "Sezon pożarów: płoną głównie drzewa, a krzewy zajmują ich miejsce. Żadna akcja nie pomagała wyraźnie: często najlepiej przeczekać. Przerzedzanie krzewów raczej szkodzi.",
+			"text": "Fire season: mostly trees burn and shrubs take their place. No action clearly helped: often it is best to wait it out. Thinning shrubs tends to hurt.",
 			"acts": [
 				"aquifer_release"
 			]
 		},
 		"overheating": {
-			"text": "Przegrzanie: upał spowalnia wzrost i wyczerpuje życie. Pomagały lekkie ochłodzenie i wody podziemne; mocny pył i wulkany szkodziły.",
+			"text": "Overheating: the heat slows growth and drains life. Light cooling and aquifers helped; strong dust and volcanoes did harm.",
 			"acts": [
 				"mirrors_cool:weak",
 				"aquifer_release"
@@ -112,17 +120,17 @@
 		}
 	},
 	"succession": {
-		"next": "Następny etap życia: {species}. Brakuje: {missing}.",
-		"ready": "{species}: warunki są dobre, pojawią się same albo możesz je zasiać.",
-		"lost_ready": "{species} wymarły, ale warunki znów są dobre: zasiew może je przywrócić."
+		"next": "Next stage of life: {species}. Missing: {missing}.",
+		"ready": "{species}: conditions are good, they will appear on their own or you can sow them.",
+		"lost_ready": "{species} died out, but conditions are good again: sowing may bring them back."
 	},
 	"needs": {
-		"warmth": "ciepła (temperatura {value}, potrzeba co najmniej {need})",
-		"cooling": "chłodu (temperatura {value}, najwyżej {need})",
-		"humidity": "wilgoci w powietrzu (wilgotność {value}, potrzeba {need})",
-		"precipitation": "deszczu (opady {value}, potrzeba {need})",
-		"co2": "CO₂ ({value}, potrzeba {need})",
-		"oxygen": "tlenu ({value}, potrzeba ok. {need})",
-		"soil": "gleby, czyli biomasy ({value}, potrzeba {need})"
+		"warmth": "warmth (temperature {value}, at least {need} needed)",
+		"cooling": "cooler air (temperature {value}, at most {need})",
+		"humidity": "moisture in the air (humidity {value}, {need} needed)",
+		"precipitation": "rain (rainfall {value}, {need} needed)",
+		"co2": "CO₂ ({value}, {need} needed)",
+		"oxygen": "oxygen ({value}, about {need} needed)",
+		"soil": "soil, that is biomass ({value}, {need} needed)"
 	}
 }

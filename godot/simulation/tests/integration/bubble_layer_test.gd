@@ -158,3 +158,16 @@ func test_a_bubble_at_the_facing_point_is_still_visible_after_its_whole_life() -
 		_planet.turn(Vector2(PlanetView.SPIN_SPEED * 15.0, 0.0))
 		assert_object(_planet.screen_point(facing.x, facing.y)).is_not_null()
 		_planet.turn(Vector2(-PlanetView.SPIN_SPEED * 15.0, 0.0))
+
+
+func test_a_gain_floats_up_and_fades_within_a_second() -> void:
+	await get_tree().process_frame
+	var field := _open_layer(1)
+	var id: int = field.bubbles()[0]["id"]
+	assert_array(Array(_layer.floaters())).is_empty()
+	_layer.show_gain(id, 4)
+	assert_array(Array(_layer.floaters())).is_equal(["+4 ✦"])
+	_layer.advance_floaters(0.5)
+	assert_array(Array(_layer.floaters())).is_equal(["+4 ✦"])
+	_layer.advance_floaters(0.6)
+	assert_array(Array(_layer.floaters())).is_empty()

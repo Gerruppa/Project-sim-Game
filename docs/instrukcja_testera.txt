@@ -1,122 +1,108 @@
-GENESIS ERROR - prototyp do testów
-==================================
+GENESIS ERROR - playtest build
+==============================
 
-Dziękuję, że testujesz! To wczesny prototyp: prosta grafika, wszystko po
-polsku. Sprawdzamy, czy sama gra jest ciekawa, a nie jak wygląda.
-
-
-1. URUCHOMIENIE (Windows 10/11, 64-bit)
----------------------------------------
-
-1. Rozpakuj ZIP do dowolnego folderu (np. na Pulpit).
-2. Uruchom GenesisError.exe.
-3. Windows może pokazać ostrzeżenie "System Windows ochronił ten komputer"
-   (gra nie ma płatnego podpisu cyfrowego). Kliknij "Więcej informacji",
-   potem "Uruchom mimo to".
-
-Nic nie trzeba instalować. Gra nie łączy się z internetem.
+Thank you for testing! This is an early prototype: simple graphics, all text
+in English. We want to find out whether the game itself is fun, not how it
+looks.
 
 
-2. O CO CHODZI
+1. RUNNING IT (Windows 10/11, 64-bit)
+-------------------------------------
+
+1. Unzip the archive anywhere (for example to the Desktop).
+2. Run GenesisError.exe.
+3. Windows may show "Windows protected your PC" (the game has no paid
+   digital signature). Click "More info", then "Run anyway".
+
+Nothing to install. The game does not connect to the internet.
+
+
+2. WHAT IT IS ABOUT
+-------------------
+
+You are the Creator's Apprentice. Humanity has bet that any fool with divine
+powers can create life. You get an empty planet and 200 years to prove them
+wrong.
+
+Life climbs a ladder on its own, one rung at a time, as conditions allow:
+bacteria -> algae -> moss -> shrubs -> trees, and on the plants the animals:
+insects (they live on moss) -> small animals (shrubs) -> large mammals
+(trees). The bar over the globe shows the ladder, the next rung and what it
+still needs.
+
+GOAL: "Mature planet" - every stage of life, from bacteria to large mammals,
+alive at the same time for 5 years. When you get there a card congratulates
+you, and you can keep playing.
+
+The planet has its own crises: droughts, ice ages, overheating, fire
+seasons. They are announced before they strike (amber warning over the
+globe, with the perks and actions that help). The first warning of each
+kind stops the game and explains.
+
+
+3. HOW TO PLAY
 --------------
 
-Opiekujesz się młodą, martwą planetą. Nie budujesz niczego: obserwujesz,
-jak planeta żyje, i od czasu do czasu w nią ingerujesz.
+Start screen: type a planet number or leave it empty (random). The same
+number is always the same planet, so you can replay it and try something
+else. Planet character: Harmonious (calm), Chaotic (more crises), Guardian
+(heals itself), or random.
 
-Życie pojawia się samo, etapami:
-bakterie -> glony -> mchy -> krzewy -> drzewa.
-Każdy etap potrzebuje innych warunków (ciepła, wody, tlenu, gleby).
-Planeta ma też własne kryzysy: susze, epoki lodowe, przegrzanie, pożary.
+The window:
+  * the globe in the middle (drag to turn it, wheel to zoom). Over it:
+    the ladder of life, the chronicle (what happened and why, in the
+    translucent box; the "Chronicle" button shows all of it) and warnings.
+    Bubbles float over the globe: CLICK THEM, they are Sparks of Life.
+  * left: the planet's numbers and the life on it (arrows show what rose or
+    fell over the last few years), and the planting guide
+  * right: the "Perks" button, the divine actions, speed, pause, goals
+  * top: the date ("Year 29, November"), your Sparks and the cheapest perk
+    you could buy next
 
-CEL: "Dojrzała planeta" - wszystkie 5 etapów życia żyje jednocześnie
-przez 2 lata.
+Planting guide: for each species a coloured dot says how well the planet
+suits it right now (green = ideal, yellow = weak, red = too early, grey =
+waiting for the species it grows from). Hover for what it needs and what the
+planet has. "Plant" (plants) or "Release" (animals) puts a little of it on
+the planet. Animals also appear on their own once their food has been
+plentiful for long enough.
 
-Dodatkowe nagrody:
-  * gwiazdki: Bez strat (nic nie wymarło), Szybko (wygrana przed rokiem
-    30), Lekką ręką (od 1 do 5 akcji, lustra i pył tylko "lekko")
-  * 7 ambicji, np. "Pierwszy las", "Przetrwać zimę", "Nie ruszaj"
-    (wygrana bez żadnej akcji)
+Perks (button, or press P): the game pauses while the perk window is open,
+so you can read. Six branches: Environment (divine powers), Resistance (cold,
+heat, drought, fire), Sowing (more per sowing, spreading by itself), Production
+(growth, soil, oxygen), Shield (softer and rarer crises, at a price) and
+Fauna (opens once insects have lived). Many perks come in levels (I, II,
+III). Every perk has a price in the world (a side effect). You can refund a
+perk for part of its cost.
 
+Speed: x5 (slow) ... x25 (default) ... x100 (fast). Pause stops the planet.
+The game saves itself regularly and when you close the window; "Load last
+game" on the start screen continues it.
 
-3. JAK GRAĆ
------------
-
-Ekran startowy: wpisz numer planety albo zostaw pole puste (losowa).
-Ten sam numer to zawsze ta sama planeta - możesz zagrać ją drugi raz
-i sprawdzić, co by było, gdybyś zrobił coś inaczej.
-Charakter planety: Harmonijna (spokojna), Chaotyczna (więcej kryzysów),
-Strażnik (sama się leczy), albo losowy.
-
-Okno:
-  * na środku: planeta jako globus - przeciągnij myszą, żeby ją obrócić,
-    kółko przybliża (biel = lód, zieleń = życie, poświata = powietrze:
-    pomarańczowa przy małej ilości tlenu, niebieska przy dużej)
-  * pod globusem: panel decyzji i kronika planety - co się wydarzyło
-    i DLACZEGO
-  * po lewej: liczby planety i życie; strzałki pokazują, co wzrosło (↑)
-    i zmalało (↓) od początku gry, a pod każdym gatunkiem, co zmienił
-    (np. ile tlenu dały glony); przycisk "Wykresy"
-  * po prawej: sklep z perkami, przyciski akcji, tempo, "Pauza" i "Cele"
-  * na górze: licznik "Iskry"
-
-Gra sama się nie zatrzymuje: planeta żyje bez przerwy, a Ty działasz,
-kiedy chcesz. Przeczytaj kronikę, zobacz, co się dzieje, i:
-  * kliknij akcję (gatunek i siłę wybierasz z listy pod przyciskiem),
-  * albo nic nie rób i patrz.
-Przycisk "Pauza" zatrzymuje planetę w każdej chwili; w pauzie też możesz
-działać (akcja ruszy w pierwszym ticku po wznowieniu).
-
-Iskry Życia zdobywasz od żyjącej planety. Za Iskry kupujesz w sklepie
-perki (po prawej, dwa drzewka: Środowisko i Życie). Perk daje stałą
-korzyść i odblokowuje moc: przycisk akcji, której jeszcze nie masz, jest
-szary i podpisany "wymaga: <nazwa perka>". Kupiony perk możesz cofnąć
-i odzyskać część Iskier.
-
-Tempo: x5 (wolno), x10, x25 (domyślnie), x50, x100 (szybko).
-Co jest do zdobycia: przycisk "Cele" w prawej kolumnie.
-Szare przyciski się odnawiają; najedź myszą, żeby zobaczyć, od kiedy
-będą dostępne.
-
-Akcje:
-  Zasiew gatunku      dodaje trochę wybranego gatunku (przywraca wymarłe)
-  Przerzedzenie       zostawia 10% gatunku
-  Lustra orbitalne    ocieplają planetę (lekko / umiarkowanie / z pełną mocą)
-  Pył orbitalny       ochładza planetę (lekko / umiarkowanie / z pełną mocą)
-  Zasiew chmur        więcej deszczu
-  Wody podziemne      więcej wilgoci w powietrzu
-  Przebudzenie        wulkany wydzielają więcej CO2 (cieplej na długo)
-    wulkanów
-
-Wskazówka: gatunek, który wymarł, prawie nigdy nie wraca sam.
-
-Gra zapisuje się sama co jakiś czas i przy zamknięciu okna. Po ponownym
-uruchomieniu kliknij "Wczytaj ostatnią grę".
-
-Partia trwa zwykle kilkanaście minut (zależy od tempa i od tego, jak
-długo czytasz kronikę).
+A game takes about 10-20 minutes, depending on the speed and how long you
+read.
 
 
-4. CO MNIE INTERESUJE (najważniejsza część!)
---------------------------------------------
+4. WHAT I WANT TO KNOW (the most important part!)
+-------------------------------------------------
 
-Po 1-3 partiach odpisz proszę krótko na pytania:
+After 1-3 games please answer briefly:
 
- 1. Czy choć raz pomyślałeś "ciekawe, co się stanie, jeśli..."?
-    Przy czym?
- 2. Co cię zaskoczyło? Co było niezrozumiałe?
- 3. Czy wiedziałeś, co możesz zrobić w danej chwili?
-    Czy do czegoś zabrakło wskazówki?
- 4. Których akcji i perków używałeś najczęściej, a których wcale?
-    Dlaczego?
- 5. Czy tempo gry było za wolne, za szybkie, w sam raz?
- 6. Czy cel i gwiazdki motywowały? Czy wygrałeś?
- 7. Czy chciałbyś zagrać jeszcze raz (inną planetą albo tą samą)?
- 8. Jedna rzecz, którą byś zmienił.
+ 1. Did you know WHEN to plant shrubs and when trees? What told you?
+ 2. Did you notice the warning before a crisis? What did you do?
+ 3. Was the perk window clear? Did you have something to spend Sparks on
+    all the time? Did different choices feel different?
+ 4. Were the animals a reward? Did you notice when they appeared?
+ 5. Did you always know what was happening between sowing moss and growing
+    a tree, and what came next?
+ 6. Did you know when you had finished? Did the ending card feel good?
+ 7. Was the speed too slow, too fast, just right?
+ 8. Would you play again (another planet or the same one)?
+ 9. One thing you would change.
 
-Bardzo pomoże, jeśli dołączysz kroniki swoich partii. To pliki tekstowe:
-  wpisz w pasku adresu Eksploratora Windows
+It helps a lot if you attach the chronicles of your games. They are text
+files: type in the Windows Explorer address bar
     %APPDATA%\Godot\app_userdata\Genesis Error\logs\simulation_runs
-  i skopiuj pliki *.chronicle.txt (jeden na partię).
+and copy the *.chronicle.txt files (one per game).
 
-Błędy i dziwne zachowania też są cenne: napisz, co się stało, i podaj
-numer planety (widać go na górze okna, "seed").
+Bugs and odd behaviour are valuable too: write what happened and give the
+planet number (shown at the top of the window, "planet").

@@ -4,7 +4,7 @@
 		{
 			"id": "harmonious",
 			"weight": 1,
-			"description": "Łagodna i bujna: spokojniejszy klimat, szybszy wzrost, rzadsze pożary. Kryzysy zdarzają się rzadziej.",
+			"description": "Gentle and lush: calmer climate, faster growth, rarer wildfires. Crises come less often.",
 			"modifiers": [
 				{"target": "climate.drift_noise", "operation": "multiply", "value": 0.8},
 				{"target": "climate.season_amplitude", "operation": "multiply", "value": 0.9},
@@ -15,7 +15,7 @@
 		{
 			"id": "chaotic",
 			"weight": 1,
-			"description": "Niespokojna, wulkaniczna i płonąca: silne wahania klimatu, więcej CO₂ i pożarów. Życie ma trudniej.",
+			"description": "Restless, volcanic and burning: strong climate swings, more CO₂ and wildfires. Life has it harder.",
 			"modifiers": [
 				{"target": "climate.drift_noise", "operation": "multiply", "value": 1.25},
 				{"target": "climate.drift_limit", "operation": "multiply", "value": 1.1},
@@ -28,7 +28,7 @@
 		{
 			"id": "guardian",
 			"weight": 1,
-			"description": "Strażnik życia i równowagi: klimat szybciej wraca do normy, słabszy punkt przełomowy lodu, życie lepiej znosi stres.",
+			"description": "A guardian of life and balance: the climate returns to normal faster, the ice tipping point is weaker, life endures stress better.",
 			"modifiers": [
 				{"target": "climate.thermal_response", "operation": "multiply", "value": 1.2},
 				{"target": "climate.ice_strength", "operation": "multiply", "value": 0.9},

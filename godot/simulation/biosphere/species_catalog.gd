@@ -39,6 +39,7 @@ static func from_data(data: Dictionary) -> SimResult:
 	if total_weight > 1.0:
 		result.add_error("sum of species weight is %s; it must not exceed 1 (biomass scale)" % total_weight)
 	_check_succession(catalog, result)
+	_check_food(catalog, result)
 	if result.is_ok():
 		result.value = catalog
 	return result
@@ -47,6 +48,10 @@ static func from_data(data: Dictionary) -> SimResult:
 static func _parse_species(raw: Dictionary, index: int, result: SimResult) -> SpeciesData:
 	var label := "species #%d (%s)" % [index, raw.get("id", "?")]
 	var numbers := raw.duplicate()
+	for field in SpeciesData.OPTIONAL_FIELDS:
+		if not numbers.has(field):
+			numbers[field] = 0
+	numbers.erase("food")
 	var species := SpeciesData.new()
 	var ok := true
 	for field in SpeciesData.TEXT_FIELDS:
@@ -69,6 +74,10 @@ static func _parse_species(raw: Dictionary, index: int, result: SimResult) -> Sp
 	species.id = StringName(raw["id"])
 	species.water = StringName(raw["water"])
 	species.emerges_from = StringName(raw["emerges_from"])
+	if raw.has("food") and typeof(raw["food"]) != TYPE_STRING:
+		result.add_error("%s: 'food' must be a species id" % label)
+	else:
+		species.food = StringName(raw.get("food", ""))
 	return species
 
 
@@ -88,6 +97,20 @@ static func _check_succession(catalog: SpeciesCatalog, result: SimResult) -> voi
 			if current == species:
 				result.add_error("species '%s': succession forms a cycle" % species.id)
 				break
+
+
+## An animal eats another species of the catalog (not itself) and needs a
+## food population to count as plenty.
+static func _check_food(catalog: SpeciesCatalog, result: SimResult) -> void:
+	for species in catalog._species:
+		if species.food.is_empty():
+			continue
+		if species.food == species.id:
+			result.add_error("species '%s': cannot eat itself" % species.id)
+		elif catalog.index_of(species.food) == -1:
+			result.add_error("species '%s': unknown food '%s'" % [species.id, species.food])
+		if species.food_need <= 0.0:
+			result.add_error("species '%s': food_need must be above 0 when it eats" % species.id)
 
 
 func size() -> int:

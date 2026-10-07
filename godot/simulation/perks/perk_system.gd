@@ -37,6 +37,7 @@ var _to_remove: Array[StringName] = []
 
 func _init(catalog: PerkCatalog) -> void:
 	_catalog = catalog
+	_sparks = float(catalog.start_sparks)
 
 
 func system_id() -> StringName:
@@ -49,6 +50,14 @@ func catalog() -> PerkCatalog:
 
 func sparks() -> float:
 	return _sparks
+
+
+## The product of what the owned perks do to the Spark income (1 = untouched).
+func income_scale() -> float:
+	var scale := 1.0
+	for id in _owned:
+		scale *= _catalog.get_def(id).income_scale
+	return scale
 
 
 func owns(perk_id: StringName) -> bool:
@@ -109,14 +118,14 @@ func apply_command(command: SimCommand) -> Array[SimCommand]:
 					"sparks": _sparks})
 		else:
 			emit_event(REJECTED_EVENT, {"id": "", "name": "", "reason": reason,
-					"story": "Praktykant nie dostaje Iskier: %s." % reason})
+					"story": "The Apprentice receives no Sparks: %s." % reason})
 		return []
 	var def := _def_of(command)
 	if def == null:
 		return []
 	if not errors.is_empty():
 		emit_event(REJECTED_EVENT, {"id": String(def.id), "name": def.name, "reason": reason,
-				"story": "Praktykant nie może %s: %s." % [_verb(command.action, def), reason]})
+				"story": "The Apprentice cannot %s: %s." % [_verb(command.action, def), reason]})
 	elif command.action == ACTION_BUY:
 		_sparks -= float(def.cost)
 		_owned.append(def.id)
@@ -143,7 +152,7 @@ func provide_modifiers(snapshot: PlanetSnapshot, _tick: int, registry: ModifierR
 	_to_register.clear()
 	var biomass := snapshot.get_value(Param.BIOMASS)
 	if is_finite(biomass) and biomass > 0.0:
-		_sparks += biomass * _catalog.income_per_biomass_tick
+		_sparks += biomass * _catalog.income_per_biomass_tick * income_scale()
 
 
 func restore_modifiers(registry: ModifierRegistry) -> void:
@@ -169,7 +178,7 @@ func refund_of(def: PerkDef) -> int:
 
 
 static func _verb(action: StringName, def: PerkDef) -> String:
-	return ("kupić „%s”" if action == ACTION_BUY else "zwrócić „%s”") % def.name
+	return ("buy \"%s\"" if action == ACTION_BUY else "refund \"%s\"") % def.name
 
 
 ## The perk a buy or refund names; null if it names none that exists.
@@ -222,22 +231,22 @@ func _perk_errors(command: SimCommand, errors: Array[String]) -> void:
 
 func _buy_errors(def: PerkDef, errors: Array[String]) -> void:
 	if _owned.has(def.id):
-		errors.append("już kupione")
+		errors.append("already bought")
 		return
 	for id in missing_requirements(def.id):
-		errors.append("najpierw kup „%s”" % _catalog.get_def(id).name)
+		errors.append("buy \"%s\" first" % _catalog.get_def(id).name)
 	if _sparks < float(def.cost):
-		errors.append("brakuje %d Iskier (koszt %d)" % [int(ceilf(float(def.cost) - _sparks)), def.cost])
+		errors.append("%d more Sparks needed (cost %d)" % [int(ceilf(float(def.cost) - _sparks)), def.cost])
 
 
 func _refund_errors(def: PerkDef, errors: Array[String]) -> void:
 	if not _owned.has(def.id):
-		errors.append("nie jest kupione")
+		errors.append("not bought")
 		return
 	for id in _owned:
 		var other := _catalog.get_def(id)
 		if other.requires.has(def.id):
-			errors.append("wymaga go kupiony „%s”" % other.name)
+			errors.append("the bought \"%s\" requires it" % other.name)
 
 
 func save_state() -> Dictionary:

@@ -4,7 +4,8 @@ extends RefCounted
 
 ## Coefficient specs of the systems the project runs.
 static func specs() -> Dictionary:
-	return {&"climate": ClimateConfig.SPEC, &"atmosphere": AtmosphereConfig.SPEC, &"biosphere": BiosphereConfig.SPEC}
+	return {&"climate": ClimateConfig.SPEC, &"atmosphere": AtmosphereConfig.SPEC, &"biosphere": BiosphereConfig.SPEC,
+			&"events": EventConfig.SPEC}
 
 
 static func archetype(id: String, modifiers: Array = [], overrides: Dictionary = {}) -> Dictionary:

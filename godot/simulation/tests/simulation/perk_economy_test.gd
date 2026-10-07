@@ -8,7 +8,7 @@ extends GdUnitTestSuite
 
 const TICKS := 30000
 const SEEDS: Array[int] = [13, 42]
-const PERK_COUNT := 10
+const PERK_COUNT := 38
 const TICKS_PER_MINUTE_X25 := 1500.0
 const TICKS_PER_MINUTE_X50 := 3000.0
 
@@ -79,12 +79,12 @@ func test_first_perk_is_bought_early() -> void:
 		assert_bool(tick > 0 and tick <= 600).override_failure_message("seed %d: first purchase at tick %d, wanted 1..600" % [seed_value, tick]).is_true()
 
 
-func test_the_whole_shop_is_bought_within_the_game() -> void:
+func test_about_twenty_perks_are_bought_and_the_shop_is_not_exhausted() -> void:
 	for seed_value in SEEDS:
 		var run: Dictionary = _runs[seed_value]
-		assert_int(run["owned"]).override_failure_message("seed %d owns %d of %d perks" % [seed_value, run["owned"], PERK_COUNT]).is_equal(PERK_COUNT)
-		var tick: int = run["all_owned_tick"]
-		assert_bool(tick > 0 and tick < TICKS).override_failure_message("seed %d: all perks owned at tick %d" % [seed_value, tick]).is_true()
+		assert_bool(run["owned"] >= 12 and run["owned"] <= 28).override_failure_message("seed %d owns %d perks, wanted 12..28 (the spec aims at about 20)" % [seed_value, run["owned"]]).is_true()
+		# Choices matter: even a perfect player leaves a good part of the shop unbought.
+		assert_int(run["owned"]).is_less(PERK_COUNT)
 
 
 func test_sparks_granted_stay_in_the_designed_range() -> void:

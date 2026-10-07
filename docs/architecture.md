@@ -957,7 +957,7 @@ res://  (godot/)
   resources/        data assets (planet/, simulation/, chronicle/, ...)
   game/             game layer: GameSession, SimulationRunner, PlaySession, GoalTracker,
                     DecisionWatcher, HintAdvisor, BubbleField, RunSaver, ConsoleInput (above simulation/)
-  ui/               the window: GameView (main.tscn), PlanetView, HistoryChart, BubbleLayer, PerkPanel
+  ui/               the window: GameView (main.tscn), PlanetView, HistoryChart, BubbleLayer, PerkWindow, OverlayCard, ChronicleOverlay, ThreatStrip, LifePathBar, SpeciesPanel
   tools/            entry points only: run_simulation.gd, play.gd
 ```
 

@@ -192,7 +192,7 @@ static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
 	var atmosphere := AtmosphereConfig.load_json(options["atmosphere"])
 	var catalog := SpeciesCatalog.load_json(options["species"])
 	var biosphere := BiosphereConfig.load_json(options["biosphere"])
-	var specs := {&"climate": ClimateConfig.SPEC, &"atmosphere": AtmosphereConfig.SPEC, &"biosphere": BiosphereConfig.SPEC}
+	var specs := {&"climate": ClimateConfig.SPEC, &"atmosphere": AtmosphereConfig.SPEC, &"biosphere": BiosphereConfig.SPEC, &"events": EventConfig.SPEC}
 	var personality_catalog := PersonalityCatalog.load_json(PersonalityCatalog.DEFAULT_PATH, specs)
 	var failed := SimResult.new()
 	for loaded: SimResult in [climate, atmosphere, catalog, biosphere, personality_catalog]:
@@ -215,7 +215,10 @@ static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
 	if not events.is_ok():
 		return events
 	var archetype: StringName = personality.value.archetype_id()
-	manager.register_system(EventSystem.new(events.value, archetype))
+	var event_config := EventConfig.load_json(EventConfig.DEFAULT_PATH)
+	if not event_config.is_ok():
+		return event_config
+	manager.register_system(EventSystem.new(events.value, archetype, event_config.value))
 	# The player's hand: it reaches others only through modifiers and commands.
 	var interventions := InterventionCatalog.load_json(InterventionCatalog.DEFAULT_PATH, specs, {&"biosphere": BiosphereSystem.COMMANDS})
 	if not interventions.is_ok():
@@ -225,6 +228,10 @@ static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
 	var perks := PerkCatalog.load_json(PerkCatalog.DEFAULT_PATH, specs, interventions.value.ids())
 	if not perks.is_ok():
 		return perks
+	var species_check := SimResult.new()
+	(perks.value as PerkCatalog).check_species((catalog.value as SpeciesCatalog).ids(), species_check)
+	if not species_check.is_ok():
+		return species_check
 	manager.register_system(PerkSystem.new(perks.value))
 
 	return SimResult.success({
@@ -234,7 +241,7 @@ static func build_planet(config: SimConfig, options: Dictionary) -> SimResult:
 			"parameters": ParameterSchema.DEFAULT_PATH, "climate": options["climate"],
 			"atmosphere": options["atmosphere"], "species": options["species"],
 			"biosphere": options["biosphere"], "personality": PersonalityCatalog.DEFAULT_PATH,
-			"events": options["events"], "interventions": InterventionCatalog.DEFAULT_PATH,
+			"events": options["events"], "event_config": EventConfig.DEFAULT_PATH, "interventions": InterventionCatalog.DEFAULT_PATH,
 			"perks": PerkCatalog.DEFAULT_PATH,
 		}),
 	})
@@ -268,7 +275,7 @@ static func create_watcher(manager: SimulationManager) -> SimResult:
 ## What the player reads at a decision point: what happened, where it was
 ## saved, what they can do now and the command that continues the run.
 static func decision_report(manager: SimulationManager, watcher: DecisionWatcher, save_path: String) -> PackedStringArray:
-	var lines := PackedStringArray(["", "=== Punkt decyzji: tick %d ===" % manager.tick()])
+	var lines := PackedStringArray(["", "=== Decision point: tick %d ===" % manager.tick()])
 	lines.append_array(watcher.sentences())
 	# What the player needs for a hypothesis: the planet's state in its own words.
 	var snapshot := manager.snapshot()
@@ -276,21 +283,21 @@ static func decision_report(manager: SimulationManager, watcher: DecisionWatcher
 	var values := PackedStringArray()
 	for i in schema.size():
 		values.append("%s %.1f" % [schema.def_at(i).display_name(), snapshot.get_value_at(i)])
-	lines.append("Planeta (skala 0-100): " + ", ".join(values))
-	lines.append("Zapis: %s" % save_path)
-	lines.append("Interwencje:")
+	lines.append("Planet (scale 0-100): " + ", ".join(values))
+	lines.append("Save: %s" % save_path)
+	lines.append("Interventions:")
 	var hand := manager.system(InterventionSystem.ID) as InterventionSystem
 	var biosphere := manager.system(BiosphereSystem.ID) as BiosphereSystem
 	for id in hand.catalog().ids():
 		var def := hand.catalog().get_def(id)
 		var ready := hand.ready_at(id)
-		lines.append("  %-40s %-24s %s" % [InterventionCatalog.usage(def), def.name, "gotowe" if ready <= manager.tick() + 1 else "od ticku %d" % ready])
+		lines.append("  %-40s %-24s %s" % [InterventionCatalog.usage(def), def.name, "ready" if ready <= manager.tick() + 1 else "from tick %d" % ready])
 	if biosphere != null:
 		var species := PackedStringArray()
 		for data in biosphere.species_ids():
-			species.append("%s %.1f%s" % [data, biosphere.population(data), " (wymarłe)" if biosphere.is_lost(data) else ""])
-		lines.append("Gatunki (populacja 0-100): " + ", ".join(species))
-	lines.append("Dalej: ./godot/run_simulation.sh --load %s --act <interwencja> --until decision --story" % save_path.get_file())
+			species.append("%s %.1f%s" % [data, biosphere.population(data), " (lost)" if biosphere.is_lost(data) else ""])
+		lines.append("Species (population 0-100): " + ", ".join(species))
+	lines.append("Next: ./godot/run_simulation.sh --load %s --act <intervention> --until decision --story" % save_path.get_file())
 	return lines
 
 

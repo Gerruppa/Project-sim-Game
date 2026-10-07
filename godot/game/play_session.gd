@@ -64,7 +64,7 @@ static func create(options: Dictionary, read: Callable, write: Callable) -> SimR
 	session._read = read
 	session._write = write
 	for warning in session._game.warnings:
-		write.call("UWAGA: %s\n" % warning)
+		write.call("WARNING: %s\n" % warning)
 	return SimResult.success(session)
 
 
@@ -73,18 +73,18 @@ static func create(options: Dictionary, read: Callable, write: Callable) -> SimR
 func play() -> int:
 	if _game.new_game:
 		_say("\n".join(_game.advisor.intro))
-		_say("\n[Enter] zaczyna grę.")
+		_say("\n[Enter] starts the game.")
 		if _ask() == null:
 			return 0
 	while true:
 		_game.begin_round()
 		_game.step(ROUND_LIMIT)
 		if _game.manager.is_halted():
-			_say("Symulacja zatrzymała się z błędem: %s" % ", ".join(_game.manager.errors()))
+			_say("The simulation halted with an error: %s" % ", ".join(_game.manager.errors()))
 			return 1
 		var saved := _game.save()
 		if not saved.is_ok():
-			_say("Nie udało się zapisać gry: %s" % ", ".join(saved.errors))
+			_say("Could not save the game: %s" % ", ".join(saved.errors))
 		_say(screen())
 		if not _decide():
 			return 0
@@ -94,39 +94,39 @@ func play() -> int:
 ## The decision screen: what happened, the planet, life, hints and menu.
 func screen() -> String:
 	var lines := PackedStringArray()
-	lines.append("\n=== Punkt decyzji: tick %d (rok %d) ===" % [_game.tick(), _game.year()])
+	lines.append("\n=== Decision point: tick %d (year %d) ===" % [_game.tick(), _game.year()])
 	if _game.decision_point() != null:
-		lines.append("Co się stało:  " + " ".join(_game.decision_sentences()))
+		lines.append("What happened:  " + " ".join(_game.decision_sentences()))
 	else:
-		lines.append("Co się stało:  przez %d ticków nic ważnego, planeta żyje spokojnie." % ROUND_LIMIT)
+		lines.append("What happened:  nothing important for %d ticks, the planet lives quietly." % ROUND_LIMIT)
 	var news := _game.goals.take_news()
 	if not news.is_empty():
 		lines.append("")
 		for item in news:
 			lines.append("*** " + item + " ***")
 		if _game.goals.won() and _game.goals.victory_tick() > _game.last_tick():
-			lines.append("Możesz grać dalej: ambicje wciąż czekają.")
+			lines.append("You can keep playing: ambitions are still waiting.")
 		lines.append("")
 	lines.append_array(_game.goals.status_lines(_game.texts.species))
 	if _game.last_tick() == -1:
-		lines.append("Planeta:")
+		lines.append("Planet:")
 	else:
 		var ago := _game.tick() - _game.last_tick()
-		lines.append("Planeta (zmiana od poprzedniej decyzji, %d %s temu):" % [ago, GameSession.ticks_word(ago)])
+		lines.append("Planet (change since the previous decision, %d %s ago):" % [ago, GameSession.ticks_word(ago)])
 	for row in _game.planet_rows():
 		lines.append("  %-20s %16s   %s" % [row["name"], row["shown"], row["change"]])
-	lines.append("Życie:")
+	lines.append("Life:")
 	for row in _game.life_rows():
 		var effects := GameSession.effects_text(row["effects"])
 		lines.append(("  %-10s %7s   %-8s %s" % [row["name"], row["shown"], row["change"],
-				"" if effects.is_empty() else "wpływ: " + effects]).strip_edges(false, true))
+				"" if effects.is_empty() else "impact: " + effects]).strip_edges(false, true))
 	for row in _game.other_effects():
 		lines.append("  %s: %s" % [row["name"], GameSession.effects_text(row["effects"])])
 	lines.append_array(_watch_lines())
 	_game.remember()
 	if _game.hints:
 		lines.append("")
-		lines.append("Podpowiedź:")
+		lines.append("Hint:")
 		for hint in _game.hint_lines(_act_label):
 			lines.append(" • " + hint)
 	lines.append("")
@@ -135,20 +135,20 @@ func screen() -> String:
 
 
 func menu() -> String:
-	var lines := PackedStringArray(["Co robisz?"])
+	var lines := PackedStringArray(["What do you do?"])
 	var actions := _game.actions()
 	for i in actions.size():
 		var action: Dictionary = actions[i]
-		lines.append(" %d) %-26s %s" % [i + 1, action["name"], "gotowe" if action["ready"] else _cooldown_text(action)])
-	lines.append(" 0) Czekaj, nic nie rób (albo Enter)")
-	lines.append(" ?) Wyjaśnij akcje   c) Cele   h) %s podpowiedzi   q) Zapisz i wyjdź" % ("Ukryj" if _game.hints else "Pokaż"))
+		lines.append(" %d) %-26s %s" % [i + 1, action["name"], "ready" if action["ready"] else _cooldown_text(action)])
+	lines.append(" 0) Wait, do nothing (or Enter)")
+	lines.append(" ?) Explain actions   c) Goals   h) %s hints   q) Save and quit" % ("Hide" if _game.hints else "Show"))
 	return "\n".join(lines)
 
 
-## "za 300 ticków (od ticku 1631)": the console has no real-time clock, so the
+## "in 300 ticks (from tick 1631)": the console has no real-time clock, so the
 ## wait is counted in ticks, like everything else it shows.
 func _cooldown_text(action: Dictionary) -> String:
-	return "za %d %s (od ticku %d)" % [action["ready_in"], GameSession.ticks_word(int(action["ready_in"])), action["ready_at"]]
+	return "in %d %s (from tick %d)" % [action["ready_in"], GameSession.ticks_word(int(action["ready_in"])), action["ready_at"]]
 
 
 ## What the player's earlier actions are doing now, so they know when to watch.
@@ -159,16 +159,16 @@ func _watch_lines() -> PackedStringArray:
 		var text := ""
 		match action["phase"]:
 			"queued":
-				text = "ruszy w następnym ticku"
+				text = "starts next tick"
 			"running":
-				text = "działa jeszcze %d %s" % [action["remaining"], GameSession.ticks_word(int(action["remaining"]))]
+				text = "acts for %d more %s" % [action["remaining"], GameSession.ticks_word(int(action["remaining"]))]
 			_:
-				text = "już nie działa"
+				text = "no longer acting"
 		if action["fade_max"] > 0:
-			text += "; skutek zwykle widać jeszcze %s" % _fade_text(action)
+			text += "; the effect usually shows for another %s" % _fade_text(action)
 		lines.append("  %s: %s" % [name, text])
 	if not lines.is_empty():
-		lines.insert(0, "W toku (akcje, których skutek warto obserwować):")
+		lines.insert(0, "In progress (actions whose effect is worth watching):")
 	return lines
 
 
@@ -190,7 +190,7 @@ func _decide() -> bool:
 			"", "0":
 				return true
 			"q":
-				_say("Zapisano: %s\nWróć do gry: ./godot/play.sh --load %s" % [_game.save_path, _game.save_path.get_file()])
+				_say("Saved: %s\nBack to the game: ./godot/play.sh --load %s" % [_game.save_path, _game.save_path.get_file()])
 				return false
 			"?":
 				_say(_help())
@@ -198,21 +198,21 @@ func _decide() -> bool:
 				_say(_game.goals.goals_text())
 			"h":
 				_game.hints = not _game.hints
-				_say("Podpowiedzi %s." % ("włączone" if _game.hints else "ukryte"))
+				_say("Hints %s." % ("on" if _game.hints else "hidden"))
 			_:
 				var actions := _game.actions()
 				if not choice.is_valid_int() or int(choice) < 1 or int(choice) > actions.size():
-					_say("Nie rozumiem „%s”. Wpisz numer z menu, 0, ?, c, h albo q." % choice)
+					_say("I do not understand \"%s\". Type a number from the menu, 0, ?, c, h or q." % choice)
 					continue
 				if _act(actions[int(choice) - 1]):
-					_say("Możesz zrobić coś jeszcze albo nacisnąć Enter, żeby puścić planetę dalej.")
+					_say("You can do something else, or press Enter to let the planet run on.")
 	return true
 
 
 ## Asks for the intervention's arguments and queues it. True when queued.
 func _act(action: Dictionary) -> bool:
 	if not action["ready"]:
-		_say("%s jeszcze się odnawia: dostępne od ticku %d." % [action["name"], action["ready_at"]])
+		_say("%s is still recharging: available from tick %d." % [action["name"], action["ready_at"]])
 		return false
 	var args := {}
 	if action["species"]:
@@ -227,18 +227,18 @@ func _act(action: Dictionary) -> bool:
 		args["level"] = level
 	var submitted := _game.submit(action["id"], args)
 	if not submitted.is_ok():
-		_say("Nie da się: %s" % ", ".join(submitted.errors))
+		_say("Cannot do that: %s" % ", ".join(submitted.errors))
 		return false
-	_say("Zrobione: %s." % submitted.value)
+	_say("Done: %s." % submitted.value)
 	return true
 
 
 func _choose_species() -> Variant:
 	var list := _game.species_choices()
-	var lines := PackedStringArray(["Który gatunek?"])
+	var lines := PackedStringArray(["Which species?"])
 	for i in list.size():
 		lines.append(" %d) %-9s %-16s %s" % [i + 1, list[i]["name"], list[i]["state"], list[i]["needs"]])
-	lines.append(" 0) Wróć")
+	lines.append(" 0) Back")
 	_say("\n".join(lines))
 	while true:
 		var answer: Variant = _ask()
@@ -247,17 +247,17 @@ func _choose_species() -> Variant:
 		var text := (answer as String).strip_edges()
 		if text.is_valid_int() and int(text) >= 1 and int(text) <= list.size():
 			return list[int(text) - 1]["id"]
-		_say("Wpisz numer gatunku (1-%d) albo 0." % list.size())
+		_say("Type a species number (1-%d) or 0." % list.size())
 	return null
 
 
 func _choose_level(action: Dictionary) -> Variant:
 	var levels: Array = action["levels"]
-	var lines := PackedStringArray(["Jak mocno?"])
+	var lines := PackedStringArray(["How strong?"])
 	for i in levels.size():
-		var marker := " (domyślnie)" if levels[i][0] == action["default_level"] else ""
+		var marker := " (default)" if levels[i][0] == action["default_level"] else ""
 		lines.append(" %d) %s%s" % [i + 1, levels[i][1], marker])
-	lines.append(" 0) Wróć   (Enter = domyślnie)")
+	lines.append(" 0) Back   (Enter = default)")
 	_say("\n".join(lines))
 	while true:
 		var answer: Variant = _ask()
@@ -270,20 +270,20 @@ func _choose_level(action: Dictionary) -> Variant:
 			return null
 		if text.is_valid_int() and int(text) >= 1 and int(text) <= levels.size():
 			return levels[int(text) - 1][0]
-		_say("Wpisz numer poziomu (1-%d), Enter albo 0." % levels.size())
+		_say("Type a level number (1-%d), Enter or 0." % levels.size())
 	return null
 
 
 func _help() -> String:
-	var lines := PackedStringArray(["Akcje:"])
+	var lines := PackedStringArray(["Actions:"])
 	var actions := _game.actions()
 	for i in actions.size():
 		lines.append(" %d) %s: %s" % [i + 1, actions[i]["name"], actions[i]["help"]])
-	lines.append("Czas odnowienia: po użyciu akcja jest niedostępna do podanego ticku.")
+	lines.append("Recharge: after use an action is unavailable until the given tick.")
 	return "\n".join(lines)
 
 
-## How the player picks an advised act here: "3 (Lustra orbitalne, lekko)".
+## How the player picks an advised act here: "3 (Orbital mirrors, light)".
 func _act_label(act: String) -> String:
 	var parts := act.split(":")
 	var actions := _game.actions()

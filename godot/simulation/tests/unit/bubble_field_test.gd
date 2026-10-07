@@ -342,3 +342,25 @@ func test_without_a_provider_bubbles_still_spread_over_the_whole_globe() -> void
 	for bubble: Dictionary in field.bubbles():
 		far = far or absf(float(bubble["lon"])) > 90.0
 	assert_bool(far).is_true()
+
+
+func test_collected_count_counts_each_bubble_once() -> void:
+	var field := _field()
+	field.on_event(_emerged(1, "moss"))
+	field.on_event(_emerged(2, "algae"))
+	assert_int(field.collected_count()).is_equal(0)
+	var id: int = field.bubbles()[0]["id"]
+	field.collect(id)
+	field.collect(id)
+	assert_int(field.collected_count()).is_equal(1)
+
+
+func test_collected_count_is_saved_and_old_saves_start_at_zero() -> void:
+	var field := _field()
+	field.on_event(_emerged(1, "moss"))
+	field.collect(field.bubbles()[0]["id"])
+	var restored := _field()
+	restored.load_state(field.save_state())
+	assert_int(restored.collected_count()).is_equal(1)
+	restored.load_state({"bloom": {}, "next_id": 3})
+	assert_int(restored.collected_count()).is_equal(0)

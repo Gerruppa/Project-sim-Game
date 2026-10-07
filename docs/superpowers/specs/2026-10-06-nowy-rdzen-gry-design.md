@@ -274,3 +274,25 @@ Vertical slice (etapy 1-3):
 | Próba Ostateczna nie do przejścia albo trywialna | pomiar botem na 3 archetypach i wielu seedach |
 | fauna wymaga nowego mechanizmu | wydzielona w etap 5, nie blokuje slice'a |
 | zakres większy niż czas autora | każdy etap grywalny; strona Steam po etapie 3 |
+
+
+---
+
+# Zmiany 2026-10-07 (po pierwszych testach)
+
+Plan: `docs/superpowers/plans/2026-10-07-poprawki-po-testach.md`. Z uwagi
+testerów i decyzji użytkownika (gra po angielsku, ma przypominać Plague Inc,
+"symulacja ma być ciekawa, nie idealna"):
+
+- **Fauna wchodzi przed Etapami 2-4** (Etap 5 specyfikacji): trzy gatunki
+  z jednym ogniwem pokarmowym każdy, bez drapieżników; cel gry wymaga
+  zwierząt (rozdział 5.4: Wskaźnik Życia zostaje na Etap 3).
+- **Ostrzeżenia o kryzysach** wyprzedzają Próby (rozdział 5.2): osobny
+  warunek `warning` w danych zdarzenia, a nie faza Pending; zasada
+  "każdy kryzys zapowiedziany i z przeciwdziałaniem" już obowiązuje.
+- **Drzewka perków** (rozdział 3.3) mają sześć gałęzi: Środowisko, Odporność,
+  Rozsiew, Produkcja, Tarcza, Fauna; perki mają poziomy do III. Gałąź Dyspersja
+  (zasięg) czeka na Etap 2.
+- **Zakończenie** (rozdział 5.4): karta wygranej i karta końca 200 lat jako
+  miękki koniec (można grać dalej); porażka i Dziedzictwo w Etapie 3-4.
+- Tekst gry jest po angielsku; dokumenty projektowe zostają po polsku.

@@ -1,5 +1,9 @@
 # Jak grać w Genesis Error (prototyp w konsoli)
 
+> Uwaga (2026-10-07): ten dokument opisuje starszy przepływ z punktami decyzji
+> (konsola). Aktualny opis gry w oknie jest w `docs/instrukcja_testera.txt`
+> (po angielsku), perki i bąbelki w `docs/perks.md`.
+
 Genesis Error to gra o prowadzeniu ewolucji żywej planety. Nie budujesz
 niczego: obserwujesz, jak planeta żyje, stawiasz hipotezy i od czasu do czasu
 delikatnie (albo mniej delikatnie) w nią ingerujesz. Nagrodą jest
@@ -115,7 +119,7 @@ pokaże komunikat i ekran nowej gry.
 ### Paczka dla testerów
 
 `./godot/export_game.sh` buduje `build/GenesisError-<data>-<commit>.zip`:
-samodzielny `GenesisError.exe` i `INSTRUKCJA.txt`
+samodzielny `GenesisError.exe` i `INSTRUCTIONS.txt`
 (`docs/instrukcja_testera.txt`). Uruchomiona bez opcji gra pokazuje ekran
 nowej gry (numer planety albo losowa, charakter, wczytanie ostatniej gry).
 Zapisy i kroniki wersji samodzielnej trafiają do

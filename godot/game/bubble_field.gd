@@ -46,6 +46,8 @@ var _next_id := 1
 var _last_ambient := 0
 ## species id -> index of the highest bloom threshold reached so far.
 var _bloom_reached: Dictionary[String, int] = {}
+## How many bubbles the player picked in this game.
+var _collected := 0
 
 
 ## population_of.call(species_id: String) -> float. Value: the BubbleField.
@@ -178,8 +180,14 @@ func collect(id: int) -> int:
 		if _bubbles[i]["id"] == id:
 			var value: int = _bubbles[i]["value"]
 			_bubbles.remove_at(i)
+			_collected += 1
 			return value
 	return 0
+
+
+## How many bubbles the player has picked.
+func collected_count() -> int:
+	return _collected
 
 
 func lifetime() -> float:
@@ -195,7 +203,8 @@ func set_center_provider(provider: Callable) -> void:
 
 
 func save_state() -> Dictionary:
-	return {"bloom": _bloom_reached.duplicate(), "next_id": _next_id, "last_ambient": _last_ambient}
+	return {"bloom": _bloom_reached.duplicate(), "next_id": _next_id, "last_ambient": _last_ambient,
+			"collected": _collected}
 
 
 ## Missing or damaged data starts fresh; it never blocks a game. Bubbles on
@@ -212,6 +221,8 @@ func load_state(data: Dictionary) -> void:
 	_next_id = maxi(1, int(next_id)) if _is_number(next_id) else 1
 	var last_ambient: Variant = data.get("last_ambient", 0)
 	_last_ambient = int(last_ambient) if _is_number(last_ambient) else 0
+	var collected: Variant = data.get("collected", 0)
+	_collected = maxi(0, int(collected)) if _is_number(collected) else 0
 
 
 ## Index of the highest threshold the population reached, -1 when none.

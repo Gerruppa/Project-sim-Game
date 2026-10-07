@@ -94,7 +94,7 @@ func test_buy_needs_enough_sparks() -> void:
 	_grant(system, 2.5)
 	var result := system.validate_command(_command(PerkSystem.ACTION_BUY, {"perk": "perk_hardy"}))
 	assert_bool(result.is_ok()).is_false()
-	assert_str(_errors(result)).contains("brakuje 2 Iskier")
+	assert_str(_errors(result)).contains("2 more Sparks needed")
 	_buy(system, "perk_hardy")
 	assert_bool(system.owns(&"perk_hardy")).is_false()
 	assert_float(system.sparks()).is_equal(2.5)
@@ -161,7 +161,7 @@ func test_two_buys_in_one_tick_cannot_overspend() -> void:
 	_buy(other, "perk_hardy")
 	var events := other.take_events(1)
 	assert_array(_types(events)).is_equal(["perk_bought", "perk_rejected"])
-	assert_str(events[1].data["story"]).contains("Test perk_hardy").contains("brakuje 4 Iskier")
+	assert_str(events[1].data["story"]).contains("Test perk_hardy").contains("4 more Sparks needed")
 	assert_float(other.sparks()).is_equal(0.0)
 
 
@@ -305,3 +305,50 @@ func test_load_rejects_unknown_perk_and_bad_format() -> void:
 		assert_float(target.sparks()).is_equal(0.0)
 		assert_array(target.owned()).is_empty()
 	assert_str(_errors(_system().load_state(bad_states[1]))).contains("perk_missing")
+
+
+func test_the_purse_starts_with_the_catalogs_start_sparks() -> void:
+	var catalog := P.catalog([_hardy()], {"start_sparks": 3})
+	assert_int(catalog.start_sparks).is_equal(3)
+	assert_float(PerkSystem.new(catalog).sparks()).is_equal(3.0)
+	assert_float(_system().sparks()).is_equal(0.0)
+
+
+func test_a_loaded_purse_does_not_get_the_start_sparks_again() -> void:
+	var catalog := P.catalog([_hardy()], {"start_sparks": 3})
+	var first := PerkSystem.new(catalog)
+	_grant(first, 2.0)
+	var restored := PerkSystem.new(catalog)
+	assert_bool(restored.load_state(first.save_state()).is_ok()).is_true()
+	assert_float(restored.sparks()).is_equal(5.0)
+
+
+func test_catalog_rejects_negative_or_fractional_start_sparks() -> void:
+	assert_str("\n".join(P.parse([_hardy()], {"start_sparks": -1}).errors)).contains("start_sparks")
+	assert_str("\n".join(P.parse([_hardy()], {"start_sparks": 1.5}).errors)).contains("start_sparks")
+
+
+func test_income_scale_multiplies_the_passive_income() -> void:
+	var plain := _system()
+	var thrifty := PerkSystem.new(P.catalog([_hardy(), P.perk("perk_thrifty", {"cost": 1, "income_scale": 0.5})]))
+	assert_float(plain.income_scale()).is_equal(1.0)
+	_grant(thrifty, 5.0)
+	_buy(thrifty, "perk_thrifty")
+	thrifty.take_events(1)
+	assert_float(thrifty.income_scale()).is_equal(0.5)
+	var before := thrifty.sparks()
+	_tick(thrifty, 50.0, 2)
+	var full := PerkSystem.new(P.catalog([_hardy()]))
+	_grant(full, 4.0)
+	_tick(full, 50.0, 2)
+	var thrifty_gain := thrifty.sparks() - before
+	var full_gain := full.sparks() - 4.0
+	assert_float(thrifty_gain).is_equal_approx(full_gain * 0.5, 1e-12)
+
+
+func test_refunding_a_perk_restores_the_income() -> void:
+	var system := PerkSystem.new(P.catalog([P.perk("perk_thrifty", {"cost": 1, "income_scale": 0.5})]))
+	_grant(system, 5.0)
+	_buy(system, "perk_thrifty")
+	system.apply_command(_command(PerkSystem.ACTION_REFUND, {"perk": "perk_thrifty"}))
+	assert_float(system.income_scale()).is_equal(1.0)

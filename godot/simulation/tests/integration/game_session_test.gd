@@ -22,7 +22,7 @@ func test_steps_stop_at_the_decision_point() -> void:
 	assert_bool(game.round_over()).is_true()
 	assert_int(game.tick()).is_equal(130)
 	assert_str(String(game.decision_point().type)).is_equal("species_emerged")
-	assert_array(Array(game.decision_sentences())).is_equal(["Pojawiają się bakterie."])
+	assert_array(Array(game.decision_sentences())).is_equal(["Life takes hold: bacteria."])
 	assert_int(game.step(100)).is_equal(0)
 
 
@@ -46,25 +46,25 @@ func test_actions_report_readiness_and_submit_queues() -> void:
 	assert_str(before["id"]).is_equal("mirrors_warm")
 	assert_bool(before["ready"]).is_true()
 	assert_array(before["levels"]).has_size(3)
-	assert_str(game.submit("mirrors_warm", {"level": "weak"}).value).is_equal("Lustra orbitalne (lekko)")
+	assert_str(game.submit("mirrors_warm", {"level": "weak"}).value).is_equal("Orbital mirrors (light)")
 	var after: Dictionary = game.actions()[2]
 	# Not applied yet: the cooldown starts when the command runs next tick,
 	# but the same cooldown group cannot be queued twice meanwhile.
 	assert_bool(after["ready"]).is_true()
-	assert_str("\n".join(game.submit("mirrors_cool", {}).errors)).contains("już zaplanowane")
+	assert_str("\n".join(game.submit("mirrors_cool", {}).errors)).contains("already queued")
 	assert_bool(game.submit("aquifer_release", {}).is_ok()).is_true()
 	game.begin_round()
 	game.step(1)
 	assert_bool(game.actions()[2]["ready"]).is_false()
-	assert_str("\n".join(game.submit("mirrors_cool", {}).errors)).contains("odnawia")
+	assert_str("\n".join(game.submit("mirrors_cool", {}).errors)).contains("recharging")
 
 
 func test_species_choices_say_what_each_species_lacks() -> void:
 	var game := _session()
 	var choices := game.species_choices()
-	assert_int(choices.size()).is_equal(5)
-	assert_str(choices[2]["name"]).is_equal("mchy")
-	assert_str(choices[2]["needs"]).starts_with("brakuje:")
+	assert_int(choices.size()).is_equal(8)
+	assert_str(choices[2]["name"]).is_equal("moss")
+	assert_str(choices[2]["needs"]).starts_with("missing:")
 
 
 # --- the player's units, zones and action timers ------------------------------
@@ -90,7 +90,7 @@ func test_planet_rows_speak_the_players_units() -> void:
 	# The change is the difference of the two shown temperatures, not of the 0-100 values.
 	assert_str(later["change"]).is_equal(GameSession.trend(
 			game.display.change("temperature", temperature["value"], later["value"]), 1))
-	assert_str(later["name"]).is_equal("Średnia temperatura")
+	assert_str(later["name"]).is_equal("Average temperature")
 
 
 func test_rows_carry_the_life_zone() -> void:
@@ -135,8 +135,8 @@ func test_a_timed_action_is_watched_while_it_runs_and_while_its_effect_shows() -
 	game.submit("mirrors_cool", {"level": "weak"})
 	var queued: Dictionary = game.active_actions()[0]
 	assert_str(queued["phase"]).is_equal("queued")
-	assert_str(queued["name"]).is_equal("Pył orbitalny")
-	assert_str(queued["level_name"]).is_equal("lekko")
+	assert_str(queued["name"]).is_equal("Orbital dust")
+	assert_str(queued["level_name"]).is_equal("light")
 	game.begin_round()
 	game.step(1)
 	var started := game.tick()
@@ -206,7 +206,7 @@ func test_species_effects_name_who_made_the_oxygen() -> void:
 	var oxygen: Array = (algae["effects"] as Array).filter(func(e: Dictionary) -> bool: return e["id"] == "oxygen")
 	assert_array(oxygen).has_size(1)
 	assert_float(oxygen[0]["change"]).is_greater(0.0)
-	assert_str(oxygen[0]["shown"]).starts_with("+").ends_with(" % atmosfery")
+	assert_str(oxygen[0]["shown"]).starts_with("+").ends_with(" % of atmosphere")
 
 
 ## The shares of life, the player and the planet add up to the change the
@@ -233,3 +233,65 @@ func test_a_species_not_yet_here_shows_no_effect() -> void:
 	_play_to(game, 1)
 	var trees: Dictionary = game.life_rows().filter(func(row: Dictionary) -> bool: return row["id"] == "tree")[0]
 	assert_array(trees["effects"]).is_empty()
+
+
+func test_date_text_follows_the_calendar() -> void:
+	var game := _session()
+	assert_str(game.date_text(0)).is_equal("Year 1, January")
+	assert_str(game.date_text(10380)).is_equal("Year 29, November")
+	assert_str(game.date_text()).is_equal(game.date_text(game.tick()))
+
+
+func test_a_recharging_action_names_the_date_it_is_ready() -> void:
+	var game := _session()
+	game.begin_round()
+	game.step(10000)
+	assert_bool(game.submit("mirrors_warm", {}).is_ok()).is_true()
+	game.begin_round()
+	game.step(1)
+	var refused := "\n".join(game.submit("mirrors_warm", {}).errors)
+	assert_str(refused).contains("available from Year ").not_contains("tick")
+
+
+func test_species_guide_rows_cover_every_species() -> void:
+	var game := _session()
+	var rows := game.species_guide_rows()
+	assert_int(rows.size()).is_equal(8)
+	assert_str(rows[0]["id"]).is_equal("bacteria")
+	assert_str(rows[0]["name"]).is_equal("bacteria")
+	assert_str(String(rows[3]["verdict"])).is_equal("waiting")
+	assert_str(rows[3]["verb"]).is_equal("Plant")
+	assert_str(rows[5]["id"]).is_equal("insects")
+	assert_str(rows[5]["verb"]).is_equal("Release")
+	assert_bool(rows[0]["ready"]).is_true()
+
+
+func test_species_guide_rows_follow_the_seed_cooldown() -> void:
+	var game := _session()
+	game.begin_round()
+	game.step(10000)
+	assert_bool(game.submit("seed_species", {"species": "bacteria"}).is_ok()).is_true()
+	game.begin_round()
+	game.step(1)
+	assert_bool(game.species_guide_rows()[0]["ready"]).is_false()
+
+
+func test_life_path_lists_the_rungs_of_life() -> void:
+	var game := _session()
+	var path := game.life_path()
+	assert_int(path.size()).is_equal(8)
+	assert_str(path[0]["id"]).is_equal("bacteria")
+	assert_str(path[0]["state"]).is_equal("next")
+	assert_str(path[4]["id"]).is_equal("tree")
+
+
+func test_the_next_perk_goal_is_the_cheapest_perk_within_reach() -> void:
+	var game := _session()
+	var goal := game.next_perk_goal()
+	assert_str(goal["name"]).is_equal("Hardiness I")
+	assert_int(goal["cost"]).is_equal(4)
+	assert_int(goal["missing"]).is_equal(1)
+	game.manager.submit(PerkSystem.ID, PerkSystem.ACTION_GRANT, {"amount": 3, "source": "test"})
+	game.begin_round()
+	game.step(2)
+	assert_int(game.next_perk_goal()["missing"]).is_equal(0)

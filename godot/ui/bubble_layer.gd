@@ -18,11 +18,16 @@ const KIND_COLORS := {
 }
 const DEFAULT_COLOR := Color("dbe7f2")
 const TEXT_COLOR := Color("10141c")
+## How long a gain floats, and how far it rises (pixels).
+const FLOAT_SECONDS := 1.0
+const FLOAT_RISE := 50.0
 
 var _planet: PlanetView
 var _field: BubbleField
 ## bubble id -> its button.
 var _buttons: Dictionary[int, Button] = {}
+## {"label", "age", "from"} for each gain floating up.
+var _floaters: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -101,3 +106,48 @@ static func _round_style(color: Color) -> StyleBoxFlat:
 	style.border_color = Color(1, 1, 1, 0.55)
 	style.set_border_width_all(2)
 	return style
+
+
+## A "+4 ✦" that rises from where the bubble was and fades within FLOAT_SECONDS.
+## Call it right after the click, while the bubble's button still exists.
+func show_gain(id: int, amount: int) -> void:
+	var label := Label.new()
+	label.text = "+%d ✦" % amount
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", 22)
+	label.add_theme_color_override("font_color", Color("f2c14e"))
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	label.add_theme_constant_override("outline_size", 6)
+	var from := _buttons[id].position if _buttons.has(id) else size * 0.5
+	label.position = from
+	add_child(label)
+	_floaters.append({"label": label, "age": 0.0, "from": from})
+
+
+## The texts of the gains still floating.
+func floaters() -> PackedStringArray:
+	var texts := PackedStringArray()
+	for floater in _floaters:
+		texts.append((floater["label"] as Label).text)
+	return texts
+
+
+## Ages the floating gains by `seconds`: they rise and fade, then go.
+func advance_floaters(seconds: float) -> void:
+	var alive: Array[Dictionary] = []
+	for floater in _floaters:
+		floater["age"] = float(floater["age"]) + seconds
+		var label: Label = floater["label"]
+		var progress := float(floater["age"]) / FLOAT_SECONDS
+		if progress >= 1.0:
+			remove_child(label)
+			label.queue_free()
+			continue
+		label.position = (floater["from"] as Vector2) + Vector2(0, -FLOAT_RISE * progress)
+		label.modulate.a = 1.0 - progress
+		alive.append(floater)
+	_floaters = alive
+
+
+func _process(delta: float) -> void:
+	advance_floaters(delta)
