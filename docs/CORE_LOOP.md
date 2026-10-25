@@ -2,7 +2,10 @@
 
 # Genesis Error Core Loop
 
-Version: 1.0
+Version: 2.0 (new core, 2026-10-06)
+
+Source: `docs/superpowers/specs/2026-10-06-nowy-rdzen-gry-design.md`
+(chapters 2, 3, 5, 9).
 
 Purpose:
 Define the primary player experience.
@@ -14,547 +17,147 @@ it should not be implemented.
 
 # NORTH STAR
 
-The player is not building a planet.
+The player is the Creator's Apprentice.
 
-The player is discovering how a planet works.
+Humanity doubts that life can be created on purpose.
+The Creator gives the Apprentice an empty planet and 200 years.
 
-The objective is not control.
-
-The objective is understanding.
+The objective is lush life:
+many species, wide spread, surviving every Trial.
 
 The core experience is:
 
-Observe a world.
-Change something.
-Watch the consequences.
-Learn.
-Repeat.
+Collect Sparks.
+Buy a perk.
+Watch life spread.
+Avert the next Trial.
+Play again.
 
 ---
 
 # THE PRIMARY LOOP
 
-```text
-Observe
-↓
-Hypothesize
-↓
-Intervene
-↓
-Simulate
-↓
-Observe Consequences
-↓
-Learn
-↓
-Form New Hypothesis
-```
+The loop runs on four levels at once.
 
-This loop defines the entire game.
+| Level | What the player does | Plague Inc analogue |
+|---|---|---|
+| Seconds | collects bubbles on the globe and gets **Sparks of Life** | DNA bubbles |
+| 1-2 minutes | buys perks, uses divine powers, reacts to a Trial warning | evolution, events |
+| 5 minutes | picks a direction (tree) and a growth pace, because fast growth angers the Creator | stealth vs. lethality |
+| game (15-25 min) | 200 years: from an empty planet to the Final Trial | one playthrough |
+| meta | Legacy unlocks planets, starting perks, difficulty | genes, scenarios |
 
-Every feature must support it.
+Time scale: 1 year = 360 ticks, a game = 72 000 ticks.
+Speeds: x1, x5, x10, x25, x50, x100.
+
+The loop is live: the simulation runs while the player acts.
+Pause is not required for decisions. Only a Trial warning may auto-pause.
 
 ---
 
-# LOOP STAGE 1
+# LEVEL 1: SECONDS (BUBBLES)
 
-# OBSERVE
+Bubbles appear on reached continents:
 
-Player studies the world.
+- Bloom: a species crossed a population threshold.
+- Mutation: a random event with a cause in the planet state.
+- Discovery: a species appears for the first time, a continent is
+  settled for the first time.
 
-Objectives:
+A bubble disappears after 15 real seconds, so the game rewards attention.
 
-- understand current climate
-- understand species distribution
-- identify opportunities
-- identify risks
+Targets (to be measured with a bot and testers):
 
-Player asks:
-
-What is happening?
-
-Why is it happening?
-
-What could happen next?
+- 4-6 bubbles per minute,
+- the first perk bought within 30 seconds of the start,
+- about 20 perks bought per game.
 
 ---
 
-# Player Emotions
+# LEVEL 2: 1-2 MINUTES (PERKS AND POWERS)
 
-Curiosity
+Four perk trees:
 
-Wonder
+| Tree | Content |
+|---|---|
+| Environment | divine powers: mirrors, dust, cloud seeding, groundwater, volcanoes |
+| Life | species traits: drought and frost resistance, faster growth, lower flammability |
+| Dispersal | spores, wind-borne seeds, crossing the ocean (extends reach) |
+| Ecosystem | decomposers, pollinators, insects, amphibians, mammals (later stage) |
 
-Interest
-
----
-
-# Success Criteria
-
-Player can identify:
-
-- major environmental trends
-- dominant species
-- ecosystem state
-
-Without requiring external tools.
+Every perk has a price in Sparks, requirements, a **side effect**,
+and can be refunded for part of the cost.
+Divine powers keep their cooldowns: the player buys access, not a resource.
 
 ---
 
-# Questions Produced
+# LEVEL 3: 5 MINUTES (DIRECTION AND PACE)
 
-Examples:
+The Creator's Wrath (0-100) is derived from the planet state:
+the growth rate of biomass over a window. The faster life grows,
+the higher the Wrath. Slower growth lowers it over time.
 
-Why is oxygen rising?
+A Trial (cataclysm) is a world event:
 
-Why are forests dying?
+- **Pending = warning.** The condition must hold for `for_ticks`
+  (about 20-40 seconds at game pace). The player sees the warning
+  and can avert the Trial by slowing growth or buying the matching perk.
+- **Escalation.** Later Trials have higher biomass thresholds
+  and stronger modifiers. The better the player does, the faster
+  the Creator moves.
+- Every Trial has a counter in the trees (ice age: mirrors and frost
+  resistance; oxygen catastrophe: anaerobic niche; fires: low flammability).
 
-Why is humidity collapsing?
-
-Why are algae spreading?
-
-Good gameplay begins with questions.
-
----
-
-# LOOP STAGE 2
-
-# HYPOTHESIZE
-
-The player develops a theory.
-
-Examples:
-
-I believe adding moss
-will increase humidity.
-
-I believe lower temperatures
-will stabilize the ecosystem.
-
-I believe algae growth
-will improve oxygen levels.
+The only scripted element is the Final Trial in year 200
+(meteor impact plus volcanic winter).
 
 ---
 
-# Purpose
+# LEVEL 4: THE GAME (200 YEARS)
 
-Create player agency through knowledge.
+Life Index (0-100): the sum over species of
+`weight * min(1, population / threshold)` plus a bonus
+for the number of species living at once.
 
-Not through power.
-
----
-
-# Success Criteria
-
-Player can make informed predictions.
-
-Predictions do not need
-to be correct.
-
-Only reasonable.
+- **Win:** after the Final Trial the Life Index is at least 60
+  and at least 4 species live.
+- **Loss:** biomass stays below 2 for 5 game years, or after the Final
+  Trial the Life Index is below 60.
 
 ---
 
-# LOOP STAGE 3
+# REWARD
 
-# INTERVENE
+The primary reward is growth in power and expansion:
+more Sparks, stronger species, more of the map filled with life.
 
-Player performs an action.
+The secondary reward is transformation of the globe:
+desert, moss, wetlands, forests, a complex biosphere.
+Coverage fills the map with species colors, like a plague
+spreading in Plague Inc.
 
-Examples:
-
-Introduce species.
-
-Remove species.
-
-Alter climate.
-
-Deploy technology.
-
-Influence atmosphere.
-
-Modify water cycle.
-
-Create ecological pressure.
+The tertiary reward is stories:
+the Trial that was averted at the last second,
+the mutation that saved the planet,
+the headline from humanity after a win.
 
 ---
 
-# Design Rule
+# FAILURE AND LEGACY
 
-Every action must change
-the simulation.
-
-Avoid cosmetic actions.
-
-Avoid meaningless interactions.
-
----
-
-# Questions Produced
-
-What happens now?
-
-What side effects exist?
-
-What did I miss?
-
----
-
-# LOOP STAGE 4
-
-# SIMULATE
-
-The world processes changes.
-
-This is the most important phase.
-
-The player should feel:
-
-The planet is alive.
-
-Not:
-
-The planet is following scripts.
-
----
-
-# Design Goals
-
-System interactions
-
-Delayed consequences
-
-Unexpected outcomes
-
-Nonlinear effects
-
-Tradeoffs
-
----
-
-# Examples
-
-Player introduces algae.
-
-↓
-
-Oxygen increases.
-
-↓
-
-Humidity changes.
-
-↓
-
-Moss expands.
-
-↓
-
-Forest appears.
-
-↓
-
-Wildfires increase.
-
-↓
-
-Atmosphere destabilizes.
-
-A single action created
-multiple outcomes.
-
-This is desirable.
-
----
-
-# LOOP STAGE 5
-
-# OBSERVE CONSEQUENCES
-
-Player investigates outcomes.
-
-This stage provides reward.
-
-Not currency.
-
-Not experience points.
-
-Not unlocks.
-
-Knowledge.
-
----
-
-# Questions Produced
-
-Was my theory correct?
-
-Why did this happen?
-
-What caused this chain reaction?
-
-Can I repeat it?
-
-Can I stop it?
-
----
-
-# Design Goal
-
-Generate stories.
-
-Examples:
-
-I accidentally caused
-a planetary drought.
-
-I created a forest ecosystem.
-
-My species became invasive.
-
-These stories are progression.
-
----
-
-# LOOP STAGE 6
-
-# LEARN
-
-Player builds mental models.
-
-This is the true progression system.
-
-Player progression should be:
-
-KnowledgeBasedProgression
-
-Not:
-
-NumericProgression
-
----
-
-# Bad Progression
-
-Unlock stronger algae.
-
-Unlock larger buildings.
-
-Unlock bigger numbers.
-
----
-
-# Good Progression
-
-Understand ecosystems.
-
-Understand feedback loops.
-
-Understand weather systems.
-
-Understand ecological pressures.
-
----
-
-# LOOP STAGE 7
-
-# NEW HYPOTHESIS
-
-Player's new knowledge creates
-new experiments.
-
-The loop restarts.
-
----
-
-# SECONDARY LOOP
-
-Planet Discovery Loop
+A loss ends the game, but it always pays out.
 
 ```text
-Observe Anomaly
+Game ends
 ↓
-Investigate
+Legacy points (Life Index, Trials survived, speed)
 ↓
-Gather Evidence
+Unlocks: planets, starting perks, difficulty levels
 ↓
-Understand Cause
-↓
-Gain Knowledge
+Next game
 ```
 
-Purpose:
-
-Support exploration.
-
----
-
-# TERTIARY LOOP
-
-Ecological Management Loop
-
-```text
-Problem
-↓
-Diagnosis
-↓
-Intervention
-↓
-Monitoring
-↓
-Resolution
-```
-
-Purpose:
-
-Create long-term engagement.
-
----
-
-# EMOTIONAL CURVE
-
-Early Game
-
-Curiosity
-
-↓
-
-Experimentation
-
-↓
-
-Discovery
-
-Mid Game
-
-Mastery
-
-↓
-
-Unexpected Crisis
-
-↓
-
-Adaptation
-
-Late Game
-
-Stewardship
-
-↓
-
-Responsibility
-
-↓
-
-Planetary Transformation
-
----
-
-# WHAT IS THE PLAYER ACTUALLY DOING?
-
-A common design mistake is
-misunderstanding the player activity.
-
-The player is NOT:
-
-Building
-
-Mining
-
-Crafting
-
-Collecting
-
-Grinding
-
-The player IS:
-
-Observing
-
-Predicting
-
-Experimenting
-
-Learning
-
-Adapting
-
----
-
-# PRIMARY REWARD
-
-The primary reward is:
-
-Understanding.
-
----
-
-# SECONDARY REWARD
-
-Planetary transformation.
-
-Examples:
-
-Desert
-
-↓
-
-Moss
-
-↓
-
-Wetlands
-
-↓
-
-Forests
-
-↓
-
-Complex Ecosystem
-
-The visual change reflects learning.
-
----
-
-# TERTIARY REWARD
-
-Emergent stories.
-
-Examples:
-
-The oxygen crisis.
-
-The fungal takeover.
-
-The great extinction.
-
-The endless storm age.
-
-These stories create memory.
-
----
-
-# FAILURE LOOP
-
-Failure is not game over.
-
-Failure produces knowledge.
-
-```text
-Failure
-↓
-Analysis
-↓
-Understanding
-↓
-New Strategy
-```
-
-A failed ecosystem is content.
-
-Not punishment.
+Legacy is the meta loop: failure moves the player forward.
 
 ---
 
@@ -564,23 +167,24 @@ Every feature must pass this test.
 
 Question 1:
 
-Does it improve observation?
+Does it give the player a reason to click once more
+(bubble, perk, power)?
 
 Question 2:
 
-Does it improve hypothesis creation?
+Does it make a decision clearer or a crisis more readable?
 
 Question 3:
 
-Does it improve intervention?
+Does it carry a price or a side effect?
 
 Question 4:
 
-Does it create consequences?
+Does it change PlanetState in a measurable way?
 
 Question 5:
 
-Does it create learning?
+Does it make the next game more interesting?
 
 If at least three answers are NO,
 the feature should be rejected.
@@ -589,15 +193,13 @@ the feature should be rejected.
 
 # SYSTEM CONTRIBUTION MATRIX
 
-Climate System
+Perk shop
 
-✓ Observation
+✓ Click once more
 
-✓ Hypothesis
+✓ Price and side effect
 
-✓ Consequences
-
-✓ Learning
+✓ Changes PlanetState
 
 Keep.
 
@@ -605,88 +207,61 @@ Keep.
 
 Inventory System
 
-✗ Observation
+✗ Clarity of decisions
 
-✗ Consequences
+✗ Changes PlanetState
 
-✗ Learning
+✗ Next game
 
 Reject unless proven necessary.
 
 ---
 
-# PLAYER QUESTIONS TEST
-
-A healthy game constantly generates
-player questions.
-
-Examples:
-
-Why is that happening?
-
-What if I change this?
-
-What caused that event?
-
-Can I stabilize the ecosystem?
-
-Can I reproduce this outcome?
-
-If a feature creates questions,
-it is valuable.
-
-If a feature only creates clicks,
-it is dangerous.
-
----
-
 # DESIGN WARNING SIGNS
 
-The game is becoming a city builder if:
+The game is going wrong if:
 
-Players optimize layouts.
+Players buy perks without reading them.
 
-Players focus on production.
+One perk path wins every game.
 
-Players solve build orders.
+Players stop clicking bubbles.
 
-Players repeat identical strategies.
+Trials arrive without a warning, or have no counter.
 
-Players stop observing the planet.
+Players do not start a second game.
 
 If this happens:
 
-Return focus to simulation.
+Return to the loop: bubbles, perks, Trials.
 
 ---
 
-# THE 30-MINUTE TEST
+# THE 15-25 MINUTE TEST
 
-Observe a simulation.
-
-Allow intervention.
-
-Play for 30 minutes.
+Play one full game (200 years).
 
 Questions:
 
-Did interesting things happen?
+Did the game last 15-25 minutes?
 
-Did unexpected things happen?
+Did the tester click bubbles without hints (4-6 per minute)?
 
-Did the planet surprise the player?
+Was every Trial announced, and could it be countered?
 
-Did the player form hypotheses?
+Did the tester feel stronger over time?
 
-Did the player learn anything?
+Could the tester tell a story afterward?
 
-Could the player tell a story afterward?
+Did the tester start a second game without being asked?
+
+At least 3 of 5 testers should start the second game unprompted.
 
 If most answers are NO:
 
 Do not add more content.
 
-Fix the simulation.
+Fix the loop.
 
 ---
 
@@ -694,7 +269,7 @@ Fix the simulation.
 
 Players should leave the game saying:
 
-"I wonder what would happen if..."
+"One more game, I know what to do differently."
 
 Not:
 

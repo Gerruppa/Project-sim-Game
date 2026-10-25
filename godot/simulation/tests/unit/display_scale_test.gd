@@ -109,10 +109,10 @@ func test_shown_has_the_unit_the_decimals_and_the_label() -> void:
 
 func test_the_chronicle_converts_levels_and_differences() -> void:
 	var scale := _scale()
-	assert_str(scale.chronicle_number("temperature", "min", 30.0, 0.0)).is_equal("10,0 °C")
-	assert_str(scale.chronicle_number("temperature", "change", -8.0, 30.0)).is_equal("-8,5 °C")
+	assert_str(scale.chronicle_number("temperature", "min", 30.0, 0.0)).is_equal("10.0 °C")
+	assert_str(scale.chronicle_number("temperature", "change", -8.0, 30.0)).is_equal("-8.5 °C")
 	# Not 14.25: an exact half rounds up on Windows but to even on Linux and macOS.
-	assert_str(scale.chronicle_number("humidity", "mean", 14.27, 50.0)).is_equal("14,3")
+	assert_str(scale.chronicle_number("humidity", "mean", 14.27, 50.0)).is_equal("14.3")
 
 
 func test_effect_ticks_are_known_only_for_measured_actions() -> void:
@@ -187,3 +187,15 @@ func test_goal_texts_name_parameter_values_in_the_players_units() -> void:
 					"ambition '%s' should name its threshold in the player's units" % ambition["id"]).contains(
 					scale.chronicle_number(ambition["param"], "value", float(ambition["value"]), 0.0))
 	assert_int(checked).is_greater(0)
+
+
+func test_months_default_to_english_names() -> void:
+	var months := _scale().months()
+	assert_int(months.size()).is_equal(12)
+	assert_str(months[10]).is_equal("November")
+
+
+func test_months_come_from_the_data_and_need_twelve_names() -> void:
+	var names := ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"]
+	assert_str(_scale({"months": names}).months()[11]).is_equal("l")
+	assert_str(_errors(_data({"months": ["only", "two"]}))).contains("months")

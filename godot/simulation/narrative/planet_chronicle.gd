@@ -33,8 +33,8 @@ func use_schema(schema: ParameterSchema) -> void:
 
 func begin_run(seed_value: int, initial: PlanetSnapshot) -> void:
 	_schema = initial.schema()
-	var resumed := "" if initial.tick() == 0 else " | wznowiona od ticku %d" % initial.tick()
-	_write("# Kronika planety | seed %d%s" % [seed_value, resumed])
+	var resumed := "" if initial.tick() == 0 else " | resumed from tick %d" % initial.tick()
+	_write("# Planet chronicle | seed %d%s" % [seed_value, resumed])
 
 
 func close() -> void:
@@ -94,9 +94,9 @@ func _param_name(id: String) -> String:
 	return id
 
 
-## One decimal with a decimal comma: the chronicle is written for people.
+## One decimal: the chronicle is written for people.
 static func _number(value: float) -> String:
-	return ("%.1f" % value).replace(".", ",")
+	return "%.1f" % value
 
 
 func _write(line: String) -> void:

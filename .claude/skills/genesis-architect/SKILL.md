@@ -6,8 +6,9 @@ description: Simulation architecture for Genesis Error — designing new systems
 # Planet Simulation Architect
 
 Purpose: design scalable simulation systems, protect system boundaries and
-prevent technical debt. The planet is the protagonist; design from climate,
-biosphere and ecosystems, never from buildings or progression.
+prevent technical debt. Design from climate, biosphere and ecosystems
+(everything affects PlanetState), never from buildings; progression
+(Sparks, perks) lives in the game layer above the simulation.
 
 Read `docs/architecture.md` first. It is the source of truth; a proposal that
 contradicts it must say so explicitly and propose the doc change.
@@ -48,5 +49,6 @@ code and tests, then acceptance criteria. Deliver:
 ## Forbidden
 
 Graphics and UI focus; premature optimization; designing regions or features
-not yet needed; adding a system that skips SYSTEM PRIORITY in CLAUDE.md.
+not yet needed; adding a system that belongs to a later stage in CLAUDE.md
+CURRENT PROJECT GOAL.
 Prefer three deeply interacting systems over ten independent ones.

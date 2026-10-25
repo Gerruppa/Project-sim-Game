@@ -11,12 +11,12 @@ testable and free of circular dependencies. Read `docs/architecture.md`
 (DOMAIN SYSTEMS, COMMUNICATION MODEL) and the system's own doc
 (`docs/climate.md`, `docs/biosphere.md`, `docs/events.md`) first.
 
-## 0. Check the build order
+## 0. Check the stage
 
-`CLAUDE.md` defines SYSTEM PRIORITY (PlanetState → TickScheduler → Climate →
-Atmosphere → Biosphere → Personality → Events → Save → Gameplay → Visualization).
-If the requested system skips an unfinished earlier step, say so and propose
-building the missing step first. Run `genesis-feature-gate` for the spec.
+`CLAUDE.md` CURRENT PROJECT GOAL lists the stages (0-6). The simulation
+systems up to events and saves already exist. If the requested system belongs
+to a later stage or depends on a system that does not exist yet, say so and
+propose building the missing piece first. Run `genesis-feature-gate` for the spec.
 
 ## 1. Define the contract before code
 
@@ -76,7 +76,7 @@ godot/simulation/tests/integration/<area>_*_test.gd
   tick). See `tests/simulation/scheduler_determinism_test.gd` for the pattern.
 - In the game and the console run: register it in
   `SimulationRunner.build_planet` (`godot/game/simulation_runner.gd`), in the
-  CLAUDE.md order; its save state goes through `save_state`/`load_state`.
+  the order of the tick pipeline (`docs/architecture.md`); its save state goes through `save_state`/`load_state`.
 - The pipeline calls `compute` in the Compute phase with the snapshot of the
   previous tick; never call other systems or the pipeline from a system.
 

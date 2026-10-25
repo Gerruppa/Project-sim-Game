@@ -539,12 +539,22 @@ never touch determinism or the golden trace.
 Dependencies point down: `ui/` and `tools/` → `game/` → `simulation/`.
 
 - `godot/ui/` is the window (step 10, debug visualization): `GameView`
-  (`ui/main.tscn`, the project's main scene), `PlanetView` (code-drawn
-  planet), `HistoryChart` (parameters over time). Godot nodes and signals
+  (`ui/main.tscn`, the project's main scene), `PlanetView` (a 3D globe
+  the player turns: continents fixed by the planet's number, shaders driven
+  by global values through `PlanetView.look`; the simulation has no
+  regions), `HistoryChart` (parameters over time, behind a button). The
+  project renders with the Compatibility (OpenGL) backend so testers' older
+  GPUs run it. Godot nodes and signals
   live only here. It shows a `GameSession` and turns clicks into
-  `GameSession.submit`; time comes from `TickScheduler` (x10/x100/x1000)
+  `GameSession.submit`; time comes from `TickScheduler` (x5/x10/x25/x100)
 - `GameSession` (`game/`) is the game as data, shared by the window and
   the console (`PlaySession` only formats it as text)
+- `SpeciesImpact` (`game/`, a `RunObserver`) sums the applied deltas of
+  every tick (`TICK_APPLIED`) by who caused them: the species named in the
+  cause (`algae_photosynthesis`), the player (source `interventions`) or
+  the rest of the planet. `GameSession.species_effects` converts each share
+  at the parameter's average display rate since the last decision, so the
+  shares add up to the change the planet table shows
 
 - `godot/tools/` holds only the SceneTree entry points:
   `run_simulation.gd` (command mode) and `play.gd` (the game with menus)
@@ -941,12 +951,13 @@ res://  (godot/)
     personality/    PersonalitySystem, PersonalityCatalog, PersonalityArchetype
     narrative/      PlanetChronicle, ChronicleTexts (observers, presentation only)
     interventions/  InterventionSystem, InterventionCatalog, InterventionDef (player's hand)
+    perks/          PerkSystem, PerkCatalog, PerkDef (Sparks and perks)
     tests/          unit, integration, simulation, architecture,
                     support (test-only helpers), golden, tools
   resources/        data assets (planet/, simulation/, chronicle/, ...)
   game/             game layer: GameSession, SimulationRunner, PlaySession, GoalTracker,
-                    DecisionWatcher, HintAdvisor, RunSaver, ConsoleInput (above simulation/)
-  ui/               the window: GameView (main.tscn), PlanetView, HistoryChart
+                    DecisionWatcher, HintAdvisor, BubbleField, RunSaver, ConsoleInput (above simulation/)
+  ui/               the window: GameView (main.tscn), PlanetView, HistoryChart, BubbleLayer, PerkWindow, OverlayCard, ChronicleOverlay, ThreatStrip, LifePathBar, SpeciesPanel
   tools/            entry points only: run_simulation.gd, play.gd
 ```
 

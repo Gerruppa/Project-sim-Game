@@ -3,7 +3,10 @@ extends GdUnitTestSuite
 ## ambitions and saving. Populations are set directly, ticks are published
 ## on the bus, so each rule is tested on its own.
 
-const ALL := ["bacteria", "algae", "moss", "shrub", "tree"]
+const ALL := ["bacteria", "algae", "moss", "shrub", "tree", "insects", "small_animals", "large_mammals"]
+
+## Ticks every stage of life must stay alive to win (goals.json).
+const HOLD := 1800
 
 var _manager: SimulationManager
 var _tracker: GoalTracker
@@ -56,26 +59,26 @@ func test_rejects_goals_without_the_three_stars() -> void:
 
 func test_victory_needs_every_stage_alive_for_the_whole_stretch() -> void:
 	_start()
-	_populate(ALL.slice(0, 4))
+	_populate(ALL.slice(0, 7))
 	_ticks(1, 800)
 	assert_bool(_tracker.won()).is_false()
-	assert_array(_tracker.missing_stages()).is_equal(["tree"])
+	assert_array(_tracker.missing_stages()).is_equal(["large_mammals"])
 	_populate(ALL)
-	_ticks(801, 801 + 718)
+	_ticks(801, 801 + HOLD - 2)
 	assert_bool(_tracker.won()).is_false()
-	_ticks(1520, 1520)
+	_ticks(801 + HOLD - 1, 801 + HOLD - 1)
 	assert_bool(_tracker.won()).is_true()
-	assert_int(_tracker.victory_tick()).is_equal(1520)
+	assert_int(_tracker.victory_tick()).is_equal(801 + HOLD - 1)
 
 
 func test_a_quiet_quick_light_victory_earns_three_stars() -> void:
 	_start()
 	_populate(ALL)
 	_publish(&"intervention_applied", 5, {"id": "mirrors_warm", "level": "weak"})
-	_ticks(1, 720)
+	_ticks(1, HOLD)
 	assert_array(_tracker.stars()).contains_exactly(["no_losses", "fast", "light_hand"])
 	assert_str(_tracker.stars_text()).starts_with("★★★")
-	assert_str("".join(_tracker.take_news())).contains("WYGRANA: Dojrzała planeta w roku 3.")
+	assert_str("".join(_tracker.take_news())).contains("VICTORY: Mature planet in year 6.")
 
 
 func test_stars_are_lost_by_extinction_slowness_and_a_heavy_hand() -> void:
@@ -93,7 +96,7 @@ func test_more_than_five_actions_is_not_a_light_hand() -> void:
 	_populate(ALL)
 	for i in 6:
 		_publish(&"intervention_applied", 1, {"id": "aquifer_release"})
-	_ticks(1, 720)
+	_ticks(1, HOLD)
 	assert_bool(_tracker.stars().has("light_hand")).is_false()
 
 
@@ -148,7 +151,7 @@ func test_gardener_needs_the_players_seed() -> void:
 func test_untouched_victory_is_its_own_ambition_but_not_a_light_hand() -> void:
 	_start()
 	_populate(ALL)
-	_ticks(1, 720)
+	_ticks(1, HOLD)
 	assert_bool(_tracker.achieved().has("hands_off")).is_true()
 	assert_array(_tracker.stars()).contains_exactly(["no_losses", "fast"])
 
@@ -163,7 +166,7 @@ func test_progress_survives_a_save() -> void:
 	_populate(ALL)
 	_tracker.load_state(saved)
 	assert_int(_tracker.streak()).is_equal(300)
-	_ticks(301, 720)
+	_ticks(301, HOLD)
 	assert_bool(_tracker.won()).is_true()
 	assert_bool(_tracker.stars().has("light_hand")).is_false()
 
@@ -173,3 +176,22 @@ func test_damaged_progress_starts_fresh() -> void:
 	_tracker.load_state({"achieved": "x", "victory": 3, "running": []})
 	assert_bool(_tracker.won()).is_false()
 	assert_int(_tracker.achieved().size()).is_equal(0)
+
+
+func test_the_goal_line_counts_the_remaining_time_in_months() -> void:
+	_start()
+	_populate(ALL)
+	_ticks(1, 300)
+	var line := "\n".join(_tracker.status_lines({}))
+	assert_str(line).contains("4 y. 2 mo. to go").not_contains("ticks")
+
+
+func test_ending_texts_are_part_of_the_goal_data() -> void:
+	var data: Dictionary = GoalTracker.load_json().value
+	for kind: String in ["won", "timeup"]:
+		assert_str(data["ending"][kind]["title"]).is_not_empty()
+		assert_str(data["ending"][kind]["body"]).is_not_empty()
+	var broken := data.duplicate(true)
+	(broken["ending"] as Dictionary).erase("timeup")
+	assert_bool(GoalTracker.validate(broken).is_ok()).is_false()
+	assert_str("\n".join(GoalTracker.validate(broken).errors)).contains("ending")

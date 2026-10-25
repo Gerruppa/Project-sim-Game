@@ -244,3 +244,42 @@ Historia strojenia (prototyp w Pythonie przed implementacją):
 - nie zapisuje stanu bezpośrednio, tylko zwraca delty
 - losowość tylko z własnego strumienia SeededRng
 - efekty zależą od współczynników z danych
+
+
+---
+
+## Fauna (od 2026-10-07)
+
+Trzy gatunki-zwierzęta w tym samym katalogu co rośliny (`resources/biosphere/species.json`),
+rozpoznawane po polu `food`:
+
+| Gatunek | Żyje na | Pojawia się po | Dodatkowo |
+|---|---|---|---|
+| `insects` | mchy (`moss`) | 720 ticków obfitości pokarmu | zapylają rośliny nad glebą |
+| `small_animals` | krzewy (`shrub`) | 1080 ticków | |
+| `large_mammals` | drzewa (`tree`) | 1440 ticków | |
+
+- **Pojawienie się:** zwierzę nie zasiewa się samo, dopóki populacja pokarmu
+  nie przekroczy `food_need` (× `food_need_scale`) przez `food_ticks` ticków
+  (licznik rośnie o 1, spada o 1 przy niedoborze; zapisywany w stanie
+  biosfery). Gracz może wypuścić zwierzęta wcześniej, ale bez pokarmu zginą.
+- **Zależność:** przydatność środowiska × `smoothstep(0, need, pokarm)`;
+  pojemność proporcjonalna do pokarmu (pełna przy 2 × need). Przyczyna
+  wymarcia: `hunger`.
+- **Wypas:** pokarm traci `graze × graze_scale × (populacja zwierzęcia / 100) ×
+  populacja pokarmu` na tick (przyczyna straty roślin: `grazed`).
+- **Zapylanie:** wzrost roślin warstw ≥ 2 mnożony przez
+  `1 + pollination × Σ(pollinator × populacja / 100)`; domyślnie
+  `pollination` = 0, perki ją podnoszą.
+- **Waga biomasy 0:** suma wag roślin to już 1,0, a zwierzęta nie mają
+  przeliczać biomasy ani tlenu. Wpływają przez oddychanie (O₂/CO₂), wypas i
+  zapylanie.
+- **Bez szumu:** zwierzęta nie losują szumu wzrostu, więc wspólny strumień
+  losowy zostaje taki, jak dla samych roślin (dynamika roślin się nie zmieniła).
+- Nie mają rysunku na globusie (backlog): widać je na pasku drabiny życia, w
+  kronice, w bąbelkach "discovery" i w celach.
+
+Pomiar bez gracza (`simulation/tests/tools/life_timeline.gd`, 9 przebiegów po
+30 000 ticków): owady mediana roku 6 (4-60), małe zwierzęta 22 (15-35, 6/9
+planet), duże ssaki 66 (48-76, 3/9). Na planetach chaotycznych drzew często
+nie ma wcale, więc zwierząt wyższych też.

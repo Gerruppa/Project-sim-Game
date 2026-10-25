@@ -34,9 +34,15 @@ const SPEC := {
 	"co2_uptake": [0.0, 5.0, false],
 	"respiration": [0.0, 5.0, false],
 	"transpiration": [0.0, 5.0, false],
+	"food_need": [0.0, 100.0, false],
+	"food_ticks": [0.0, 10000.0, true],
+	"graze": [0.0, 1.0, false],
+	"pollinator": [0.0, 1.0, false],
 }
 const ORDERED_PAIRS := [["t_min", "t_max"]]
 const TEXT_FIELDS: Array[String] = ["id", "water", "emerges_from"]
+## Fauna fields may be left out of data (a plant has none): they default to 0.
+const OPTIONAL_FIELDS: Array[String] = ["food_need", "food_ticks", "graze", "pollinator"]
 
 var id: StringName
 ## Parameter id supplying water (humidity or precipitation).
@@ -70,15 +76,34 @@ var oxygen: float
 var co2_uptake: float
 var respiration: float
 var transpiration: float
+## Fauna lives on another species: the id of its food ("" for a plant), the
+## food population (0-100) that counts as plenty, how many ticks of plenty
+## before the animals appear, how much of the food they eat (share of the food
+## population per tick at full numbers), and whether they pollinate plants (0-1).
+var food: StringName
+var food_need: float
+var food_ticks: int
+var graze: float
+var pollinator: float
+
+
+## An animal: it lives on another species.
+func is_fauna() -> bool:
+	return not food.is_empty()
 
 
 ## How well the environment suits the species, 0..1. Multiplicative:
 ## any missing need (cold, drought, no soil) stops growth.
-func suitability(snapshot: PlanetSnapshot) -> float:
+## cold, heat and drought (planet scale 0-100) widen the temperature window and
+## lower the water need: what perks of resistance do.
+func suitability(snapshot: PlanetSnapshot, cold: float = 0.0, heat: float = 0.0, drought: float = 0.0) -> float:
 	var t := snapshot.get_value(Param.TEMPERATURE)
-	var temperature_fit := SimMath.smoothstep(t_min - t_margin, t_min, t) \
-			* (1.0 - SimMath.smoothstep(t_max, t_max + t_margin, t))
-	var water_fit := SimMath.smoothstep(water_min - water_margin, water_min, snapshot.get_value(water))
+	var low := t_min - cold
+	var high := t_max + heat
+	var dry := water_min - drought
+	var temperature_fit := SimMath.smoothstep(low - t_margin, low, t) \
+			* (1.0 - SimMath.smoothstep(high, high + t_margin, t))
+	var water_fit := SimMath.smoothstep(dry - water_margin, dry, snapshot.get_value(water))
 	var co2_fit := 1.0 if co2_need == 0.0 else SimMath.smoothstep(0.0, co2_need, snapshot.get_value(Param.CO2))
 	var oxygen_fit := 1.0 if o2_need == 0.0 \
 			else SimMath.smoothstep(o2_need * 0.5, o2_need, snapshot.get_value(Param.OXYGEN))
@@ -90,14 +115,14 @@ func suitability(snapshot: PlanetSnapshot) -> float:
 ## The factor of suitability() that limits the species most, as a loss
 ## cause: heat, cold, drought, co2_starvation, oxygen_lack or poor_soil.
 ## Ties keep this order, so the answer is deterministic.
-func limiting_factor(snapshot: PlanetSnapshot) -> StringName:
+func limiting_factor(snapshot: PlanetSnapshot, cold: float = 0.0, heat: float = 0.0, drought: float = 0.0) -> StringName:
 	var t := snapshot.get_value(Param.TEMPERATURE)
-	var cold_fit := SimMath.smoothstep(t_min - t_margin, t_min, t)
-	var heat_fit := 1.0 - SimMath.smoothstep(t_max, t_max + t_margin, t)
+	var cold_fit := SimMath.smoothstep(t_min - cold - t_margin, t_min - cold, t)
+	var heat_fit := 1.0 - SimMath.smoothstep(t_max + heat, t_max + heat + t_margin, t)
 	var fits := [
 		[&"heat", heat_fit],
 		[&"cold", cold_fit],
-		[&"drought", SimMath.smoothstep(water_min - water_margin, water_min, snapshot.get_value(water))],
+		[&"drought", SimMath.smoothstep(water_min - drought - water_margin, water_min - drought, snapshot.get_value(water))],
 		[&"co2_starvation", 1.0 if co2_need == 0.0 else SimMath.smoothstep(0.0, co2_need, snapshot.get_value(Param.CO2))],
 		[&"oxygen_lack", 1.0 if o2_need == 0.0 else SimMath.smoothstep(o2_need * 0.5, o2_need, snapshot.get_value(Param.OXYGEN))],
 		[&"poor_soil", 1.0 if biomass_need == 0.0 else SimMath.smoothstep(biomass_need * 0.5, biomass_need, snapshot.get_value(Param.BIOMASS))],

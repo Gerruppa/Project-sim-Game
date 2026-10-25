@@ -2,10 +2,10 @@
 
 # Genesis Error Design Principles
 
-Version: 1.0
+Version: 2.0 (new core, 2026-10-06)
 
 Project Type:
-Planetary Evolution Simulation
+Strategy game, Plague Inc-style, goal: create lush life
 
 Audience:
 Designers
@@ -19,12 +19,19 @@ Protect the core identity of the game.
 Whenever a design decision is questionable,
 this document wins.
 
+Source: `docs/superpowers/specs/2026-10-06-nowy-rdzen-gry-design.md`.
+
 ---
 
 # GAME IDENTITY
 
-Genesis Error is a simulation about creating,
-guiding and understanding a living planet.
+Genesis Error is a strategy game about creating
+a living planet in 200 years.
+
+The player is the Creator's Apprentice.
+Humanity doubts that life can be created on purpose.
+The Creator gives the Apprentice an empty planet,
+and speeds up the cataclysms when the Apprentice does well.
 
 It is not a city builder.
 
@@ -32,15 +39,10 @@ It is not a colony simulator.
 
 It is not a survival game.
 
-It is not a resource management game.
-
-Those elements may exist.
-
-None of them are the focus.
-
 The focus is:
 
-Watching a world evolve.
+Spreading life, spending Sparks on perks,
+surviving the Creator's Trials.
 
 ---
 
@@ -48,7 +50,7 @@ Watching a world evolve.
 
 The player fantasy is:
 
-"I influence planetary evolution and observe the consequences."
+"I grow life across a planet and survive everything the Creator throws at me."
 
 Not:
 
@@ -56,109 +58,113 @@ Not:
 
 Not:
 
-"I maximize resources."
-
-Not:
-
-"I build bigger structures."
+"I watch numbers go up."
 
 The player acts as:
 
-- scientist
-- observer
-- gardener
-- experimenter
-
-Never as:
-
-- king
-- general
-- factory manager
+- the Creator's Apprentice
+- a gardener of a whole planet
+- a strategist who chooses a direction and a pace
 
 ---
 
-# THE PLANET IS THE PROTAGONIST
+# EVERY PERK HAS A PRICE AND A SIDE EFFECT
 
-Most games make the player
-the main character.
+This replaces "the player is not an economy".
+Sparks of Life are a currency, and that is fine,
+as long as spending them is a real decision.
 
-Genesis Error makes the planet
-the main character.
+A perk:
 
-The player is secondary.
+- costs Sparks,
+- has requirements (a planet parameter threshold or another perk),
+- has a side effect,
+- can be refunded for part of the cost.
 
-The player exists to interact with the planet.
+Example:
 
-Every design decision must ask:
+Faster growth
+=
+higher Creator's Wrath
 
-"Does this make the planet feel more alive?"
+The concrete side effect of each perk is decided
+per perk in its data file and measured before it ships.
 
-If not:
-
-Reject it.
-
----
-
-# OBSERVATION FIRST
-
-The primary activity is observation.
-
-Gameplay loop:
-
-Observe
-↓
-Understand
-↓
-Intervene
-↓
-Observe consequences
-
-Not:
-
-Click
-↓
-Reward
-↓
-Click
-↓
-Reward
-
-The game must encourage patience.
-
-Not constant action.
+If a perk has no downside, it is a bug in the design.
+If one perk beats every other, the game is broken.
 
 ---
 
-# CONSEQUENCES OVER REWARDS
+# EVERY TRIAL IS ANNOUNCED AND HAS A COUNTER
 
-The game should not focus on rewards.
+A Trial (cataclysm) is a world event with a Pending phase.
 
-The game should focus on consequences.
+- The player sees the warning (the condition must hold for `for_ticks`).
+- The player can avert the Trial: slow growth, or buy the matching perk.
+- Later Trials are stronger: when the player does well,
+  the Creator speeds up.
 
-Player action:
+Bad:
 
-Introduce algae.
+A random catastrophe with no warning.
 
-Interesting response:
+Good:
 
-The algae unexpectedly reshapes
-the ecosystem.
+"Ice age in 30 seconds. Mirrors or frost resistance will help."
 
-Boring response:
+The only scripted element is the Final Trial in year 200.
+Scripting is justified by the story deadline.
 
-+10 oxygen.
+---
 
-Prefer systemic consequences.
+# THE LOOP IS LIVE
 
-Avoid isolated rewards.
+The simulation runs while the player acts.
+
+- Bubbles on the globe appear and disappear in 15 real seconds.
+- The player can always spend Sparks.
+- Pause is not required for decisions.
+
+The game must reward attention, not patience.
+
+---
+
+# EXPANSION MUST BE VISIBLE
+
+The strongest reward is the map filling with life.
+
+Coverage appears on reached continents, in species colors,
+like a plague in Plague Inc.
+
+Desert
+↓
+Moss
+↓
+Wetlands
+↓
+Forests
+↓
+Complex biosphere
+
+The world changing is more important
+than graphical fidelity.
+
+---
+
+# THE SIMULATION STAYS GLOBAL
+
+No regions. Reach is modeled by continents and species capacity:
+effective capacity = `capacity * reach`.
+
+Consequence we accept: climate effects are global,
+so there are no local decisions ("drought only on continent A").
+If testers show this is missing, regions become a separate stage.
 
 ---
 
 # EMERGENCE OVER SCRIPTING
 
-The most memorable moments should emerge.
-
-Good example:
+Good:
 
 A species expands.
 
@@ -172,40 +178,14 @@ Atmosphere changes.
 
 All systems interact naturally.
 
-Bad example:
+Bad:
 
 At minute 15,
 trigger forest fire cutscene.
 
-Emergence should dominate.
-
-Scripts should support emergence,
-not replace it.
-
----
-
-# THE PLANET SHOULD SURPRISE THE PLAYER
-
-The player should never have
-complete control.
-
-The planet should surprise them.
-
-Healthy surprises:
-
-Unexpected growth.
-
-Unexpected collapse.
-
-Rare mutations.
-
-Environmental shifts.
-
-Planetary crises.
-
-The player must learn.
-
-Not memorize.
+Events originate from the planet state
+(biomass growth, oxygen, humidity),
+not from a random roll.
 
 ---
 
@@ -217,75 +197,13 @@ When designing a new mechanic ask:
 
 Can a player tell a story about this later?
 
-Example:
-
 Good:
 
-"I accidentally caused a global extinction."
+"I averted the ice age with 5 seconds to spare."
 
 Bad:
 
 "I increased biomass from 48 to 52."
-
-Stories are the real reward.
-
----
-
-# INFORMATION SHOULD BE DISCOVERED
-
-Avoid showing everything.
-
-The player should discover:
-
-- ecosystem behavior
-- planetary tendencies
-- long-term consequences
-- hidden relationships
-
-Knowledge becomes progression.
-
-Not just numbers.
-
----
-
-# KNOWLEDGE IS A RESOURCE
-
-Traditional games reward:
-
-gold
-wood
-stone
-credits
-
-Genesis Error rewards:
-
-understanding
-
-The player should become more powerful
-because they know more.
-
-Not because numbers increased.
-
----
-
-# FAILURE MUST BE INTERESTING
-
-Failure is content.
-
-A collapse should reveal something.
-
-Good failure:
-
-An ecosystem crashes and teaches
-the player a lesson.
-
-Bad failure:
-
-Game over.
-
-Avoid hard failure states.
-
-Prefer transformative failures.
 
 ---
 
@@ -304,60 +222,9 @@ higher wildfire risk
 
 More biomass
 =
-greater ecological instability
-
-More rain
-=
-higher mutation probability
+greater Wrath of the Creator
 
 Every gain should create new risks.
-
----
-
-# SHORT-TERM VS LONG-TERM THINKING
-
-Interesting decisions create tension.
-
-The player should constantly choose between:
-
-Immediate benefit
-
-and
-
-Future stability
-
-Example:
-
-Fast-growing species provide
-quick ecosystem growth.
-
-Later:
-
-They become invasive.
-
----
-
-# THE PLAYER IS AN ECOLOGIST
-
-The player should think like:
-
-an ecologist
-a biologist
-a climatologist
-
-Not:
-
-an accountant
-
-Not:
-
-an RTS player
-
-Not:
-
-a logistics optimizer
-
-Design interfaces accordingly.
 
 ---
 
@@ -369,10 +236,6 @@ why something happened.
 Every major outcome should have
 traceable causes.
 
-The player may not know them immediately.
-
-But they must exist.
-
 Avoid:
 
 Random unexplained punishment.
@@ -380,19 +243,6 @@ Random unexplained punishment.
 Prefer:
 
 Understandable consequences.
-
----
-
-# TRANSPARENCY OF SYSTEMS
-
-Never hide information
-without a reason.
-
-The player may not know everything.
-
-But the simulation always knows.
-
-There must be logic underneath.
 
 Mystery is acceptable.
 
@@ -405,8 +255,6 @@ Arbitrariness is not.
 Avoid adding complexity through
 more systems.
 
-Prefer complexity through interaction.
-
 Bad:
 
 10 independent systems.
@@ -417,122 +265,37 @@ Good:
 
 Depth beats quantity.
 
----
+Most dangerous state:
 
-# SIMULATION BEFORE GAMEPLAY
-
-The simulation must be enjoyable
-before gameplay exists.
-
-Required test:
-
-Observe the simulation for 30 minutes.
-
-Question:
-
-Is it interesting?
-
-If not:
-
-Adding gameplay will not solve it.
+simulation depth > gameplay depth.
 
 ---
 
-# BEAUTY THROUGH TRANSFORMATION
+# DATA OVER CODE
 
-The strongest visual reward
-is transformation.
+Perks, bubbles, Trials, continents, species
+and scenarios live in data files (JSON, Resources).
 
-Players should witness:
-
-Desert
-↓
-Moss
-↓
-Wetlands
-↓
-Forests
-↓
-Complex biosphere
-
-The world changing is more important
-than graphical fidelity.
-
-Transformation creates emotion.
+Code stays small and general.
 
 ---
 
-# SYSTEMIC EVENTS
+# DETERMINISM IS A TESTING TOOL
 
-Events should emerge naturally.
+Same seed, same result.
 
-Good:
-
-Drought occurs because
-humidity collapsed.
-
-Bad:
-
-5% random drought chance.
-
-All major events should originate from:
-
-- environment
-- ecology
-- climate
-- species interactions
+Determinism is not a goal for the player.
+It is how we test, balance with bots and reproduce bugs.
+It is never traded for speed or fun.
 
 ---
 
-# THE PLAYER SHOULD FEEL SMALL
+# FAILURE PAYS OUT
 
-The planet exists beyond the player.
+A lost game ends the run, but always gives Legacy points.
 
-The planet should feel ancient.
-
-Powerful.
-
-Independent.
-
-Alive.
-
-The player influences.
-
-The player does not dominate.
-
----
-
-# UNCERTAINTY CREATES CURIOSITY
-
-The player should not know
-every outcome in advance.
-
-Questions are gameplay.
-
-Examples:
-
-Will this species survive?
-
-Will the climate stabilize?
-
-Will the ecosystem collapse?
-
-Curiosity drives engagement.
-
----
-
-# BEAUTIFUL PROBLEMS
-
-The best moments happen when
-the player creates a problem.
-
-Then attempts to solve it.
-
-The game should generate:
-
-Interesting mistakes.
-
-Not perfect plans.
+Legacy unlocks planets, starting perks and difficulty levels.
+The player should want to start the next game.
 
 ---
 
@@ -560,25 +323,25 @@ Remove it.
 
 Before adding a new feature:
 
-□ Does it make the planet feel alive?
+□ Does the player want to click once more?
+
+□ Does it have a price and a side effect?
 
 □ Does it create stories?
 
-□ Does it increase emergence?
-
 □ Does it create trade-offs?
 
-□ Does it generate curiosity?
-
-□ Does it interact with existing systems?
+□ Does it interact with PlanetState?
 
 □ Does it produce meaningful consequences?
 
-□ Can the player learn from it?
+□ Is a crisis it creates announced, with a counter?
 
 □ Does it avoid dominant strategies?
 
-□ Can it create unexpected outcomes?
+□ Is it visible on the map or in a decision?
+
+□ Does it make the next game more interesting?
 
 If most answers are "no",
 the feature should not exist.
@@ -587,35 +350,25 @@ the feature should not exist.
 
 # FEATURES WE WANT
 
-Emergent ecosystems
+Bubbles and Sparks of Life
 
-Planetary evolution
+Perk trees with side effects
 
-Species interaction
+Visible spread of life across continents
 
-Environmental adaptation
+Trials with a warning and a counter
 
-Mutation
+Creator's Wrath derived from planet state
 
-Climate response
+Mutations with a cause in the planet state
 
-Ecological collapse
+Scenarios (planets) and Legacy
 
-Planet personality
-
-Long-term consequences
-
-Scientific discovery
-
-Environmental storytelling
+Humanity's reactions as a story layer
 
 ---
 
 # FEATURES WE DO NOT WANT
-
-Idle mechanics
-
-Clicker gameplay
 
 Artificial grind
 
@@ -627,13 +380,13 @@ Busy work
 
 Daily quests
 
-Meaningless upgrades
+Perks without downsides
 
-Constant notifications
+Trials without a warning
 
 Excessive micro-management
 
-Instant gratification loops
+Multiplayer, combat, crafting
 
 ---
 
@@ -641,19 +394,19 @@ Instant gratification loops
 
 A player says:
 
-"I wanted to see what would happen next."
+"One more game."
 
 A player says:
 
-"I accidentally created a disaster."
+"I averted the Trial just in time."
 
 A player says:
 
-"I spent an hour watching the ecosystem."
+"I tried a different perk path this time."
 
 A player says:
 
-"I did not expect that outcome."
+"I filled the whole map."
 
 These are success signals.
 
@@ -663,11 +416,11 @@ These are success signals.
 
 A player says:
 
-"I solved the optimal build order."
+"I solved the optimal perk order."
 
 A player says:
 
-"I only watched the numbers go up."
+"I stopped clicking the bubbles."
 
 A player says:
 
@@ -675,7 +428,7 @@ A player says:
 
 A player says:
 
-"I already know the best strategy."
+"The Trial came out of nowhere."
 
 These are warning signs.
 
@@ -683,9 +436,8 @@ These are warning signs.
 
 # NORTH STAR
 
-The goal of Genesis Error is not to let players build a planet.
-
-The goal is to let players witness
-the birth of a world.
+The goal of Genesis Error is to let players
+prove that life can be created,
+one game at a time.
 
 Everything else is secondary.

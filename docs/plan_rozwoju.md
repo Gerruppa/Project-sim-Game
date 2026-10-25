@@ -6,6 +6,62 @@ na początek kolejnej sesji (rozdział 5).
 
 ---
 
+## 0. Nowy rdzeń od 2026-10-06
+
+Gra przechodzi z "obserwuj planetę" na pętlę w stylu Plague Inc:
+gracz jest Praktykantem Creatora, zbiera bąbelki (Iskry Życia), kupuje
+perki, przeciwdziała Próbom i ma 200 lat na stworzenie bujnego życia.
+Symulacja zostaje globalna (bez regionów).
+
+- Specyfikacja: `docs/superpowers/specs/2026-10-06-nowy-rdzen-gry-design.md`
+- Plan (etapy 0-1): `docs/superpowers/plans/2026-10-06-iskry-i-perki.md`
+- Księga postępu wykonania: `.superpowers/sdd/2026-10-06-iskry-i-perki/progress.md`
+  to lokalny plik roboczy (jest w .gitignore, w klonie repozytorium może go
+  brakować); trwałym zapisem są specyfikacja i plan powyżej
+
+| Etap | Treść | Pytanie do testera |
+|---|---|---|
+| 0 | dokumenty (`CLAUDE.md`, `CORE_LOOP.md`, `vision.md`, `DESIGN_PRINCIPLES.md`, ten plik) | - |
+| 1 | bąbelki, Iskry, sklep perków w oknie; 10 perków (6 Środowisko, 4 Życie) | czy tester klika bąbelki bez podpowiedzi? |
+| 2 | zasięg: kontynenty jako dane, `reach`, drzewko Dyspersji, pokrycie na globusie | czy rozświetlanie mapy daje satysfakcję? |
+| 3 | Creator: Gniew, Próby z zapowiedzią, Próba Ostateczna, Wskaźnik Życia, wygrana i porażka | czy Próba jest czytelna i uczciwa? |
+| 4 | meta: mutacje, Dziedzictwo, trzy scenariusze, wiara ludzkości, ekran końcowy | czy tester zaczyna drugą partię? |
+| 5 | fauna: gatunki-konsumenci (osobna specyfikacja po etapie 4) | - |
+| 6 | Steam: GodotSteam, osiągnięcia, chmura zapisów, strona sklepu | - |
+
+Kryteria vertical slice (etapy 1-3): partia 15-25 minut, 4-6 bąbelków
+na minutę bez podpowiedzi, bot wygrywa 40-60% partii, co najmniej 3 z 5
+testerów zaczyna drugą partię bez zachęty, każda Próba jest zapowiedziana
+i ma przeciwdziałanie.
+
+### Stan po Etapie 1 (2026-10-06)
+
+- Działa: bąbelki Iskier nad globusem (ambient, odkrycie gatunku, rozkwit),
+  konto Iskier z dochodem pasywnym od biomasy, sklep z 10 perkami w oknie,
+  blokada działań perkami i tryb live bez punktów decyzyjnych z autozapisem
+  co 1000 ticków.
+- Uruchomienie: `./godot/play_window.sh` (tryb live). Perki i pomiary:
+  `docs/perks.md`.
+- Pomiar (`perk_economy_test.gd`, doskonały gracz, seedy 13 i 42, 30 000
+  ticków): pierwszy zakup w ticku 123-131, wszystkie 10 perków w ticku
+  11602-18402, 134-143 przyznane Iskry, ok. 3,0 bąbelka na 1000 ticków
+  (4,5-4,6 na minutę przy x25, ok. 9 przy x50). `ambient.every_ticks`
+  skrócono z 600 do 400, by przy x25 trafić w cel 4-6 na minutę. Cel jest
+  mierzony przy domyślnym tempie x25; ok. 9 na minutę przy x50 jest przyjęte,
+  a czy bąbelki ambient mają się pojawiać w czasie rzeczywistym, rozstrzygnie
+  Etap 3 razem z długością partii.
+- Uwaga: Etap 1 ma 10 z ok. 20 perków, a doskonały gracz ma wszystkie w
+  ticku ok. 11,6-18,4 tys., więc Iskry niczego nie kupują przez większość
+  72-tysięcznej partii, dopóki kolejne etapy nie dodadzą perków. Bąbelek
+  ambient nie ma przyczyny w stanie planety (odstępstwo od specyfikacji 3.2,
+  zastępnik do czasu mutacji); szczegóły w `docs/perks.md`.
+- Następny plan: Etap 2, zasięg na kontynentach i wybór lądowania.
+
+Poniższe rozdziały 1-3 to historia i pomiary sprzed zmiany. Etapy A-E
+są zastąpione. Rozdział 4 (zasady i pułapki) nadal obowiązuje.
+
+---
+
 ## 1. Stan na 2026-10-05 (commit `6c75ebd`)
 
 - Kroki 1-9 z CLAUDE.md gotowe: PlanetState, scheduler, klimat, atmosfera,
@@ -37,12 +93,14 @@ na początek kolejnej sesji (rozdział 5).
 
 ---
 
-## 2. Kolejne etapy (zalecana kolejność)
+## 2. Dawne etapy A-E (zastąpione: nowy rdzeń 2026-10-06)
+
+Sekcja zachowana jako historia i źródło pomiarów. Aktualny plan: rozdział 0.
 
 Każdy etap: najpierw Fun Detector, potem architektura, testy (z dowodem
 mutacją), pomiar narzędziami z rozdziału 1, dokumentacja, commit na prośbę.
 
-### Etap A. Sesje gry i wnioski (krótki, pierwszy po przerwie)
+### Etap A. Sesje gry i wnioski (zastąpione: nowy rdzeń 2026-10-06)
 
 Pierwsze wnioski z partii (2026-10-06), już zrobione (szczegóły
 `docs/gameplay.md`, „Czytelność po sesjach gry”): odliczanie cooldownu
@@ -51,6 +109,25 @@ zwykłe jednostki z punktami kotwiczącymi (`resources/display/display.json`,
 start 10 °C, epoka lodowa poniżej 0 °C), kolory stref życia z danych
 gatunków. Do sprawdzenia w kolejnych partiach: czy kolory i jednostki
 zmieniają decyzje, czy gracz patrzy na skutek w podanym czasie.
+
+Druga runda uwag z okna (2026-10-06), zrobione: układ okna zbudowany na
+1366×800 i skalowany z oknem (stretch `canvas_items`/`expand`, minimum
+1024×600); komórki tabel o stałej szerokości, długie napisy ucięte
+z podpowiedzią, cele i działające akcje przewijane, więc „Dalej” zawsze
+widać (test mierzy układ przez 8 rund); przycisk „Cele ★” z pełną listą
+celu, gwiazdek i ambicji (gracz nie szukał ambicji, których nie znał);
+tempo x5/x10/x25/x100, domyślnie x10 (x1000 służyło do przewijania gry).
+Do sprawdzenia: czy gracze otwierają „Cele” i celują w ambicje.
+
+Trzecia runda (2026-10-06), zrobione: planeta jest głównym widokiem
+(globus 3D z obrotem i przybliżeniem; kontynenty z numeru planety, reszta
+z globalnego stanu, bez regionów w symulacji); wykresy pod przyciskiem;
+akcje w pionie po prawej, decyzja i kronika pod globusem; pod każdym
+gatunkiem jego zmierzony wpływ od ostatniej decyzji (`SpeciesImpact`),
+plus „Reszta planety” i „Twoje akcje”, sumujące się do zmiany w tabeli
+(także w konsoli). Renderer Compatibility. Do sprawdzenia: czy globus
+pomaga rozumieć planetę, czy wpływ gatunków prowadzi do „co jeśli
+zasieję glony?”, czy kontynenty nie obiecują regionów, których nie ma.
 
 - Zagrać 2-3 partie: `./godot/play.sh`, w tym
   `./godot/play.sh --personality chaotic`.
@@ -61,7 +138,7 @@ zmieniają decyzje, czy gracz patrzy na skutek w podanym czasie.
   pytania z `docs/instrukcja_testera.txt` i kroniki partii testerów.
 - Wynik: lista poprawek UX i balansu do etapu B.
 
-### Etap B. Domknięcie luk z pomiarów
+### Etap B. Domknięcie luk z pomiarów (zastąpione: nowy rdzeń 2026-10-06)
 
 1. **Akcja przyspieszająca natlenienie** (np. zasiew sinic albo
    utlenianie skorupy). Dziś dobra gra nie przyspiesza natlenienia
@@ -76,18 +153,18 @@ zmieniają decyzje, czy gracz patrzy na skutek w podanym czasie.
 4. **Tempo punktów decyzji**: rozważyć pomijanie `species_emerged`
    na początku gry albo grupowanie kilku faktów w jeden punkt.
 
-### Etap C. Narzędzie „co, jeśli…”: porównanie dwóch przyszłości
+### Etap C. Narzędzie „co, jeśli…”: porównanie dwóch przyszłości (zastąpione: nowy rdzeń 2026-10-06)
 
 - W menu opcja „rozgałęź”: ten sam punkt decyzji, dwie akcje, obie kroniki
   obok siebie z wyróżnionymi różnicami. Pole `lineage` w zapisie już na to
   czeka.
 - Najkrótsza droga do celu gry: „ciekawe, co się stanie, jeśli…”.
 
-### Etap D. Krok 10: wizualizacja debugowa (rozpoczęta)
+### Etap D. Krok 10: wizualizacja debugowa (zastąpione: nowy rdzeń 2026-10-06; okno zostaje głównym interfejsem)
 
-Pierwsza wersja gotowa: `./godot/play_window.sh` (rysunek planety, wykres,
-tabele, kronika, cele, panel decyzji z przyciskami, tempo x10/x100/x1000,
-pauza). Paczka dla testerów zewnętrznych: `./godot/export_game.sh`
+Pierwsza wersja gotowa: `./godot/play_window.sh` (globus 3D, tabele
+z wpływem gatunków, kronika, cele, panel decyzji, akcje w kolumnie, tempo
+x5/x10/x25/x100, pauza, wykresy pod przyciskiem). Paczka dla testerów zewnętrznych: `./godot/export_game.sh`
 (ZIP z `GenesisError.exe` i instrukcją z pytaniami do testera). Dalej:
 dopracowanie po sesjach gry i odpowiedziach testerów, potem wizualizacja
 docelowa.
@@ -100,7 +177,7 @@ docelowa.
 - Zasada z CLAUDE.md: symulacja → logi → wizualizacja debugowa →
   wizualizacja docelowa.
 
-### Etap E. Pogłębienie świata (po etapie D, tylko przez Fun Detector)
+### Etap E. Pogłębienie świata (zastąpione: nowy rdzeń 2026-10-06; fauna to etap 5, scenariusze to etap 4)
 
 - Kolejne gatunki (np. grzyby, beztlenowce głębinowe). Zasada „5 gatunków,
   20 decyzji”: dodawać tylko wtedy, gdy tworzą nowe decyzje.
@@ -172,7 +249,8 @@ docelowa.
 **Sposób pracy**
 - Rozmowa po polsku; kod, identyfikatory i część dokumentacji po angielsku.
 - Decyzje przedstawiać jako krótkie pytania przed kodem.
-- Commit i push tylko na prośbę.
+- Podczas wykonywania planu wolno robić lokalne commity po każdym zadaniu;
+  push tylko na prośbę.
 - Fun Detector przed każdą nową funkcją.
 - Mierzyć przed strojeniem: wiele seedów i archetypów, narzędzia
   z `tests/tools`, wyniki zapisywać w dokumentacji.
@@ -211,14 +289,41 @@ Wklej na początku nowej sesji:
 
 ```text
 Kontynuujemy projekt Genesis Error (D:\PythonProject_game, Godot 4.7.2,
-GDScript). Przeczytaj najpierw docs/plan_rozwoju.md (stan, etapy, backlog,
-zasady i pułapki), CLAUDE.md oraz docs/gameplay.md. Sprawdź git log i git
-status, uruchom pełny zestaw testów (GODOT_BIN jak w planie,
-./godot/run_tests.sh) i potwierdź, że jest zielony.
+GDScript), nowy rdzeń w stylu Plague Inc. Przeczytaj najpierw
+docs/superpowers/specs/2026-10-06-nowy-rdzen-gry-design.md (specyfikacja),
+docs/superpowers/plans/2026-10-06-iskry-i-perki.md (plan) oraz księgę
+postępu .superpowers/sdd/2026-10-06-iskry-i-perki/progress.md (lokalny plik
+roboczy, może go brakować w klonie; wtedy oprzyj się na specyfikacji, planie
+i git log). Potem docs/plan_rozwoju.md (rozdział 0 i zasady
+w rozdziale 4) oraz CLAUDE.md. Sprawdź git log i git status, uruchom pełny
+zestaw testów (GODOT_BIN jak w planie, ./godot/run_tests.sh) i potwierdź,
+że jest zielony.
 
-Potem powiedz w 3-5 zdaniach, na czym skończyliśmy i który etap planu jest
-następny, i zaproponuj konkretne pierwsze kroki tego etapu jako krótkie
-pytania do decyzji. Pracujemy po polsku; przed nową funkcją Fun Detector,
-przed strojeniem pomiar, testy z dowodem mutacją, commit i push tylko na
-moją prośbę.
+Potem powiedz w 3-5 zdaniach, na czym skończyliśmy i które zadanie planu
+jest następne, i zaproponuj konkretne pierwsze kroki jako krótkie pytania
+do decyzji. Pracujemy po polsku; przed nową funkcją Fun Detector ("czy
+gracz chce kliknąć jeszcze raz?"), przed strojeniem pomiar, testy z dowodem
+mutacją; lokalne commity po zadaniach są dozwolone, push tylko na moją
+prośbę.
 ```
+
+
+---
+
+## Stan po poprawkach z testów (2026-10-07)
+
+Plan: `docs/superpowers/plans/2026-10-07-poprawki-po-testach.md`. Zrobione
+(uwagi pierwszych testerów): data zamiast ticków ("Year 29, November"), tekst
+gry po angielsku, strzałki zamiast liczb przy gatunkach, kronika w
+półprzezroczystym pasku nad globusem, karta zakończenia (wygrana, koniec 200
+lat), przewodnik "kiedy sadzić", ostrzeżenia o kryzysach z przeciwdziałaniami,
+drabina życia z postępem i toasty, okno perków (6 gałęzi, 47 perków, poziomy
+do III), fauna (owady, małe zwierzęta, duże ssaki) i jej perki, balans
+(mediana wygranej bota ok. 20 000 ticków). Zmiany względem specyfikacji:
+fauna i ostrzeżenia weszły przed Etapami 2-4; cel "Dojrzała planeta" wymaga
+też zwierząt i trwa 5 lat.
+
+Do sprawdzenia przez testerów: czy wiedzą, kiedy sadzić; czy zauważają
+ostrzeżenia; czy okno perków jest czytelne i czy wybory się różnią; czy
+zwierzęta są nagrodą; czy wiedzą, że skończyli. Backlog: rysunek fauny na
+globusie, dźwięk, Próby Creatora (Etap 3), zasięg na kontynentach (Etap 2).

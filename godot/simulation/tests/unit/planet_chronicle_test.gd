@@ -43,12 +43,12 @@ func _fact(measure: String, measured: float, window: int = 500) -> Dictionary:
 
 
 func test_starts_with_the_seed() -> void:
-	assert_str(_sink.lines[0]).is_equal("# Kronika planety | seed 42")
+	assert_str(_sink.lines[0]).is_equal("# Planet chronicle | seed 42")
 
 
 func test_world_event_tells_its_story_with_measured_causes() -> void:
 	_publish(&"world_event_started", 734, {"story": "Susza.", "causes": [_fact("value", 24.24), _fact("change", -5.36)]})
-	assert_str(_sink.lines[1]).is_equal("[Tick 734] Susza. (Humidity 24,2; Humidity spada o 5,4 w 500)")
+	assert_str(_sink.lines[1]).is_equal("[Tick 734] Susza. (Humidity 24.2; Humidity spada o 5.4 w 500)")
 
 
 func test_story_without_causes_has_no_brackets() -> void:
@@ -58,7 +58,7 @@ func test_story_without_causes_has_no_brackets() -> void:
 
 func test_signed_phrase_follows_the_sign_of_the_measure() -> void:
 	_publish(&"world_event_started", 1, {"story": "S.", "causes": [_fact("change", 2.5)]})
-	assert_str(_sink.lines[1]).contains("Humidity rośnie o 2,5 w 500")
+	assert_str(_sink.lines[1]).contains("Humidity rośnie o 2.5 w 500")
 
 
 func test_fractions_read_as_percent() -> void:
@@ -83,7 +83,7 @@ func test_unknown_parameter_keeps_its_id() -> void:
 	var fact := _fact("value", 1.0)
 	fact["param"] = "radiation"
 	_publish(&"world_event_started", 1, {"story": "S.", "causes": [fact]})
-	assert_str(_sink.lines[1]).contains("radiation 1,0")
+	assert_str(_sink.lines[1]).contains("radiation 1.0")
 
 
 func test_system_events_use_the_vocabulary_and_species_names() -> void:
@@ -120,4 +120,4 @@ func test_resumed_run_says_where_it_continues() -> void:
 	var resumed := PlanetChronicle.new([sink], ChronicleTexts.load_json(ChronicleTexts.DEFAULT_PATH).value)
 	var state: PlanetState = PlanetState.create(P.schema()).value
 	resumed.begin_run(42, state.snapshot(1500))
-	assert_str(sink.lines[0]).is_equal("# Kronika planety | seed 42 | wznowiona od ticku 1500")
+	assert_str(sink.lines[0]).is_equal("# Planet chronicle | seed 42 | resumed from tick 1500")

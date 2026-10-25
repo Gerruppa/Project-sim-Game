@@ -49,7 +49,7 @@ func test_stops_at_the_first_decision_point_after_the_grace_period() -> void:
 	# Seed 42: bacteria appear at tick 122, the first fact after tick 100.
 	assert_int(manager.tick()).is_equal(122)
 	assert_str(String(watcher.point().type)).is_equal("species_emerged")
-	assert_array(Array(watcher.sentences())).is_equal(["[Tick 122] Pojawiają się bakterie."])
+	assert_array(Array(watcher.sentences())).is_equal(["[Tick 122] Life takes hold: bacteria."])
 
 
 func test_grace_period_hides_the_players_own_consequences() -> void:
@@ -78,14 +78,14 @@ func test_report_shows_the_point_interventions_and_how_to_continue() -> void:
 	manager.submit(InterventionSystem.ID, &"mirrors_cool")
 	_run_to_decision(manager, watcher)
 	var report := "\n".join(SimulationRunner.decision_report(manager, watcher, "D:/saves/decision.json"))
-	assert_str(report).contains("=== Punkt decyzji: tick 122 ===")
-	assert_str(report).contains("[Tick 122] Pojawiają się bakterie.")
+	assert_str(report).contains("=== Decision point: tick 122 ===")
+	assert_str(report).contains("[Tick 122] Life takes hold: bacteria.")
 	assert_str(report).contains("seed_species:<species>")
-	assert_str(report).contains("od ticku 1501")
+	assert_str(report).contains("from tick 1501")
 	assert_str(report).contains("bacteria 1.0")
-	assert_str(report).contains("Planeta (skala 0-100): Temperatura ")
-	assert_str(report).contains("Tlen ")
-	assert_str(report).contains("--load decision.json --act <interwencja> --until decision")
+	assert_str(report).contains("Planet (scale 0-100): Temperature ")
+	assert_str(report).contains("Oxygen ")
+	assert_str(report).contains("--load decision.json --act <intervention> --until decision")
 
 
 func test_parses_until_decision() -> void:

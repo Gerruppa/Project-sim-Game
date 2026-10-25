@@ -7,11 +7,18 @@ func _errors(species_list: Array) -> String:
 	return "\n".join(SpeciesCatalog.from_data(S.catalog_data(species_list)).errors)
 
 
-func test_project_catalog_has_five_species_in_succession_order() -> void:
+func test_project_catalog_climbs_from_bacteria_to_large_mammals() -> void:
 	var result := SpeciesCatalog.load_json(SpeciesCatalog.DEFAULT_PATH)
 	assert_array(Array(result.errors)).is_empty()
 	var catalog: SpeciesCatalog = result.value
-	assert_array(catalog.ids()).is_equal([&"bacteria", &"algae", &"moss", &"shrub", &"tree"])
+	assert_array(catalog.ids()).is_equal([&"bacteria", &"algae", &"moss", &"shrub", &"tree", &"insects", &"small_animals", &"large_mammals"])
+	assert_str(catalog.get_species(&"insects").food).is_equal("moss")
+	assert_str(catalog.get_species(&"small_animals").food).is_equal("shrub")
+	assert_str(catalog.get_species(&"large_mammals").food).is_equal("tree")
+	assert_str(catalog.get_species(&"large_mammals").emerges_from).is_equal("small_animals")
+	assert_bool(catalog.get_species(&"insects").pollinator > 0.0).is_true()
+	for id: StringName in [&"insects", &"small_animals", &"large_mammals"]:
+		assert_float(catalog.get_species(id).weight).is_equal(0.0)
 	assert_str(catalog.get_species(&"tree").emerges_from).is_equal("shrub")
 	assert_str(catalog.get_species(&"bacteria").emerges_from).is_equal("")
 

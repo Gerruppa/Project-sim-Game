@@ -52,6 +52,11 @@ static func validate(data: Dictionary) -> SimResult:
 			or (victory["species"] as Array).is_empty() or not _is_number(victory.get("for_ticks")) \
 			or not _is_number(victory.get("min_population")) or typeof(victory.get("name")) != TYPE_STRING:
 		result.add_error("goals: 'victory' needs name, species, min_population and for_ticks")
+	var ending: Variant = data.get("ending")
+	for kind: String in ["won", "timeup"]:
+		var card: Variant = ending.get(kind) if typeof(ending) == TYPE_DICTIONARY else null
+		if typeof(card) != TYPE_DICTIONARY or typeof(card.get("title")) != TYPE_STRING or typeof(card.get("body")) != TYPE_STRING:
+			result.add_error("goals: 'ending.%s' needs a title and a body" % kind)
 	var stars: Variant = data.get("stars")
 	if typeof(stars) != TYPE_ARRAY:
 		result.add_error("goals: 'stars' must be a list")
@@ -155,7 +160,7 @@ func _win(tick: int) -> void:
 		if earned:
 			stars.append(star["id"])
 	_victory = {"tick": tick, "stars": stars}
-	_news.append("WYGRANA: %s w roku %d. Gwiazdki: %s." % [_data["victory"]["name"], year(tick), stars_text()])
+	_news.append("VICTORY: %s in year %d. Stars: %s." % [_data["victory"]["name"], year(tick), stars_text()])
 	if _interventions == 0:
 		_reach_kind("victory_untouched", tick)
 
@@ -183,7 +188,7 @@ func _reach(ambition: Dictionary, tick: int) -> void:
 	if _achieved.has(ambition["id"]):
 		return
 	_achieved[ambition["id"]] = tick
-	_news.append("Ambicja zdobyta: %s (%s)." % [ambition["name"], ambition.get("text", "")])
+	_news.append("Ambition reached: %s (%s)." % [ambition["name"], ambition.get("text", "")])
 
 
 ## Stages of life not alive now, by species id.
@@ -193,6 +198,16 @@ func missing_stages() -> Array[String]:
 		if _population(id) < float(_data["victory"]["min_population"]):
 			missing.append(id)
 	return missing
+
+
+## The name of the main goal ("Mature planet").
+func ending_goal_name() -> String:
+	return str(_data["victory"]["name"])
+
+
+## The title and body (with {placeholders}) of the ending card: "won" or "timeup".
+func ending(kind: String) -> Dictionary:
+	return _data["ending"][kind]
 
 
 func won() -> bool:
@@ -207,7 +222,7 @@ func stars() -> Array:
 	return _victory.get("stars", [])
 
 
-## "★★☆ (Bez strat, Szybko)"
+## "★★☆ (No losses, Fast)"
 func stars_text() -> String:
 	var earned := PackedStringArray()
 	var marks := ""
@@ -240,30 +255,31 @@ func status_lines(names: Dictionary) -> PackedStringArray:
 	var lines := PackedStringArray()
 	var victory: Dictionary = _data["victory"]
 	if won():
-		lines.append("Cel:           %s osiągnięta w roku %d  %s" % [victory["name"], year(victory_tick()), stars_text()])
+		lines.append("Goal:          %s reached in year %d  %s" % [victory["name"], year(victory_tick()), stars_text()])
 	else:
 		var missing := missing_stages()
 		var total: int = (victory["species"] as Array).size()
 		if missing.is_empty():
-			lines.append("Cel:           %s: wszystkie etapy życia żyją, jeszcze %d ticków (%d/%d)"
-					% [victory["name"], int(victory["for_ticks"]) - _streak, _streak, int(victory["for_ticks"])])
+			lines.append("Goal:          %s: every stage of life is alive, %s to go (%s of %s)"
+					% [victory["name"], GameCalendar.duration_text(int(victory["for_ticks"]) - _streak), GameCalendar.duration_text(_streak),
+					GameCalendar.duration_text(int(victory["for_ticks"]))])
 		else:
 			var words := PackedStringArray(missing.map(func(id: String) -> String: return str(names.get(id, id))))
-			lines.append("Cel:           %s: etapy życia %d/%d, brakuje: %s" % [victory["name"], total - missing.size(), total, ", ".join(words)])
+			lines.append("Goal:          %s: stages of life %d/%d, missing: %s" % [victory["name"], total - missing.size(), total, ", ".join(words)])
 	var reached := PackedStringArray()
 	for ambition: Dictionary in _ambitions():
 		if _achieved.has(ambition["id"]):
 			reached.append(ambition["name"])
-	lines.append("Ambicje:       %d/%d%s" % [reached.size(), _ambitions().size(), "" if reached.is_empty() else ": " + ", ".join(reached)])
+	lines.append("Ambitions:     %d/%d%s" % [reached.size(), _ambitions().size(), "" if reached.is_empty() else ": " + ", ".join(reached)])
 	return lines
 
 
 ## Every goal with its state, for the "c" (cele) screen.
 func goals_text() -> String:
-	var lines := PackedStringArray(["Cel główny: %s. %s" % [_data["victory"]["name"], _data["victory"]["text"]], "Gwiazdki:"])
+	var lines := PackedStringArray(["Main goal: %s. %s" % [_data["victory"]["name"], _data["victory"]["text"]], "Stars:"])
 	for star: Dictionary in _data["stars"]:
 		lines.append("  %s %s: %s" % ["★" if stars().has(star["id"]) else "☆", star["name"], (star["text"] as String).format(star)])
-	lines.append("Ambicje:")
+	lines.append("Ambitions:")
 	for ambition: Dictionary in _ambitions():
 		var mark := "[x]" if _achieved.has(ambition["id"]) else "[ ]"
 		lines.append("  %s %s: %s" % [mark, ambition["name"], ambition.get("text", "")])

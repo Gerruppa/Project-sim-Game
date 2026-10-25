@@ -1,40 +1,45 @@
 {
 	"chronicle_version": 1,
 	"species": {
-		"bacteria": "bakterie",
-		"algae": "glony",
-		"moss": "mchy",
-		"shrub": "krzewy",
-		"tree": "drzewa"
+		"bacteria": "bacteria",
+		"algae": "algae",
+		"moss": "moss",
+		"shrub": "shrubs",
+		"tree": "trees",
+		"insects": "insects",
+		"small_animals": "small animals",
+		"large_mammals": "large mammals"
 	},
 	"events": {
-		"planet_personality": "Planeta budzi się. {description}",
-		"species_emerged": "Pojawiają się {species}.",
-		"species_extinct": "Wymierają {species}: {cause}.",
-		"species_returned": "Wracają {species}.",
-		"intervention_rejected": "{name}: jeszcze niegotowe, dostępne od ticku {ready_at}."
+		"planet_personality": "The planet stirs. {description}",
+		"species_emerged": "Life takes hold: {species}.",
+		"species_extinct": "Lost: {species} ({cause}).",
+		"species_returned": "Back again: {species}.",
+		"intervention_rejected": "{name}: not ready yet, available from tick {ready_at}."
 	},
 	"causes": {
-		"heat": "za gorąco",
-		"cold": "za zimno",
-		"drought": "brakuje wody",
-		"co2_starvation": "brakuje CO₂",
-		"oxygen_lack": "brakuje tlenu",
-		"poor_soil": "za mało gleby i materii organicznej",
-		"fire": "strawiły je pożary",
-		"shade": "zagłuszył je cień wyższych roślin",
-		"oxygen_excess": "zatruł je tlen",
-		"old_age": "obumierają szybciej, niż się odnawiają",
-		"culled": "przerzedziła je ręka gracza"
+		"heat": "too hot",
+		"cold": "too cold",
+		"drought": "not enough water",
+		"co2_starvation": "not enough CO₂",
+		"oxygen_lack": "not enough oxygen",
+		"poor_soil": "not enough soil and organic matter",
+		"fire": "wildfires burned them",
+		"shade": "taller plants shaded them out",
+		"oxygen_excess": "oxygen poisoned them",
+		"old_age": "dying faster than they renew",
+		"hunger": "nothing left to eat",
+		"grazed": "eaten by animals",
+		"culled": "thinned out by the player's hand"
 	},
 	"measures": {
 		"value": "{param} {value}",
-		"change": {"below": "{param} spada o {abs} w ciągu {window} ticków", "above": "{param} rośnie o {abs} w ciągu {window} ticków"},
-		"mean": "{param} średnio {value} przez {window} ticków",
-		"min": "{param} najniżej {value} w ciągu {window} ticków",
-		"max": "{param} najwyżej {value} w ciągu {window} ticków",
-		"range": "{param} waha się o {value} w ciągu {window} ticków",
-		"anomaly": {"below": "{param} {abs} poniżej normy z {window} ticków", "above": "{param} {abs} powyżej normy z {window} ticków"},
-		"drop_from_peak": "{param} {percent}% poniżej szczytu z {window} ticków"
+		"change": {"below": "{param} falls by {abs} within {window} ticks", "above": "{param} rises by {abs} within {window} ticks"},
+		"mean": "{param} averages {value} over {window} ticks",
+		"min": "{param} lowest at {value} within {window} ticks",
+		"max": "{param} highest at {value} within {window} ticks",
+		"range": "{param} swings by {value} within {window} ticks",
+		"anomaly": {"below": "{param} {abs} below the norm of {window} ticks", "above": "{param} {abs} above the norm of {window} ticks"},
+		"drop_from_peak": "{param} {percent}% below the peak of {window} ticks"
 	}
 }

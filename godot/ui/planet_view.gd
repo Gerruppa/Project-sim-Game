@@ -1,91 +1,219 @@
 class_name PlanetView
-extends Control
-## The planet as a simple drawing, so the player sees its state at a glance:
-## the disk's colour follows temperature, polar ice grows when it is cold,
-## green spreads with biomass, clouds with cloud cover and a blue halo with
-## oxygen. Code-drawn, no textures. Presentation only.
+extends SubViewportContainer
+## The planet as a globe the player turns with the mouse: the main view of
+## the window. The continents are fixed for a planet (drawn from its number);
+## sea level, ice, desert, heat, clouds, the colour of the air and life by
+## layers follow the planet's state. The simulation has no regions: the globe
+## shows global values, it never invents local ones. Presentation only.
 
-const SPACE := Color("0b1018")
-const COLD := Color("cfe3f2")
-const TEMPERATE := Color("2f6f8f")
-const WARM := Color("9a7b45")
-const HOT := Color("b0472a")
-const ICE := Color("eef6fb")
-const LIFE := Color("3f9b4a")
-const CLOUD := Color(1, 1, 1)
-const HALO := Color("6fb7ff")
-## Fixed spots where vegetation shows (fractions of the radius), drawn in
-## order as biomass grows. Kept inside 0.7 of the radius to stay on the disk.
-const LIFE_SPOTS: Array[Vector2] = [
-	Vector2(-0.30, 0.10), Vector2(0.25, -0.05), Vector2(0.05, 0.35), Vector2(-0.10, -0.30),
-	Vector2(0.40, 0.25), Vector2(-0.45, -0.10), Vector2(0.15, 0.10), Vector2(-0.25, 0.40),
-	Vector2(0.35, -0.35), Vector2(-0.05, 0.55), Vector2(0.55, 0.0), Vector2(-0.50, 0.25),
-]
-const CLOUD_SPOTS: Array[Vector2] = [
-	Vector2(-0.20, -0.45), Vector2(0.30, 0.45), Vector2(0.50, -0.20), Vector2(-0.55, 0.15),
-	Vector2(0.0, 0.0), Vector2(0.20, -0.60), Vector2(-0.35, 0.55), Vector2(0.60, 0.30),
-]
+const SPIN_SPEED := 0.06
+const DRAG_SPEED := 0.008
+const MAX_TILT := 1.2
+const ZOOM_MIN := 2.2
+const ZOOM_MAX := 4.5
+const ZOOM_STEP := 0.2
+const LOW_O2_AIR := Color("e39b54")
+const RICH_O2_AIR := Color("6fb7ff")
+## Polar ice edge (|sin latitude|) against temperature (0-100): no ice above
+## the last point, caps at 0 degrees Celsius (16), ice to the tropics at 0.
+const ICE_POINTS: Array[Vector2] = [Vector2(0, 0.25), Vector2(16, 0.72), Vector2(30, 0.86), Vector2(40, 0.97), Vector2(50, 1.1)]
+## Species drawn on the globe and the population (0-100) that covers all of
+## their ground.
+const LIFE_IDS: Array[String] = ["bacteria", "algae", "moss", "shrub", "tree"]
+const FULL_COVER := 60.0
+## A point counts as facing the camera when its surface normal's dot with the
+## direction to the camera is above this (a little margin at the rim).
+const VISIBLE_DOT := 0.05
 
-var temperature := 30.0
-var humidity := 15.0
-var oxygen := 2.0
-var biomass := 0.0
-var cloud_cover := 10.0
+## Turned with the mouse and spinning slowly while nobody holds it.
+var auto_spin := true
 
-
-## values: parameter id -> value (0-100), as GameSession.planet_rows gives.
-func show_state(values: Dictionary) -> void:
-	temperature = values.get("temperature", temperature)
-	humidity = values.get("humidity", humidity)
-	oxygen = values.get("oxygen", oxygen)
-	biomass = values.get("biomass", biomass)
-	cloud_cover = values.get("cloud_cover", cloud_cover)
-	queue_redraw()
+var _viewport: SubViewport
+## Tilt toward the viewer (x) holds the spin around the planet's axis (y).
+var _tilt: Node3D
+var _pivot: Node3D
+var _camera: Camera3D
+var _surface: ShaderMaterial
+var _clouds: ShaderMaterial
+var _air: ShaderMaterial
+var _dragging := false
+var _look := {}
 
 
-func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), SPACE)
-	var center := size / 2.0
-	var radius := minf(size.x, size.y) * 0.40
-	# Oxygen: a blue halo, stronger as the air fills with it.
-	draw_circle(center, radius * 1.08, Color(HALO, clampf(oxygen / 40.0, 0.05, 0.45)))
-	draw_circle(center, radius, surface_color(temperature))
-	_draw_ice(center, radius)
-	var spots := clampi(roundi(biomass / 4.0), 0, LIFE_SPOTS.size())
-	for i in spots:
-		draw_circle(center + LIFE_SPOTS[i] * radius, radius * 0.17, Color(LIFE, 0.85))
-	var clouds := clampi(roundi(cloud_cover / 12.0), 0, CLOUD_SPOTS.size())
-	for i in clouds:
-		draw_circle(center + CLOUD_SPOTS[i] * radius, radius * 0.14, Color(CLOUD, 0.35))
-	draw_arc(center, radius, 0.0, TAU, 96, Color(1, 1, 1, 0.25), 2.0, true)
+func _init() -> void:
+	stretch = true
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	_viewport = SubViewport.new()
+	_viewport.own_world_3d = true
+	_viewport.msaa_3d = Viewport.MSAA_4X
+	add_child(_viewport)
+	var environment := Environment.new()
+	environment.background_mode = Environment.BG_COLOR
+	environment.background_color = Color("06090f")
+	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	environment.ambient_light_color = Color(0.35, 0.38, 0.45)
+	environment.ambient_light_energy = 0.6
+	var world := WorldEnvironment.new()
+	world.environment = environment
+	_viewport.add_child(world)
+	var sun := DirectionalLight3D.new()
+	sun.rotation = Vector3(-0.35, -0.75, 0.0)
+	sun.light_energy = 1.3
+	_viewport.add_child(sun)
+	_camera = Camera3D.new()
+	_camera.position = Vector3(0, 0, 3.0)
+	_camera.fov = 45.0
+	_viewport.add_child(_camera)
+	_tilt = Node3D.new()
+	_tilt.rotation.x = 0.25
+	_viewport.add_child(_tilt)
+	_pivot = Node3D.new()
+	_tilt.add_child(_pivot)
+	var hint := Label.new()
+	hint.text = "drag: rotate · wheel: zoom"
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hint.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.35))
+	hint.add_theme_font_size_override("font_size", 12)
+	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hint.offset_right = -8
+	add_child(hint)
+	_surface = _shell(1.0, "res://ui/planet_surface.gdshader", 128)
+	_clouds = _shell(1.015, "res://ui/planet_clouds.gdshader", 96)
+	_air = _shell(1.06, "res://ui/planet_atmosphere.gdshader", 64)
 
 
-## Cold white, temperate blue-green, warm sand, hot red.
-static func surface_color(t: float) -> Color:
-	if t < 20.0:
-		return COLD.lerp(TEMPERATE, clampf((t - 5.0) / 15.0, 0.0, 1.0))
-	if t < 40.0:
-		return TEMPERATE.lerp(WARM, clampf((t - 30.0) / 10.0, 0.0, 1.0))
-	return WARM.lerp(HOT, clampf((t - 40.0) / 15.0, 0.0, 1.0))
+func _shell(radius: float, shader_path: String, segments: int) -> ShaderMaterial:
+	var mesh := SphereMesh.new()
+	mesh.radius = radius
+	mesh.height = radius * 2.0
+	mesh.radial_segments = segments
+	mesh.rings = segments / 2
+	var material := ShaderMaterial.new()
+	material.shader = load(shader_path)
+	mesh.material = material
+	var instance := MeshInstance3D.new()
+	instance.mesh = mesh
+	_pivot.add_child(instance)
+	return material
 
 
-## Polar caps: none above 30 degrees, growing to half the planet at 0.
-func _draw_ice(center: Vector2, radius: float) -> void:
-	var share := clampf((30.0 - temperature) / 30.0, 0.0, 1.0) * 0.5
-	if share <= 0.0:
+## The planet's number fixes its continents and cloud pattern.
+func set_planet(seed_value: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var offset := Vector3(rng.randf_range(0, 50), rng.randf_range(0, 50), rng.randf_range(0, 50))
+	_surface.set_shader_parameter("seed_offset", offset)
+	_clouds.set_shader_parameter("seed_offset", offset * 0.7)
+	_pivot.rotation.y = rng.randf_range(0, TAU)
+
+
+## values: parameter id -> value (0-100); life: species id -> population.
+func show_state(values: Dictionary, life: Dictionary = {}) -> void:
+	_look = look(values, life)
+	for key: String in ["sea_level", "ice_line", "dryness", "heat"] + LIFE_IDS:
+		_surface.set_shader_parameter(key, _look[key])
+	_clouds.set_shader_parameter("cover", _look["clouds"])
+	_air.set_shader_parameter("glow_color", _look["air_color"])
+	_air.set_shader_parameter("strength", _look["air_strength"])
+
+
+## What the globe shows for a planet state (tests read this, not pixels).
+static func look(values: Dictionary, life: Dictionary) -> Dictionary:
+	var temperature: float = values.get("temperature", 30.0)
+	var humidity: float = values.get("humidity", 15.0)
+	var oxygen: float = values.get("oxygen", 2.0)
+	var result := {
+		# A wetter planet has more sea; a dry one shows its continental shelves.
+		"sea_level": lerpf(0.53, 0.45, clampf(humidity / 60.0, 0.0, 1.0)),
+		"ice_line": _ice_line(temperature),
+		"dryness": clampf((35.0 - humidity) / 30.0, 0.0, 1.0),
+		"heat": clampf((temperature - 40.0) / 20.0, 0.0, 1.0),
+		"clouds": clampf(float(values.get("cloud_cover", 10.0)) / 100.0, 0.0, 1.0),
+		"air_color": LOW_O2_AIR.lerp(RICH_O2_AIR, clampf(oxygen / 22.0, 0.0, 1.0)),
+		"air_strength": lerpf(0.35, 0.9, clampf(oxygen / 30.0, 0.0, 1.0)),
+	}
+	for id in LIFE_IDS:
+		result[id] = clampf(float(life.get(id, 0.0)) / FULL_COVER, 0.0, 1.0)
+	return result
+
+
+static func _ice_line(temperature: float) -> float:
+	for i in range(1, ICE_POINTS.size()):
+		if temperature <= ICE_POINTS[i].x:
+			var a := ICE_POINTS[i - 1]
+			var b := ICE_POINTS[i]
+			return lerpf(a.y, b.y, clampf((temperature - a.x) / (b.x - a.x), 0.0, 1.0))
+	return ICE_POINTS[-1].y
+
+
+## The last look shown (empty before the first state).
+func current_look() -> Dictionary:
+	return _look.duplicate()
+
+
+func _process(delta: float) -> void:
+	if auto_spin and not _dragging:
+		_pivot.rotation.y += SPIN_SPEED * delta
+
+
+func _gui_input(event: InputEvent) -> void:
+	var button := event as InputEventMouseButton
+	if button != null:
+		if button.button_index == MOUSE_BUTTON_LEFT:
+			_dragging = button.pressed
+		elif button.pressed and button.button_index == MOUSE_BUTTON_WHEEL_UP:
+			zoom(-ZOOM_STEP)
+		elif button.pressed and button.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			zoom(ZOOM_STEP)
+		accept_event()
 		return
-	var depth := radius * 2.0 * share
-	for pole: float in [-1.0, 1.0]:
-		draw_colored_polygon(cap_polygon(center, radius, depth, pole), ICE)
+	var motion := event as InputEventMouseMotion
+	if motion != null and _dragging:
+		turn(motion.relative * DRAG_SPEED)
+		accept_event()
 
 
-## A circle segment of the given depth at the top (pole -1) or bottom (1).
-static func cap_polygon(center: Vector2, radius: float, depth: float, pole: float) -> PackedVector2Array:
-	var half := acos(clampf(1.0 - depth / radius, -1.0, 1.0))
-	var middle := PI / 2.0 * pole
-	var points := PackedVector2Array()
-	var steps := 24
-	for i in steps + 1:
-		var angle := middle - half + 2.0 * half * float(i) / steps
-		points.append(center + Vector2(cos(angle), sin(angle)) * radius)
-	return points
+## Turns the globe: x around its axis, y tilts it toward the viewer.
+func turn(by: Vector2) -> void:
+	_pivot.rotation.y += by.x
+	_tilt.rotation.x = clampf(_tilt.rotation.x + by.y, -MAX_TILT, MAX_TILT)
+
+
+func zoom(by: float) -> void:
+	_camera.position.z = clampf(_camera.position.z + by, ZOOM_MIN, ZOOM_MAX)
+
+
+## (tilt, spin) in radians.
+func rotation_now() -> Vector2:
+	return Vector2(_tilt.rotation.x, _pivot.rotation.y)
+
+
+func distance() -> float:
+	return _camera.position.z
+
+
+## The latitude and longitude (degrees, as Vector2(lat, lon)) of the point of
+## the globe that faces the camera: the inverse of screen_point's mapping, so
+## screen_point(facing.x, facing.y) is the centre of this view. Bubbles spawn
+## around it, where the player looks.
+func facing_point() -> Vector2:
+	var to_camera := (_camera.global_position - _pivot.global_position).normalized()
+	var local := _pivot.global_transform.basis.orthonormalized().inverse() * to_camera
+	return Vector2(rad_to_deg(asin(clampf(local.y, -1.0, 1.0))), rad_to_deg(atan2(local.z, local.x)))
+
+
+## Where a point of the globe (degrees) falls in this container, or null while
+## it is on the side turned away from the camera. The container stretches its
+## viewport, so the projected pixel is already in its own coordinates.
+func screen_point(lat_deg: float, lon_deg: float) -> Variant:
+	var lat := deg_to_rad(lat_deg)
+	var lon := deg_to_rad(lon_deg)
+	var unit := Vector3(cos(lat) * cos(lon), sin(lat), cos(lat) * sin(lon))
+	var world := _pivot.global_transform * unit
+	var normal := (world - _pivot.global_position).normalized()
+	var to_camera := (_camera.global_position - world).normalized()
+	if normal.dot(to_camera) <= VISIBLE_DOT:
+		return null
+	return _camera.unproject_position(world)

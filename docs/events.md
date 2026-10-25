@@ -375,3 +375,40 @@ Log tekstowy drukuje `summary`:
 - unit: faza Detect widzi nowy stan, modyfikatory działają od następnego ticka (`pipeline_modifiers_test`)
 - integration: spadek wilgotności → susza → modyfikator → niższa wilgotność niż bez zdarzeń → koniec (`event_behavior_test`)
 - simulation: 3 seedy × 12 000 ticków, susze i leczenie występują i się kończą (`event_balance_test`)
+
+
+---
+
+## Ostrzeżenia o kryzysach (od 2026-10-07)
+
+Zdarzenie może mieć blok `warning` w `events.json`: luźniejszy warunek niż
+`trigger`, prawdziwy zanim kryzys się zacznie.
+
+```json
+"warning": {"condition": {...}, "for_ticks": 20, "clear_ticks": 100,
+            "text": "...", "cleared": "...", "counters": ["res_cold_1", "perk_mirrors_warm"]}
+```
+
+- Ostrzeżenie pojawia się, gdy warunek trzyma `for_ticks` ticków pod rząd
+  (zdarzenie `world_event_warned`); wycofuje się po `clear_ticks` ticków
+  niespełnienia (`world_event_warning_cleared`); start kryzysu kończy je bez
+  słowa. Jedno ostrzeżenie na epizod: warunek wahający się wokół progu nie
+  powtarza go.
+- `counters`: id perków i akcji, które pomagają (okno pokazuje ich nazwy;
+  wczytanie gry sprawdza, że istnieją).
+- Ostrzeżenie jest czystą obserwacją: nie zmienia modyfikatorów, a jego
+  historia nie opóźnia startu kryzysu (`EventDef.warning_required_samples`).
+- Pierwsze ostrzeżenie danego rodzaju pauzuje grę kartą z wyjaśnieniem;
+  kolejne widać na pasku nad globusem.
+
+Pomiar (`simulation/tests/tools/warning_report.gd`, 3 seedy × 3 archetypy ×
+9000 ticków): `overheating` mediana wyprzedzenia 284 ticków (52% fałszywych
+alarmów), `drought` 344 (23%), `ice_age` 111 (24%); fire_season zdarza się
+rzadko w tym oknie. Cel z planu (450 ticków) okazał się nieosiągalny: kryzysy
+wynikają z szybkich wahań sezonowych. Test `event_balance_test` pilnuje:
+≥ 70% kryzysów ostrzeżonych, mediana wyprzedzenia ≥ 100 ticków, fałszywe
+alarmy ≤ 60%.
+
+`EventConfig` (`resources/events/event_config.json`): `severity` (kryzys
+uderza słabiej, liczone w chwili startu) i `cooldown_scale` (dłuższa przerwa);
+obracają nimi perki gałęzi Tarcza.

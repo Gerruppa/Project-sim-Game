@@ -17,7 +17,7 @@ const CENSUS_TOLERANCE := 1e-6
 ## Why populations shrink. An extinction names the cause with the largest
 ## recent loss, so the chronicle can say why a species died out.
 const LOSS_CAUSES: Array[StringName] = [&"heat", &"cold", &"drought", &"co2_starvation", &"oxygen_lack",
-		&"poor_soil", &"fire", &"shade", &"oxygen_excess", &"old_age", &"culled"]
+		&"poor_soil", &"fire", &"shade", &"oxygen_excess", &"old_age", &"culled", &"hunger", &"grazed"]
 ## Commands the biosphere accepts: action -> {argument: [min, max]}.
 ## Interventions name these in data, so they are validated at load time.
 const COMMANDS := {
@@ -38,6 +38,9 @@ var _lost: Array[bool] = []
 ## order), decaying by loss_memory every tick. Observation only: it never
 ## changes populations.
 var _losses := PackedFloat64Array()
+## Fauna: ticks of plenty so far (up to food_ticks), per species in catalog order.
+## Animals appear once it is full. Zero for plants.
+var _food_streak := PackedInt32Array()
 
 
 func _init(config: BiosphereConfig, catalog: SpeciesCatalog, global_seed: int) -> void:
@@ -50,6 +53,8 @@ func _init(config: BiosphereConfig, catalog: SpeciesCatalog, global_seed: int) -
 	_lost.resize(_species.size())
 	_lost.fill(false)
 	_losses.resize(_species.size() * LOSS_CAUSES.size())
+	_food_streak.resize(_species.size())
+	_food_streak.fill(0)
 
 
 func system_id() -> StringName:
@@ -123,6 +128,7 @@ func save_state() -> Dictionary:
 		"established": _established.duplicate(),
 		"lost": _lost.duplicate(),
 		"losses_exact": ExactCodec.floats_to_text(_losses),
+		"food_streaks": Array(_food_streak),
 		"rng_state": ExactCodec.int_to_text(_rng.get_state()),
 	}
 
@@ -154,6 +160,11 @@ func load_state(data: Dictionary) -> SimResult:
 	if data.has("losses_exact"):
 		losses = ExactCodec.floats_from_text(data["losses_exact"], _losses.size(), "biosphere: 'losses_exact'")
 		result.errors.append_array(losses.errors)
+	# Optional: saves from before fauna have no food streaks.
+	var streaks: Variant = data.get("food_streaks", [])
+	if typeof(streaks) != TYPE_ARRAY or not ((streaks as Array).size() in [0, _species.size()]) \
+			or not (streaks as Array).all(func(n: Variant) -> bool: return typeof(n) in [TYPE_INT, TYPE_FLOAT] and float(n) >= 0.0):
+		result.add_error("biosphere: 'food_streaks' must hold %d whole numbers" % _species.size())
 	if not result.is_ok():
 		return result
 	for value: float in (populations.value as PackedFloat64Array):
@@ -166,6 +177,9 @@ func load_state(data: Dictionary) -> SimResult:
 	for i in _species.size():
 		_established[i] = flags[i]
 		_lost[i] = (lost as Array)[i] if not (lost as Array).is_empty() else false
+	_food_streak.fill(0)
+	for i in (streaks as Array).size():
+		_food_streak[i] = int(streaks[i])
 	_rng.set_state(rng_read.value)
 	return SimResult.success(self)
 
@@ -201,7 +215,7 @@ func apply_command(command: SimCommand) -> Array[SimCommand]:
 	var before := _populations[index]
 	match command.action:
 		&"add_population":
-			_populations[index] = clampf(before + float(command.args["amount"]), 0.0, 100.0)
+			_populations[index] = clampf(before + float(command.args["amount"]) * _k.seed_scale, 0.0, 100.0)
 		&"scale_population":
 			_populations[index] = before * float(command.args["factor"])
 			# Below a viable population the species is gone, as in compute.
@@ -209,6 +223,50 @@ func apply_command(command: SimCommand) -> Array[SimCommand]:
 				_populations[index] = 0.0
 			_losses[index * LOSS_CAUSES.size() + LOSS_CAUSES.find(&"culled")] += before - _populations[index]
 	return []
+
+
+## How well the planet suits the species now, 0..1 (0 for an unknown species):
+## what growth is multiplied by, and what the window shows the player.
+func fit_of(species_id: StringName, snapshot: PlanetSnapshot) -> float:
+	var index := _index_of(species_id)
+	return 0.0 if index == -1 else _fit_at(index, snapshot)
+
+
+## How far a species is from its food being plentiful long enough to appear
+## (1.0 for a plant and for an unknown species).
+func food_progress(species_id: StringName) -> float:
+	var index := _index_of(species_id)
+	if index == -1 or not _species[index].is_fauna() or _species[index].food_ticks == 0:
+		return 1.0
+	return minf(1.0, float(_food_streak[index]) / float(_species[index].food_ticks))
+
+
+func _fit_at(index: int, snapshot: PlanetSnapshot) -> float:
+	var environment := _species[index].suitability(snapshot, _k.cold_tolerance, _k.heat_tolerance, _k.drought_tolerance)
+	return environment * _food_fit(index) if _species[index].is_fauna() else environment
+
+
+## Animals suffer when their food runs short: 0 with no food, 1 with plenty.
+func _food_fit(index: int) -> float:
+	var need := _food_need(_species[index])
+	if need <= 0.0:
+		return 1.0
+	return SimMath.smoothstep(0.0, need, _populations[_index_of(_species[index].food)])
+
+
+## The food population that counts as plenty for an animal now.
+func _food_need(species: SpeciesData) -> float:
+	return species.food_need * _k.food_need_scale
+
+
+## The coefficients in force now (what perks have turned).
+func current_config() -> BiosphereConfig:
+	return _k
+
+
+## The tolerances of resistance perks in use: (cold, heat, drought), planet scale 0-100.
+func tolerance() -> Vector3:
+	return Vector3(_k.cold_tolerance, _k.heat_tolerance, _k.drought_tolerance)
 
 
 ## Weighted sum of populations: what planet biomass should be.
@@ -234,12 +292,15 @@ func compute(snapshot: PlanetSnapshot) -> Array[Delta]:
 
 	# Every species reads the populations of the previous tick, so the
 	# result does not depend on the order of species in the catalog.
+	_update_food_streaks()
+	var grazing := _grazing_losses()
+	var pollination := _pollination_boost()
 	var next := _populations.duplicate()
 	for i in _species.size():
 		var species := _species[i]
 		var p := _populations[i]
-		var suit := species.suitability(snapshot)
-		next[i] = p + _population_change(i, species, p, suit, fire, oxygen, snapshot)
+		var suit := _fit_at(i, snapshot)
+		next[i] = p + _population_change(i, species, p, suit, fire, oxygen, snapshot, grazing[i], pollination)
 		_add_effects(deltas, species, p, suit, photo_limit, fire)
 		_add(deltas, Param.BIOMASS, species.weight * (next[i] - p),
 				StringName("%s_%s" % [species.id, "growth" if next[i] > p else "dieback"]))
@@ -249,28 +310,79 @@ func compute(snapshot: PlanetSnapshot) -> Array[Delta]:
 
 
 func _population_change(index: int, species: SpeciesData, p: float, suit: float, fire: float, oxygen: float,
-		snapshot: PlanetSnapshot) -> float:
+		snapshot: PlanetSnapshot, grazed: float, pollination: float) -> float:
 	var oxygen_factor := species.oxygen_capacity_factor(oxygen)
 	var shade_factor := 1.0 - species.shade * _taller_cover(species.layer) / 100.0
-	var capacity := species.capacity * oxygen_factor * shade_factor
+	var capacity := species.capacity * oxygen_factor * shade_factor * _k.capacity_scale
+	if species.is_fauna():
+		# The land carries as many animals as its food feeds.
+		capacity *= clampf(_populations[_index_of(species.food)] / maxf(2.0 * _food_need(species), 0.000001), 0.0, 1.0)
 	var crowding := p / capacity if capacity > 0.0 else 2.0
-	var noise := 1.0 + _rng.next_range(-_k.growth_noise, _k.growth_noise)
+	# Animals draw no noise: the shared random stream stays as the plants alone used it.
+	var noise := 1.0 if species.is_fauna() else 1.0 + _rng.next_range(-_k.growth_noise, _k.growth_noise)
 	var growth := species.growth * _k.growth_scale * suit * noise * p * (1.0 - crowding)
+	if species.is_fauna():
+		growth *= _k.fauna_growth_scale
+	elif species.layer >= 2:
+		growth *= pollination
 	var natural := species.base_mortality * p
 	var stress := species.stress_mortality * _k.stress_scale * (1.0 - suit) * p
 	var burned := fire * species.flammable * p
 	var death := (species.base_mortality + species.stress_mortality * _k.stress_scale * (1.0 - suit)
 			+ fire * species.flammable) * p
-	var seeding := species.seed * suit * _precursor_share(species) * (_k.recolonization if _lost[index] else 1.0)
-	var next_population := clampf(p + growth - death + seeding, 0.0, 100.0)
+	var seeding := species.seed * _k.natural_seed_scale * suit * _precursor_share(species) * (_k.recolonization if _lost[index] else 1.0)
+	if species.is_fauna():
+		# Animals appear only after their food has been plentiful long enough.
+		seeding = seeding * _k.fauna_seed_scale if _food_streak[index] >= species.food_ticks else 0.0
+	var next_population := clampf(p + growth - death + seeding - grazed, 0.0, 100.0)
 	if next_population < _k.extinction_threshold and next_population < p:
 		next_population = 0.0
 	# Shrinking capacity shows as negative growth: shade or oxygen, whichever cut more.
 	var squeeze := maxf(-growth, 0.0)
-	var stress_cause := species.limiting_factor(snapshot) if stress > 0.0 else &"old_age"
+	var stress_cause := &"old_age"
+	if stress > 0.0:
+		stress_cause = species.limiting_factor(snapshot, _k.cold_tolerance, _k.heat_tolerance, _k.drought_tolerance)
+		if species.is_fauna() and _food_fit(index) < species.suitability(snapshot, _k.cold_tolerance, _k.heat_tolerance, _k.drought_tolerance):
+			stress_cause = &"hunger"
 	var squeeze_cause := &"shade" if shade_factor <= oxygen_factor else &"oxygen_excess"
-	_remember_losses(index, {stress_cause: stress, &"fire": burned, squeeze_cause: squeeze}, natural)
+	_remember_losses(index, {stress_cause: stress, &"fire": burned, squeeze_cause: squeeze, &"grazed": grazed}, natural)
 	return next_population - p
+
+
+## Animals count the ticks their food was plentiful (and forget slowly when it is not).
+func _update_food_streaks() -> void:
+	for i in _species.size():
+		var species := _species[i]
+		if not species.is_fauna():
+			continue
+		if _populations[_index_of(species.food)] >= _food_need(species):
+			_food_streak[i] = mini(_food_streak[i] + 1, species.food_ticks)
+		else:
+			_food_streak[i] = maxi(0, _food_streak[i] - 1)
+
+
+## What animals eat this tick, per species (the food they live on), from last tick's populations.
+func _grazing_losses() -> PackedFloat64Array:
+	var losses := PackedFloat64Array()
+	losses.resize(_species.size())
+	for i in _species.size():
+		var eater := _species[i]
+		if not eater.is_fauna() or _populations[i] <= 0.0:
+			continue
+		var food := _index_of(eater.food)
+		losses[food] += eater.graze * _k.graze_scale * (_populations[i] / 100.0) * _populations[food]
+	return losses
+
+
+## How much pollinators speed up the plants above the soil: 1 without them or
+## without the pollination coefficient.
+func _pollination_boost() -> float:
+	if _k.pollination <= 0.0:
+		return 1.0
+	var share := 0.0
+	for i in _species.size():
+		share += _species[i].pollinator * _populations[i] / 100.0
+	return 1.0 + _k.pollination * share
 
 
 ## Decays the memory and adds this tick's losses. Natural mortality is
@@ -302,7 +414,7 @@ func extinction_cause(species_id: StringName) -> StringName:
 ## oxygenates, dries or burns the planet.
 func _add_effects(deltas: Array[Delta], species: SpeciesData, p: float, suit: float, photo_limit: float, fire: float) -> void:
 	var share := p / 100.0
-	var photosynthesis := suit * photo_limit * share
+	var photosynthesis := suit * photo_limit * share * _k.photosynthesis_scale
 	var photo_cause := StringName("%s_photosynthesis" % species.id)
 	var breath_cause := StringName("%s_respiration" % species.id)
 	_add(deltas, Param.OXYGEN, species.oxygen * photosynthesis, photo_cause)

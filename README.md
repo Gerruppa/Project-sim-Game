@@ -1,8 +1,10 @@
 # Genesis Error
 
-A game about guiding the evolution of a living planet. The planet is the main
-character; the player is a catalyst who observes, intervenes and learns why
-the planet behaves the way it does.
+A strategy game in the spirit of Plague Inc, reversed: the player is the
+Creator's Apprentice (Praktykant) and must create lush life on an empty
+planet, not destroy it. They collect Sparks of Life from bubbles over the
+globe, spend them on perks and learn why the planet behaves the way it does.
+The loop is documented in CLAUDE.md and docs/CORE_LOOP.md.
 
 Built in Godot 4.7.2 (GDScript). The current prototype runs in a simple
 window (debug visualization) or in the console:

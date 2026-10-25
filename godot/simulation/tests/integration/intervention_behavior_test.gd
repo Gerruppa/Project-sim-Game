@@ -96,6 +96,6 @@ func test_chronicle_names_the_seeded_species() -> void:
 	manager.submit(InterventionSystem.ID, &"mirrors_warm")
 	manager.submit(InterventionSystem.ID, &"mirrors_cool", {}, 2)
 	manager.run_ticks(2)
-	assert_array(Array(sink.lines)).contains(["[Tick 1] Gracz zasiewa mchy.",
-			"[Tick 1] Gracz rozkłada lustra orbitalne (z pełną mocą): planeta dostaje więcej światła.",
-			"[Tick 2] Pył orbitalny: jeszcze niegotowe, dostępne od ticku 1501."])
+	assert_array(Array(sink.lines)).contains(["[Tick 1] The player seeds moss.",
+			"[Tick 1] The player unfolds orbital mirrors (full power): the planet receives more light.",
+			"[Tick 2] Orbital dust: not ready yet, available from tick 1501."])

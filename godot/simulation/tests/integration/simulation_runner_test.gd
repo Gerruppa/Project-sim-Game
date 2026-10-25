@@ -181,7 +181,7 @@ func test_chronicle_tells_a_real_run_without_changing_it() -> void:
 	told.stop()
 	assert_str(told.state_hash()).is_equal(plain.state_hash())
 	var text := FileAccess.get_file_as_string(ProjectSettings.globalize_path(TEST_DIR).path_join("told_run.chronicle.txt"))
-	assert_str(text).starts_with("# Kronika planety | seed 42")
+	assert_str(text).starts_with("# Planet chronicle | seed 42")
 
 
 func test_full_batch_run_writes_every_tick() -> void:
@@ -222,7 +222,7 @@ func test_build_planet_registers_every_system_in_order() -> void:
 	var ids: Array[StringName] = []
 	for system in (built.value["manager"] as SimulationManager).systems():
 		ids.append(system.system_id())
-	assert_array(ids).is_equal([&"climate", &"atmosphere", &"biosphere", &"personality", &"events", &"interventions"])
+	assert_array(ids).is_equal([&"climate", &"atmosphere", &"biosphere", &"personality", &"events", &"interventions", &"perks"])
 	assert_str(built.value["personality"]).is_equal("none")
 	assert_int((built.value["fingerprints"]["climate"] as String).length()).is_equal(64)
 

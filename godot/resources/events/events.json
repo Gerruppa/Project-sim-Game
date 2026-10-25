@@ -3,11 +3,11 @@
 	"events": [
 		{
 			"id": "drought",
-			"name": "Susza",
+			"name": "Drought",
 			"story": {
-				"start": "Susza: ciepłe powietrze wysycha szybciej, niż oddaje mu wodę ląd.",
-				"end": "Susza mija, powietrze znów jest wilgotne.",
-				"end_time_limit": "Susza wygasa, choć powietrze wciąż jest suche."
+				"start": "Drought: warm air dries out faster than the land gives it water.",
+				"end": "The drought passes, the air is humid again.",
+				"end_time_limit": "The drought fades, though the air is still dry."
 			},
 			"trigger": {
 				"condition": {
@@ -39,6 +39,7 @@
 				},
 				"for_ticks": 20
 			},
+			"warning": {"condition": {"all": [{"measure": "value", "param": "temperature", "op": ">", "value": 18}, {"measure": "anomaly", "param": "humidity", "window": 500, "op": "<", "value": -0.4}]}, "for_ticks": 40, "clear_ticks": 300, "text": "A drought is coming: the air is drying out.", "cleared": "The air recovers: the drought no longer looms.", "counters": ["res_drought_1", "perk_aquifer", "perk_cloud_seeding"]},
 			"min_duration": 60,
 			"max_duration": 400,
 			"cooldown": 300,
@@ -62,11 +63,11 @@
 		},
 		{
 			"id": "guardian_healing",
-			"name": "Planeta leczy się",
+			"name": "The planet heals",
 			"story": {
-				"start": "Planeta leczy się: życie zostało zranione, a Strażnik przyspiesza jego odrost.",
-				"end": "Planeta się wyleczyła: życie wróciło blisko dawnego szczytu.",
-				"end_time_limit": "Leczenie nie wystarczyło: życie wciąż jest daleko od dawnego szczytu."
+				"start": "The planet heals: life was wounded and the Guardian speeds its regrowth.",
+				"end": "The planet has healed: life is back near its former peak.",
+				"end_time_limit": "The healing was not enough: life is still far from its former peak."
 			},
 			"personality": [
 				"guardian"
@@ -120,11 +121,11 @@
 		},
 		{
 			"id": "ice_age",
-			"name": "Epoka lodowa",
+			"name": "Ice age",
 			"story": {
-				"start": "Epoka lodowa: lód odbija światło, a planeta chłodzi się sama.",
-				"end": "Lody ustępują, planeta się ociepla.",
-				"end_time_limit": "Epoka lodowa słabnie, choć lód wciąż trzyma planetę."
+				"start": "Ice age: ice reflects the light and the planet cools itself.",
+				"end": "The ice retreats, the planet warms up.",
+				"end_time_limit": "The ice age weakens, though ice still grips the planet."
 			},
 			"trigger": {
 				"condition": {
@@ -146,6 +147,7 @@
 				},
 				"for_ticks": 20
 			},
+			"warning": {"condition": {"all": [{"measure": "mean", "param": "temperature", "window": 200, "op": "<", "value": 30}, {"measure": "change", "param": "temperature", "window": 200, "op": "<", "value": -1.0}]}, "for_ticks": 20, "clear_ticks": 150, "text": "An ice age is coming: the planet is cooling.", "cleared": "The cold snap eases: the ice age no longer looms.", "counters": ["res_cold_1", "perk_mirrors_warm", "perk_volcanic"]},
 			"min_duration": 100,
 			"max_duration": 2000,
 			"cooldown": 500,
@@ -164,11 +166,11 @@
 		},
 		{
 			"id": "fire_season",
-			"name": "Sezon pożarów",
+			"name": "Fire season",
 			"story": {
-				"start": "Sezon pożarów: suche rośliny zapalają się od byle iskry.",
-				"end": "Sezon pożarów mija.",
-				"end_time_limit": "Pożary przygasają, choć ryzyko zostaje."
+				"start": "Fire season: dry plants ignite from the slightest spark.",
+				"end": "The fire season ends.",
+				"end_time_limit": "The fires die down, though the risk remains."
 			},
 			"trigger": {
 				"condition": {
@@ -222,6 +224,7 @@
 				},
 				"for_ticks": 20
 			},
+			"warning": {"condition": {"all": [{"measure": "value", "param": "oxygen", "op": ">", "value": 16}, {"measure": "mean", "param": "humidity", "window": 100, "op": "<", "value": 36}, {"measure": "value", "param": "biomass", "op": ">", "value": 14}]}, "for_ticks": 20, "clear_ticks": 150, "text": "A fire season is coming: dry plants and plenty of oxygen.", "cleared": "The fire danger fades.", "counters": ["res_fire_1", "perk_aquifer", "perk_cull"]},
 			"min_duration": 120,
 			"max_duration": 500,
 			"cooldown": 400,
@@ -240,11 +243,11 @@
 		},
 		{
 			"id": "overheating",
-			"name": "Przegrzanie",
+			"name": "Overheating",
 			"story": {
-				"start": "Przegrzanie: gorący klimat wyczerpuje życie.",
-				"end": "Upał słabnie.",
-				"end_time_limit": "Przegrzanie słabnie, ale planeta wciąż jest gorąca."
+				"start": "Overheating: the hot climate drains life.",
+				"end": "The heat eases.",
+				"end_time_limit": "The overheating eases, but the planet is still hot."
 			},
 			"trigger": {
 				"condition": {
@@ -266,6 +269,7 @@
 				},
 				"for_ticks": 20
 			},
+			"warning": {"condition": {"any": [{"measure": "mean", "param": "temperature", "window": 500, "op": ">", "value": 34.5}, {"all": [{"measure": "mean", "param": "temperature", "window": 200, "op": ">", "value": 36}, {"measure": "change", "param": "temperature", "window": 200, "op": ">", "value": 0.2}]}]}, "for_ticks": 40, "clear_ticks": 300, "text": "Overheating is coming: the planet keeps warming.", "cleared": "The planet cools down: the overheating no longer looms.", "counters": ["res_heat_1", "perk_mirrors_cool", "perk_aquifer"]},
 			"min_duration": 100,
 			"max_duration": 1000,
 			"cooldown": 500,

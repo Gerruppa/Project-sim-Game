@@ -8,7 +8,8 @@ extends RefCounted
 
 const DEFAULT_PATH := "res://resources/events/events.json"
 const EVENT_KEYS := ["id", "name", "story", "personality", "trigger", "end", "min_duration", "max_duration",
-		"cooldown", "modifiers"]
+		"cooldown", "modifiers", "warning"]
+const WARNING_KEYS := ["condition", "for_ticks", "clear_ticks", "text", "cleared", "counters"]
 const STORY_KEYS: Array[String] = ["start", "end", "end_time_limit"]
 
 var _defs: Array[EventDef] = []
@@ -70,6 +71,9 @@ static func _parse_event(raw: Dictionary, index: int, schema: ParameterSchema, s
 	if def.max_duration <= def.min_duration and result.errors.size() == errors_before:
 		result.add_error("%s: 'max_duration' must be greater than 'min_duration'" % label)
 
+	var warning_block: Variant = raw.get("warning")
+	if raw.has("warning"):
+		_parse_warning(warning_block, label + ".warning", schema, def, result)
 	var modifiers: Variant = raw.get("modifiers")
 	if typeof(modifiers) != TYPE_ARRAY or (modifiers as Array).is_empty():
 		result.add_error("%s: 'modifiers' must be a non-empty list (an event acts only through modifiers)" % label)
@@ -87,6 +91,31 @@ static func _parse_event(raw: Dictionary, index: int, schema: ParameterSchema, s
 		def.modifiers.append({"target": modifier["target"], "operation": modifier["operation"],
 				"value": float(modifier["value"])})
 	return def
+
+
+## The optional early warning of an event: {"condition", "text", "counters", and
+## optionally "for_ticks", "clear_ticks", "cleared"}.
+static func _parse_warning(raw: Variant, label: String, schema: ParameterSchema, def: EventDef, result: SimResult) -> void:
+	if typeof(raw) != TYPE_DICTIONARY:
+		result.add_error("%s must be an object with %s" % [label, WARNING_KEYS])
+		return
+	for key: Variant in raw:
+		if not key in WARNING_KEYS:
+			result.add_error("%s: unknown key '%s'" % [label, key])
+	def.warning = EventCondition.parse(raw.get("condition"), schema, label + ".condition", result)
+	def.warning_ticks = _whole(raw, "for_ticks", 1, label, result) if raw.has("for_ticks") else 20
+	def.warning_clear_ticks = _whole(raw, "clear_ticks", 1, label, result) if raw.has("clear_ticks") else 100
+	if typeof(raw.get("text")) != TYPE_STRING or (raw["text"] as String).is_empty():
+		result.add_error("%s: 'text' must be a non-empty string" % label)
+	else:
+		def.warning_text = raw["text"]
+	def.warning_cleared_text = str(raw.get("cleared", "The threat has passed: %s." % def.name))
+	var counters: Variant = raw.get("counters")
+	if typeof(counters) != TYPE_ARRAY or not (counters as Array).all(func(c: Variant) -> bool: return typeof(c) == TYPE_STRING and not (c as String).is_empty()):
+		result.add_error("%s: 'counters' must be a list of perk or action ids" % label)
+	else:
+		for id: String in counters:
+			def.warning_counters.append(StringName(id))
 
 
 ## Every event tells the observer how it began and how it ended.

@@ -25,6 +25,10 @@ const ENDED := &"ended"
 const END_CONDITIONS := &"conditions"
 const END_MAX_DURATION := &"max_duration"
 
+## Transitions returned by advance_warning().
+const WARNED := &"warned"
+const WARNING_CLEARED := &"warning_cleared"
+
 var phase := INACTIVE
 ## Consecutive ticks the trigger (Pending) or the end condition (Active) held.
 var streak := 0
@@ -34,6 +38,11 @@ var elapsed := 0
 var cooldown_left := 0
 ## Set by the transition to ENDED.
 var end_reason := &""
+## An early warning has been issued and not yet withdrawn.
+var warned := false
+## Consecutive ticks the warning condition held (before the warning) or failed (after it).
+var warn_streak := 0
+var calm_streak := 0
 
 
 ## Advances one tick on the newest history sample.
@@ -67,6 +76,36 @@ func advance(def: EventDef, history: ParamHistory) -> StringName:
 	return NO_CHANGE
 
 
+## Advances the early warning one tick, after advance() on the same sample.
+## Only a crisis that has not started can be warned about: once it is Active
+## (or cooling down) the warning is over without a word.
+func advance_warning(def: EventDef, history: ParamHistory) -> StringName:
+	if def.warning == null or not (phase == INACTIVE or phase == PENDING):
+		warned = false
+		warn_streak = 0
+		calm_streak = 0
+		return NO_CHANGE
+	if def.warning.is_met(history):
+		calm_streak = 0
+		if warned:
+			return NO_CHANGE
+		warn_streak += 1
+		if warn_streak < def.warning_ticks:
+			return NO_CHANGE
+		warned = true
+		warn_streak = 0
+		return WARNED
+	warn_streak = 0
+	if not warned:
+		return NO_CHANGE
+	calm_streak += 1
+	if calm_streak < def.warning_clear_ticks:
+		return NO_CHANGE
+	warned = false
+	calm_streak = 0
+	return WARNING_CLEARED
+
+
 func _end(def: EventDef, reason: StringName) -> StringName:
 	end_reason = reason
 	streak = 0
@@ -76,7 +115,8 @@ func _end(def: EventDef, reason: StringName) -> StringName:
 
 
 func to_dict() -> Dictionary:
-	return {"phase": String(phase), "streak": streak, "elapsed": elapsed, "cooldown_left": cooldown_left}
+	return {"phase": String(phase), "streak": streak, "elapsed": elapsed, "cooldown_left": cooldown_left,
+			"warned": warned, "warn_streak": warn_streak, "calm_streak": calm_streak}
 
 
 func load_dict(data: Variant) -> SimResult:
@@ -89,4 +129,8 @@ func load_dict(data: Variant) -> SimResult:
 	streak = int(data["streak"])
 	elapsed = int(data["elapsed"])
 	cooldown_left = int(data["cooldown_left"])
+	# Optional: saves from before early warnings have none.
+	warned = bool(data.get("warned", false))
+	warn_streak = maxi(0, int(data.get("warn_streak", 0)))
+	calm_streak = maxi(0, int(data.get("calm_streak", 0)))
 	return SimResult.success(self)

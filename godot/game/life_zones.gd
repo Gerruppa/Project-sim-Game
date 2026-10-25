@@ -33,10 +33,10 @@ static func relevant(biosphere: BiosphereSystem) -> Array[SpeciesData]:
 
 ## NONE when no species in the list limits this parameter, else the best state
 ## any of them gives.
-static func zone(param: StringName, value: float, species: Array[SpeciesData]) -> StringName:
+static func zone(param: StringName, value: float, species: Array[SpeciesData], tolerance: Vector3 = Vector3.ZERO) -> StringName:
 	var best := NONE
 	for one in species:
-		var limits := _limits(param, one)
+		var limits := _limits(param, one, tolerance)
 		if limits.is_empty():
 			continue
 		var state := _state(value, limits)
@@ -47,11 +47,21 @@ static func zone(param: StringName, value: float, species: Array[SpeciesData]) -
 
 ## [low, high, margin below low, margin above high] where the species lives
 ## well, or [] when it does not limit this parameter.
-static func _limits(param: StringName, species: SpeciesData) -> Array[float]:
+static func limits_of(param: StringName, species: SpeciesData, tolerance: Vector3 = Vector3.ZERO) -> Array[float]:
+	return _limits(param, species, tolerance)
+
+
+## GOOD, POOR or BAD: how a value of the parameter suits the species.
+static func state_of(param: StringName, value: float, species: SpeciesData, tolerance: Vector3 = Vector3.ZERO) -> StringName:
+	var limits := _limits(param, species, tolerance)
+	return NONE if limits.is_empty() else _state(value, limits)
+
+
+static func _limits(param: StringName, species: SpeciesData, tolerance: Vector3 = Vector3.ZERO) -> Array[float]:
 	if param == Param.TEMPERATURE:
-		return [species.t_min, species.t_max, species.t_margin, species.t_margin]
+		return [species.t_min - tolerance.x, species.t_max + tolerance.y, species.t_margin, species.t_margin]
 	if param == species.water:
-		return [species.water_min, TOP, species.water_margin, 0.0]
+		return [species.water_min - tolerance.z, TOP, species.water_margin, 0.0]
 	if param == Param.CO2 and species.co2_need > 0.0:
 		return [species.co2_need, TOP, species.co2_need, 0.0]
 	if param == Param.BIOMASS and species.biomass_need > 0.0:

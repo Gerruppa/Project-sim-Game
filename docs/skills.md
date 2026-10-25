@@ -68,7 +68,7 @@ Rules for every skill:
 
 Fun Detector may challenge every other skill.
 Its veto covers features, never engineering rules
-(determinism, snapshot + deltas, tests, build order).
+(determinism, snapshot + deltas, tests, stage order).
 
 When uncertain, use `genesis-review`.
 

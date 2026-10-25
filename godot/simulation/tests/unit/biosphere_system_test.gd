@@ -410,3 +410,9 @@ func test_lost_species_survive_a_save() -> void:
 	old_save.erase("lost")
 	assert_bool(restored.load_state(old_save).is_ok()).is_true()
 	assert_bool(restored.is_lost(&"bacteria")).is_false()
+
+
+func test_food_progress_is_full_for_species_that_eat_nothing() -> void:
+	var system := BiosphereSystem.new(S.calm(), S.catalog([S.species("moss")]), 1)
+	assert_float(system.food_progress(&"moss")).is_equal(1.0)
+	assert_float(system.food_progress(&"nope")).is_equal(1.0)

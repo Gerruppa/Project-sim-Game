@@ -16,5 +16,17 @@
 	"photorespiration_low": 25.0,
 	"photorespiration_high": 60.0,
 	"loss_memory": 0.99,
-	"recolonization": 0.01
+	"recolonization": 0.01,
+	"cold_tolerance": 0.0,
+	"heat_tolerance": 0.0,
+	"drought_tolerance": 0.0,
+	"seed_scale": 1.0,
+	"natural_seed_scale": 1.0,
+	"capacity_scale": 1.0,
+	"photosynthesis_scale": 1.0,
+	"fauna_growth_scale": 1.0,
+	"fauna_seed_scale": 1.0,
+	"food_need_scale": 1.0,
+	"graze_scale": 1.0,
+	"pollination": 0.0
 }
